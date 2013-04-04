@@ -22,10 +22,10 @@ time = np.linspace(startTime, stopTime, numPoints)
 X0 = np.array([1.0])
 
 # measurement covariance noise
-R     = np.array([[0.1]])
+R     = np.array([[0.004]])
 
 # process noise
-Q     = np.array([[0.1]])
+Q     = np.array([[0.01]])
 
 # define the model
 m = model()
@@ -85,5 +85,11 @@ for i in range(numPoints):
 	else:
 		Xhat[i,:], P[i,:,:], Yhat[i,:], CovZ[i,:,:] = UKFilter.ukf_step(Z[i],Xhat[i-1,:],P[i-1,:,:],Q,R,U[i-1,:],U[i,:],time[i-1],time[i],m,False)
 
+# smoothing the results
+Xsmooth = np.zeros((numPoints,n_state))
+Psmooth = np.zeros((numPoints,n_state,n_state))
+
+Xsmooth, Psmooth = UKFilter.smooth(time,Xhat,P,Q,U,m)
+
 # plot the results
-plotResults(time,stopTime,X,Y,Z,Xhat,Yhat,P,CovZ)
+plotResults(time,stopTime,X,Y,Z,Xhat,Yhat,P,CovZ,Xsmooth,Psmooth)

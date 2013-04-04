@@ -96,7 +96,7 @@ for i in range(numPoints):
 Xsmooth = np.zeros((numPoints,n_state))
 Psmooth = np.zeros((numPoints,n_state,n_state))
 
-Xsmooth, Psmooth = UKFilter.smooth(time,Xhat,P,Q,U)
+Xsmooth, Psmooth = UKFilter.smooth(time,Xhat,P,Q,U,m)
 
 # plot the results
-plotResults(time,stopTime,X,Y,Z,Xhat,Yhat,P,CovZ)
+plotResults(time,stopTime,X,Y,Z,Xhat,Yhat,P,CovZ,Xsmooth,Psmooth)

@@ -224,6 +224,24 @@ class ukf():
 	
 		CovXZ = np.dot(np.dot(Vx.T,W),Vz)
 		return CovXZ
+	
+	"""
+	This function computes the state-state cross covariance matrix (between Xold and Xnew)
+	This is used in the smoothing process
+	"""
+	def computeCxx(self,X_next,Xave_next,X_now,Xave_now):
+		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
+		
+		Vnext = np.zeros(X_next.shape)
+		for j in range(self.n_points):
+			Vnext[j,:]   = X_next[j,:] - Xave_next[0]	
+		
+		Vnow = np.zeros(X_now.shape)
+		for j in range(self.n_points):
+			Vnow[j,:]   = X_now[j,:] - Xave_now[0]
+	
+		Cxx = np.dot(np.dot(Vnext.T,W),Vnow)
+		return Cxx
 
 	"""
 	function call for prediction + update of the UKF
@@ -278,9 +296,47 @@ class ukf():
 	"""
 	This method returns the smoothed state estimation
 	"""
-	def smooth(self,time,Xhat,P,Q,U):
+	def smooth(self,time,Xhat,P,Q,U,m):
 		
+		# initialize the smoothed states and covariance matrix
 		Xsmooth = np.zeros(Xhat.shape)
 		Psmooth = np.zeros(P.shape)
 		
+		# get the number of time steps		
+		s = np.reshape(time,(-1,1)).shape
+		nTimeStep = s[0] 
+		
+		# iterating starting from the end and back
+		# i : nTimeStep-2 -> 0
+		#
+		# From point i with an estimation Xave[i], and P[i]
+		# new sigma points are created and propagated, the result is a 
+		# new vector of states X[i+1] (one for each sigma point)
+		#
+		# NOTE that at time i+1 there is available a corrected estimation of the state Xcorr[i+1]
+		# thus the difference between these two states is backpropagated to the state at time i
+		for i in range(nTimeStep-2,-1,-1):
+			# actual state estimation and covariance matrix
+			x_i = Xhat[i,:]
+			P_i = P[i,:,:]
+			sqrtP_i = self.squareRoot(P_i)
+
+			# compute the sigma points
+			Xs_i        = self.computeSigmaPoints(x_i,sqrtP_i)
+			# propagate the sigma points
+			x_plus_1    = self.sigmaPointProj(m,Xs_i,U[i],time[i])
+			# average of the sigma points
+			Xave_plus_1 = self.averageProj(x_plus_1)
+			# compute the new covariance matrix
+			Pnew = self.computeP(x_plus_1,Xave_plus_1,Q)
+			# compute the cross covariance matrix of the two states
+			# (new state already corrected, coming from the "future", and the new just computed through the projection)
+			Cxx  = self.computeCxx(x_plus_1,Xave_plus_1,Xs_i,x_i)
+
+			# gain for the backpropagation
+			D              = Cxx*np.linalg.inv(Pnew)
+			# correction (i.e. smoothing, of the state estimation and covariance matrix)
+			Xsmooth[i,:]   = Xhat[i,:] + np.dot(D, Xhat[i+1,:]      - Xave_plus_1[0])
+			Psmooth[i,:,:] = P[i,:,:]  - np.dot(np.dot(D,P[i+1,:,:] - Pnew),D.T)
+
 		return (Xsmooth, Psmooth)
