@@ -1,1 +1,2 @@
-# This is a python version of the Unscented Kalman Filter/Smoother
+# This project contains several resources related to the ESTCP project for the Fault Detection and Diagnosis.
+The name of the project folder is ESTCP Naval District W... Energy Information System
