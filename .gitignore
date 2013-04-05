@@ -55,6 +55,7 @@ dslog.txt
 *.log
 *.sql
 *.sqlite
+.Rhistory
 
 # OS generated files #
 ######################
