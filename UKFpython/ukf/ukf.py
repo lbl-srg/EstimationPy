@@ -40,7 +40,7 @@ class ukf():
 	This method set the default parameters of the filter
 	"""
 	def setDefaultUKFparams(self):
-		self.alpha    = 1
+		self.alpha    = 0.9
 		self.k        = 0
 		self.beta     = 2
 		self.lambd    = (self.alpha**2)*(self.n_state + self.k) - self.n_state
@@ -67,6 +67,7 @@ class ukf():
 	def computeWeights(self):
 		self.W_m       = np.zeros((1+self.n_state*2,1))
 		self.W_c       = np.zeros((1+self.n_state*2,1))
+		
 		self.W_m[0,0]  = self.lambd/(self.n_state + self.lambd)
 		self.W_c[0,0]  = self.lambd/(self.n_state + self.lambd) + (1 - self.alpha**2 + self.beta)
 
@@ -144,7 +145,7 @@ class ukf():
 		X_proj = np.zeros((self.n_points,self.n_state))
 		j = 0
 		for x in Xs:
-			X_proj[j,:] = m.functionF(x,u_old,t_old)
+			X_proj[j,:] = m.functionF(x,u_old,t_old,False)
 			j += 1
 		return X_proj
 
@@ -156,7 +157,7 @@ class ukf():
 		Z_proj = np.zeros((self.n_points,self.n_outputs))
 		j = 0
 		for x in Xs:
-			Z_proj[j,:] = m.functionG(x,u,t)
+			Z_proj[j,:] = m.functionG(x,u,t,False)
 			j += 1
 		return Z_proj
 
@@ -305,7 +306,11 @@ class ukf():
 		# get the number of time steps		
 		s = np.reshape(time,(-1,1)).shape
 		nTimeStep = s[0] 
-		
+
+		# the initial value of the smoothed state estimation are equal to the filtered ones
+		Xsmooth[nTimeStep-1,:]   = Xhat[nTimeStep-1,:]
+		Psmooth[nTimeStep-1,:,:] = P[nTimeStep-1,:,:]
+
 		# iterating starting from the end and back
 		# i : nTimeStep-2 -> 0
 		#
@@ -323,6 +328,8 @@ class ukf():
 
 			# compute the sigma points
 			Xs_i        = self.computeSigmaPoints(x_i,sqrtP_i)
+			# mean of the sigma points
+			Xs_i_ave      = self.averageProj(Xs_i)
 			# propagate the sigma points
 			x_plus_1    = self.sigmaPointProj(m,Xs_i,U[i],time[i])
 			# average of the sigma points
@@ -331,7 +338,7 @@ class ukf():
 			Pnew = self.computeP(x_plus_1,Xave_plus_1,Q)
 			# compute the cross covariance matrix of the two states
 			# (new state already corrected, coming from the "future", and the new just computed through the projection)
-			Cxx  = self.computeCxx(x_plus_1,Xave_plus_1,Xs_i,x_i)
+			Cxx  = self.computeCxx(x_plus_1,Xave_plus_1,Xs_i,Xs_i_ave)
 
 			# gain for the backpropagation
 			D              = Cxx*np.linalg.inv(Pnew)

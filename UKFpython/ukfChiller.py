@@ -12,24 +12,24 @@ from ukf import *
 from plotting import *
 
 # time frame of the experiment
-dt = 2.0
+dt = 10.0
 startTime = 0.0
 stopTime  = 3600.0
 numPoints = int((stopTime - startTime)/dt)
 time = np.linspace(startTime, stopTime, numPoints)
 
 # output covariance
-R     = np.array([[1.0,    0.0],
-		  [0.0,    1.0]])
+R     = np.array([[0.1*1.0,    0.0],
+		  [0.0,    0.1*1.0]])
 
-Q     = np.array([[1.0**2, 0.0, 0.0],
-		  [0.0, 1.0**2, 0.0],
-		  [0.0, 0.0, 0.1**2]])
+Q     = np.array([[0.1*1.0**2, 0.0, 0.0],
+		  [0.0, 0.1*1.0**2, 0.0],
+		  [0.0, 0.0, 0.2**2]])
 
 # input measurement noise
-H     = np.array([[0.5**2, 0.0, 0.0],
-		  [0.0, 0.5**2, 0.0],
-		  [0.0, 0.0, 1000**2.0]])
+H     = np.array([[0.01*0.5**2, 0.0, 0.0],
+		  [0.0, 0.01*0.5**2, 0.0],
+		  [0.0, 0.0, 0.00000001*1000**2.0]])
 sqrtH = np.linalg.cholesky(H)
 
 # the states of the system are (Tch, Tcw, COP)
@@ -96,7 +96,7 @@ P    = np.zeros((numPoints,n_state,n_state))
 CovZ = np.zeros((numPoints,n_outputs,n_outputs))
 
 # initial knowledge
-X0_hat = np.array([23.0, 21.0, 2.6])
+X0_hat = np.array([23.0, 21.0, 3])
 P0     = Q
 
 # UKF parameters
