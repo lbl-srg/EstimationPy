@@ -18,7 +18,7 @@ stopTime  = 30.0
 numPoints = int((stopTime - startTime)/dt)
 time = np.linspace(startTime, stopTime, numPoints)
 
-# initial state vector (position, velocity)
+# initial state vector (state x, par b)
 X0 = np.array([3.5, 5.0])
 
 # output measurement covariance noise
@@ -27,7 +27,7 @@ R     = np.array([[0.1**2]])
 H     = np.array([[0.001*2]])
 sqrtH = np.linalg.cholesky(H)
 
-# process noise
+# initial process noise
 Q     = np.array([[0.05**2, 0.0],
 		  [0.0, 0.2**2]])
 
