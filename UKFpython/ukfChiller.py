@@ -24,7 +24,7 @@ R     = np.array([[0.1*1.0,    0.0],
 
 Q     = np.array([[0.1*1.0**2, 0.0, 0.0],
 		  [0.0, 0.1*1.0**2, 0.0],
-		  [0.0, 0.0, 0.05**2]])
+		  [0.0, 0.0, 1.0**2]])
 
 # input measurement noise
 H     = np.array([[0.5**2, 0.0, 0.0],
@@ -34,7 +34,7 @@ sqrtH = np.linalg.cholesky(H)
 
 # the states of the system are (Tch, Tcw, COP)
 # initial state vector is
-X0 = np.array([25.0, 25.0, 2.5])
+X0 = np.array([25.0, 25.0, 5.5])
 
 # define the model
 m = model()
@@ -92,12 +92,12 @@ Um = U + np.dot(sqrtH, np.random.randn(n_inputs,numPoints)).T
 # The UKF starts from the guessed initial value Xhat, and a guessed covarance matrix Q
 Xhat = np.zeros((numPoints,n_state))
 Yhat = np.zeros((numPoints,n_outputs))
-P    = np.zeros((numPoints,n_state,n_state))
-CovZ = np.zeros((numPoints,n_outputs,n_outputs))
+S    = np.zeros((numPoints,n_state,n_state))
+Sy = np.zeros((numPoints,n_outputs,n_outputs))
 
 # initial knowledge
 X0_hat = np.array([23.0, 21.0, 3])
-P0     = Q
+S0     = m.sqrtQ
 
 # UKF parameters
 UKFilter  = ukf(n_state,n_outputs)
@@ -107,17 +107,26 @@ for i in range(numPoints):
 	
 	if i==0:	
 		Xhat[i,:]   = X0_hat
-		P[i,:,:]    = P0
+		S[i,:,:]    = S0
 		Yhat[i,:]   = m.functionG(Xhat[i,:],U[i,:],time[i])
-		CovZ[i,:,:] = m.R
+		Sy[i,:,:]   = m.sqrtR
 	else:
-		Xhat[i,:], P[i,:,:], Yhat[i,:], CovZ[i,:,:] = UKFilter.ukf_step(Z[i],Xhat[i-1,:],P[i-1,:,:],Q,R,U[i-1,:],U[i,:],time[i-1],time[i],m,False)
+		Xhat[i,:], S[i,:,:], Yhat[i,:], Sy[i,:,:] = UKFilter.ukf_step(Z[i],Xhat[i-1,:],S[i-1,:,:],m.sqrtQ,m.sqrtR,U[i-1,:],U[i,:],time[i-1],time[i],m,False)
 
 # smoothing the results
 Xsmooth = np.zeros((numPoints,n_state))
-Psmooth = np.zeros((numPoints,n_state,n_state))
+Ssmooth = np.zeros((numPoints,n_state,n_state))
+Xsmooth, Ssmooth = UKFilter.smooth(time,Xhat,S,m.sqrtQ,Um,m)
 
-Xsmooth, Psmooth = UKFilter.smooth(time,Xhat,P,Q,U,m)
+# converting the squared matrix into the covariance ones
+P         = np.zeros(S.shape)
+Psmooth   = np.zeros(Ssmooth.shape)
+covY      = np.zeros(Sy.shape)
+(N, I, J) = P.shape
+for n in range(N):
+	P[n,:,:]       = np.dot(S[n,:,:],S[n,:,:].T) 
+	Psmooth[n,:,:] = np.dot(Ssmooth[n,:,:],Ssmooth[n,:,:].T)
+	covY[n,:,:]    = np.dot(Sy[n,:,:], Sy[n,:,:].T)
 
 # plot the results
-plotResults(time,stopTime,X,Y,U,Um,Pch,Z,Xhat,Yhat,P,CovZ,Xsmooth,Psmooth)
+plotResults(time,stopTime,X,Y,U,Um,Pch,Z,Xhat,Yhat,P,covY,Xsmooth,Psmooth)

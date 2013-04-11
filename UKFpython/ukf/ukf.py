@@ -31,7 +31,6 @@ class ukf():
 
 		# define UKF parameters
 		self.setUKFparams()
-		#self.setDefaultUKFparams()
 
 		# compute the weights
 		self.computeWeights()
@@ -40,7 +39,7 @@ class ukf():
 	This method set the default parameters of the filter
 	"""
 	def setDefaultUKFparams(self):
-		self.alpha    = 0.9
+		self.alpha    = 0.01
 		self.k        = 0
 		self.beta     = 2
 		self.lambd    = (self.alpha**2)*(self.n_state + self.k) - self.n_state
@@ -227,6 +226,90 @@ class ukf():
 		return CovXZ
 	
 	"""
+	This function computes the squared covariance matrix using QR decomposition + a Cholesky update
+	"""
+	def computeS(self,X_proj,Xave,sqrtQ):
+		
+		weights = np.sqrt( np.abs(self.W_c[:,0]) )
+		signs   = np.sign( self.W_c[:,0] )
+		
+		A     = np.array([[]])
+		i     = 0
+		for x in X_proj:
+			error = signs[i]*weights[i]*(x - Xave)
+			if i==1:
+				A = error.T
+			elif i>1:
+				A = np.hstack((A,error.T))
+			i    += 1
+		A = np.hstack((A,sqrtQ))
+		
+		q,L = np.linalg.qr(A.T,mode='full')
+
+		# NOW START THE CHOLESKY UPDATE
+		x = signs[0]*weights[0]*(X_proj[0,] - Xave)
+				
+		L = self.cholUpdate(L,x.T,self.W_c[:,0])
+		
+		return L
+		
+	"""
+	This function computes the squared covariance matrix using QR decomposition + a Cholesky update
+	"""
+	def computeSy(self,Z_proj,Zave,sqrtR):
+		
+		weights = np.sqrt( np.abs(self.W_c[:,0]) )
+		signs   = np.sign( self.W_c[:,0] )
+		
+		A     = np.array([[]])
+		i     = 0
+		for z in Z_proj:
+			error = signs[i]*weights[i]*(z - Zave)
+			if i==1:
+				A = error.T
+			elif i>1:
+				A = np.hstack((A,error.T))
+			i    += 1
+		A = np.hstack((A,sqrtR))
+		
+		q,L = np.linalg.qr(A.T,mode='full')
+
+		# NOW START THE CHOLESKY UPDATE
+		z = signs[0]*weights[0]*(Z_proj[0,] - Zave)
+		
+		L = self.cholUpdate(L,z.T,self.W_c[:,0])
+		
+		return L
+	
+	"""
+	This function copmputes the Cholesky update
+	"""
+	def cholUpdate(self,L,X,W):
+	
+		L = L.copy()
+		weights = np.sqrt( np.abs( W ) )
+		signs   = np.sign( W )
+	
+		# NOW START THE CHOLESKY UPDATE
+		# DO IT FOR EACH COLUMN IN THE X MATRIX
+		
+		(row, col) = X.shape
+		
+		for j in range(col):
+			x = X[0:,j]
+			
+			for k in range(row):
+				rr_arg    = L[k,k]**2 + signs[0]*x[k]**2
+				rr        = 0.0 if rr_arg < 0 else np.sqrt(rr_arg)
+				c         = rr / L[k,k]
+				s         = x[k] / L[k,k]
+				L[k,k]    = rr
+				L[k,k+1:] = (L[k,k+1:] + signs[0]*s*x[k+1:])/c
+				x[k+1:]   = c*x[k+1:]  - s*L[k, k+1:]
+				
+		return L
+	
+	"""
 	This function computes the state-state cross covariance matrix (between Xold and Xnew)
 	This is used in the smoothing process
 	"""
@@ -247,13 +330,10 @@ class ukf():
 	"""
 	function call for prediction + update of the UKF
 	"""
-	def ukf_step(self,z,x,P,Q,R,u_old,u,t_old,t,m,verbose=False):		
-	
-		# square root of the covariance matrix P using cholesky factorization
-		sqrtP = self.squareRoot(P)	
+	def ukf_step(self,z,x,S,sqrtQ,sqrtR,u_old,u,t_old,t,m,verbose=False):		
 
 		# the list of sigma points (each signa point can be an array, the state variables)
-		Xs      = self.computeSigmaPoints(x,sqrtP)
+		Xs      = self.computeSigmaPoints(x,S)
 	
 		# compute the projected (state) points (each sigma points is propagated through the state transition function)
 		X_proj = self.sigmaPointProj(m,Xs,u_old,t_old)
@@ -261,14 +341,11 @@ class ukf():
 		# compute the average
 		Xave = self.averageProj(X_proj)
 		
-		# compute the new covariance matrix P
-		Pnew = self.computeP(X_proj,Xave,Q)
+		# compute the new squared covariance matrix S
+		Snew = self.computeS(X_proj,Xave,sqrtQ)
 		
-		# compute the new sqrate root of the covariance matrix
-		sqrtPnew = self.squareRoot(Pnew)
-
 		# redraw the sigma points, given the new covariance matrix
-		Xs      = self.computeSigmaPoints(Xave,sqrtPnew)
+		Xs      = self.computeSigmaPoints(Xave,Snew)
 
 		# compute the projected (outputs) points (each sigma points is propagated through the state transition function)
 		Z_proj = self.sigmaPointOutProj(m,Xs,u,t)
@@ -277,7 +354,7 @@ class ukf():
 		Zave = self.averageOutProj(Z_proj)
 
 		# compute the innovation covariance (relative to the output)
-		CovZ = self.computeCovZ(Z_proj,Zave,R)
+		Sy = self.computeSy(Z_proj,Zave,sqrtR)
 
 		# compute the cross covariance matrix
 		CovXZ = self.computeCovXZ(X_proj, Xave, Z_proj, Zave)
@@ -285,36 +362,35 @@ class ukf():
 		# Data assimilation step
 		# The information obtained in the prediction step are corrected with the information
 		# obtained by the measurement of the outputs
-
-		K = np.dot(CovXZ,np.linalg.inv(CovZ))
-
+		
+		firstDivision = np.linalg.lstsq(Sy.T,CovXZ.T)[0]
+		K             = np.linalg.lstsq(Sy, firstDivision)[0]
+		K             = K.T
+		
 		X_corr = Xave + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
+		U      = np.dot(K,Sy)
+		S_corr = self.cholUpdate(Snew,U,-1*np.ones(self.n_state))
 
-		P_corr = Pnew - np.dot(np.dot(K,CovZ),K.T)
-
-		return (X_corr, P_corr, Zave, CovZ)
+		return (X_corr, S_corr, Zave, Sy)
 	
 	"""
 	This method returns the smoothed state estimation
 	"""
-	def smooth(self,time,Xhat,P,Q,U,m):
+	def smooth(self,time,Xhat,S,sqrtQ,U,m):
 		
 		# initialize the smoothed states and covariance matrix
-		Xsmooth = np.zeros(Xhat.shape)
-		Psmooth = np.zeros(P.shape)
+		# the initial value of the smoothed state estimation are equal to the filtered ones
+		Xsmooth = Xhat.copy()
+		Ssmooth = S.copy()
 		
 		# get the number of time steps		
 		s = np.reshape(time,(-1,1)).shape
-		nTimeStep = s[0] 
-
-		# the initial value of the smoothed state estimation are equal to the filtered ones
-		Xsmooth[nTimeStep-1,:]   = Xhat[nTimeStep-1,:]
-		Psmooth[nTimeStep-1,:,:] = P[nTimeStep-1,:,:]
+		nTimeStep = s[0]
 
 		# iterating starting from the end and back
 		# i : nTimeStep-2 -> 0
 		#
-		# From point i with an estimation Xave[i], and P[i]
+		# From point i with an estimation Xave[i], and S[i]
 		# new sigma points are created and propagated, the result is a 
 		# new vector of states X[i+1] (one for each sigma point)
 		#
@@ -322,28 +398,32 @@ class ukf():
 		# thus the difference between these two states is backpropagated to the state at time i
 		for i in range(nTimeStep-2,-1,-1):
 			# actual state estimation and covariance matrix
-			x_i = Xhat[i,:]
-			P_i = P[i,:,:]
-			sqrtP_i = self.squareRoot(P_i)
+			x_i = Xsmooth[i,:]
+			S_i = Ssmooth[i,:,:]
 
 			# compute the sigma points
-			Xs_i        = self.computeSigmaPoints(x_i,sqrtP_i)
+			Xs_i        = self.computeSigmaPoints(x_i,S_i)
 			# mean of the sigma points
-			Xs_i_ave      = self.averageProj(Xs_i)
+			Xs_i_ave    = self.averageProj(Xs_i)
 			# propagate the sigma points
 			x_plus_1    = self.sigmaPointProj(m,Xs_i,U[i],time[i])
 			# average of the sigma points
 			Xave_plus_1 = self.averageProj(x_plus_1)
 			# compute the new covariance matrix
-			Pnew = self.computeP(x_plus_1,Xave_plus_1,Q)
+			Snew = self.computeS(x_plus_1,Xave_plus_1,sqrtQ)
+			
 			# compute the cross covariance matrix of the two states
 			# (new state already corrected, coming from the "future", and the new just computed through the projection)
 			Cxx  = self.computeCxx(x_plus_1,Xave_plus_1,Xs_i,Xs_i_ave)
 
-			# gain for the backpropagation
-			D              = Cxx*np.linalg.inv(Pnew)
+			# gain for the back propagation
+			firstDivision = np.linalg.lstsq(Snew.T, Cxx.T)[0]
+			D             = np.linalg.lstsq(Snew, firstDivision)[0]
+			D             = D.T
+			
 			# correction (i.e. smoothing, of the state estimation and covariance matrix)
-			Xsmooth[i,:]   = Xhat[i,:] + np.dot(D, Xhat[i+1,:]      - Xave_plus_1[0])
-			Psmooth[i,:,:] = P[i,:,:]  - np.dot(np.dot(D,P[i+1,:,:] - Pnew),D.T)
-
-		return (Xsmooth, Psmooth)
+			Xsmooth[i,:]   = Xhat[i,:] + np.dot(D, Xhat[i+1,:] - Xave_plus_1[0])
+			V              = np.dot(D,S[i+1,:,:] - Snew)
+			Ssmooth[i,:,:] = self.cholUpdate(S[i,:,:],V,-1*np.ones(self.n_state))
+			
+		return (Xsmooth, Ssmooth)

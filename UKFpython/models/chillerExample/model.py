@@ -22,7 +22,7 @@ class model():
 	
 	# the states of the system are (Tch, Tcw, COP)
 	# initial state vector is
-	X0 = np.array([25.0, 25.0, 2.5])
+	X0 = np.array([25.0, 25.0, 5.5])
 
 	# process noise
 	Q     = np.array([[1.0, 0.0, 0.0],
@@ -168,8 +168,7 @@ class model():
 		dCh = np.max([np.min([dCh, 1]),-1])
 		dCw = (np.absolute(Tcw - Tcw_in)-dTcw_nom)/dTcw_nom
 		dCw = np.max([np.min([dCh, 1]),-1])
-		factor = np.max([np.min([1 -0.1*dW**2 -0.1*dCh**2 -0.1*dCw**2 , 1]),0.0])
-		Pch = dW*COP*W_nom*factor
+		factor = 1 #np.max([np.min([1 -0.1*dW**2 -0.1*dCh**2 -0.1*dCw**2 , 1]),0.0])
 
 		# simulation of a fault
 		if t>=2000 and simulate:

@@ -84,7 +84,7 @@ class model():
 
 	* new state at time t+1
 	"""
-	def functionF(self,x,u,t):
+	def functionF(self,x,u,t,simulate=True):
 		# parameters of the function
 		a, b, dt = self.pars
 		x_old = x[0]
@@ -107,7 +107,7 @@ class model():
 
 	* output at time t
 	"""
-	def functionG(self,x,u,t):
+	def functionG(self,x,u,t,simulate=True):
 		# parameters of the function
 		a, b, dt = self.pars
 		x_old = x[0]
