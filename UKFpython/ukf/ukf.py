@@ -30,8 +30,7 @@ class ukf():
 		self.n_points  = 1 + 2*self.n_state
 
 		# define UKF parameters
-		self.setUKFparams()
-		#self.setDefaultUKFparams()
+		self.setDefaultUKFparams()
 
 		# compute the weights
 		self.computeWeights()
