@@ -300,16 +300,13 @@ class ukf():
 	def smooth(self,time,Xhat,P,Q,U,m):
 		
 		# initialize the smoothed states and covariance matrix
-		Xsmooth = np.zeros(Xhat.shape)
-		Psmooth = np.zeros(P.shape)
+		# the initial value of the smoothed state estimation are equal to the filtered ones
+		Xsmooth = Xhat.copy()
+		Psmooth = P.copy()
 		
 		# get the number of time steps		
 		s = np.reshape(time,(-1,1)).shape
-		nTimeStep = s[0] 
-
-		# the initial value of the smoothed state estimation are equal to the filtered ones
-		Xsmooth[nTimeStep-1,:]   = Xhat[nTimeStep-1,:]
-		Psmooth[nTimeStep-1,:,:] = P[nTimeStep-1,:,:]
+		nTimeStep = s[0]
 
 		# iterating starting from the end and back
 		# i : nTimeStep-2 -> 0
@@ -322,8 +319,8 @@ class ukf():
 		# thus the difference between these two states is backpropagated to the state at time i
 		for i in range(nTimeStep-2,-1,-1):
 			# actual state estimation and covariance matrix
-			x_i = Xhat[i,:]
-			P_i = P[i,:,:]
+			x_i = Xsmooth[i,:]
+			P_i = Psmooth[i,:,:]
 			sqrtP_i = self.squareRoot(P_i)
 
 			# compute the sigma points
