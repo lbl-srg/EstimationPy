@@ -19,17 +19,17 @@ numPoints = int((stopTime - startTime)/dt)
 time = np.linspace(startTime, stopTime, numPoints)
 
 # output covariance
-R     = np.array([[0.1*1.0,    0.0],
-		  [0.0,    0.1*1.0]])
+R     = np.array([[0.5*1.0,    0.0],
+		  [0.0,    0.5*1.0]])
 
 Q     = np.array([[0.1*1.0**2, 0.0, 0.0],
 		  [0.0, 0.1*1.0**2, 0.0],
 		  [0.0, 0.0, 1.0**2]])
 
 # input measurement noise
-H     = np.array([[0.5**2, 0.0, 0.0],
-		  [0.0, 0.5**2, 0.0],
-		  [0.0, 0.0, 1000**2.0]])
+H     = np.array([[1.0**2, 0.0, 0.0],
+		  [0.0, 1.0**2, 0.0],
+		  [0.0, 0.0, 2000**2.0]])
 sqrtH = np.linalg.cholesky(H)
 
 # the states of the system are (Tch, Tcw, COP)
@@ -77,13 +77,13 @@ for i in range(numPoints):
 	else:	
 		X[i,:]= m.functionF(X[i-1,:],U[i-1,:],time[i-1])
 
-	Y[i,:]  = m.functionG(X[i,:],U[i,:],time[i])
-	Pch[i,:]= m.functionPch(X[i,:],U[i,:],time[i])
+	Y[i,:]   = m.functionG(X[i,:],U[i,:],time[i])
+	Pch[i,:] = m.functionPch(X[i,:],U[i,:],time[i])[0]
 
 # noisy measured values (outputs)
-Z  = Y + np.dot(m.sqrtR, np.random.randn(n_outputs,numPoints)).T
+Z  = Y + np.dot(m.sqrtR, np.random.uniform(-1.0, 1.0, (n_outputs,numPoints))).T
 # noisy input measurements
-Um = U + np.dot(sqrtH, np.random.randn(n_inputs,numPoints)).T
+Um = U + np.dot(sqrtH, np.random.uniform(-1.0, 1.0, (n_inputs,numPoints))).T
 
 
 ########################################################################################

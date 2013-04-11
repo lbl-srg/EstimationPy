@@ -116,12 +116,11 @@ class model():
 		Tcw_in  = u[1]
 		W_in    = u[2]
 		
-		Pch = self.functionPch(x,u,t,simulate)
+		(Pch, COP) = self.functionPch(x,u,t,simulate)
 
 		# new state value
-		Tch = dt/(Mch*cp)*(wch*cp*(Tch_in - Tch_old) - Pch[0] ) + Tch_old
-		Tcw = dt/(Mcw*cp)*(wcw*cp*(Tcw_in - Tcw_old) + Pch[0] + W_in ) + Tcw_old
-		COP = COP_old
+		Tch = dt/(Mch*cp)*(wch*cp*(Tch_in - Tch_old) - Pch ) + Tch_old
+		Tcw = dt/(Mcw*cp)*(wcw*cp*(Tcw_in - Tcw_old) + Pch + W_in ) + Tcw_old
 
 		# return the state
 		return np.array([Tch, Tcw, COP])
@@ -157,27 +156,29 @@ class model():
 
 		Tch = x[0]
 		Tcw = x[1]
-		COP = x[2]
+		
 		Tch_in  = u[0]
 		Tcw_in  = u[1]
 		W_in    = u[2]
 	
 		# nonlinear function, the compressor characteristic
-		dW  = np.absolute(W_in)/W_nom
-		dCh = (np.absolute(Tch - Tch_in)-dTch_nom)/dTch_nom
-		dCh = np.max([np.min([dCh, 1]),-1])
-		dCw = (np.absolute(Tcw - Tcw_in)-dTcw_nom)/dTcw_nom
-		dCw = np.max([np.min([dCh, 1]),-1])
-		factor = 1 #np.max([np.min([1 -0.1*dW**2 -0.1*dCh**2 -0.1*dCw**2 , 1]),0.0])
+		dW     = np.absolute(W_in)/W_nom
+		dCh    = (np.absolute(Tch - Tch_in)-dTch_nom)/dTch_nom
+		dCh    = np.max([np.min([dCh, 1]),-1])
+		dCw    = (np.absolute(Tcw - Tcw_in)-dTcw_nom)/dTcw_nom
+		dCw    = np.max([np.min([dCh, 1]),-1])
+		factor = np.max([np.min([1 -0.1*dW**2 -0.1*dCh**2 -0.1*dCw**2 , 1]),0.0])
 
 		# simulation of a fault
 		if t>=2000 and simulate:
-			Pch = dW*0.5*W_nom*factor
+			COP = 0.5
 		else:
-			Pch = dW*COP*W_nom*factor
+			COP = x[2]
+				
+		Pch = dW*COP*W_nom*factor
 
 		# return the state
-		return np.array([Pch])
+		return np.array([Pch, COP])
 
 	"""
 	get the number of states variables
