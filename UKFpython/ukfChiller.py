@@ -18,23 +18,18 @@ stopTime  = 3600.0
 numPoints = int((stopTime - startTime)/dt)
 time = np.linspace(startTime, stopTime, numPoints)
 
-# output covariance
-R     = np.array([[0.5*1.0,    0.0],
-		  [0.0,    0.5*1.0]])
-
-Q     = np.array([[0.1*1.0**2, 0.0, 0.0],
-		  [0.0, 0.1*1.0**2, 0.0],
-		  [0.0, 0.0, 1.0**2]])
-
-# input measurement noise
-H     = np.array([[1.0**2, 0.0, 0.0],
-		  [0.0, 1.0**2, 0.0],
-		  [0.0, 0.0, 2000**2.0]])
-sqrtH = np.linalg.cholesky(H)
-
 # the states of the system are (Tch, Tcw, COP)
 # initial state vector is
 X0 = np.array([25.0, 25.0, 5.5])
+
+# output covariance (Tch, Tcw)
+R     = np.diag([0.5, 0.5])
+# state covariance (Tch, Tcw, Cop)
+Q     = np.diag([0.1**2, 0.1**2, 0.1*1.0**2])
+
+# input measurement noise (Tch_in, Tcw_in, PowerCompressor)
+H     = np.diag([1.0**2, 1.0**2, 2000**2.0])
+sqrtH = np.linalg.cholesky(H)
 
 # define the model
 m = model()

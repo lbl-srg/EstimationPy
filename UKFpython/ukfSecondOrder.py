@@ -22,13 +22,10 @@ time = np.linspace(startTime, stopTime, numPoints)
 X0 = np.array([1.0, 0.0])
 
 # measurement covariance noise
-R     = np.array([[0.2**2,     0.0,     0.0],
-		  [0.0,     0.2**2,     0.0],
-		  [0.0,     0.0,     0.2**2]])
+R     = np.diag([0.2**2, 0.2**2, 0.2**2])
 
 # process noise
-Q     = np.array([[0.1**2, 0.0],
-		  [0.0, 0.1**2]])
+Q     = np.diag([0.1**2, 0.1**2])
 
 # define the model
 m = model()
