@@ -423,7 +423,7 @@ class ukf():
 			
 			# correction (i.e. smoothing, of the state estimation and covariance matrix)
 			Xsmooth[i,:]   = Xhat[i,:] + np.dot(D, Xsmooth[i+1,:] - Xave_plus_1[0])
-			V              = np.dot(D,S[i+1,:,:] - Snew)
+			V              = np.dot(D,Ssmooth[i+1,:,:] - Snew)
 			Ssmooth[i,:,:] = self.cholUpdate(S[i,:,:],V,-1*np.ones(self.n_state))
 			
 		return (Xsmooth, Ssmooth)
