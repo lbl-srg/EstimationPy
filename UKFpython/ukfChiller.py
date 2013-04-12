@@ -9,10 +9,11 @@ sys.path.insert(0,'./ukf')
 
 from model import *
 from ukf import *
+from ukfAugmented import *
 from plotting import *
 
 # time frame of the experiment
-dt = 10.0
+dt = 5.0
 startTime = 0.0
 stopTime  = 3600.0
 numPoints = int((stopTime - startTime)/dt)
@@ -25,7 +26,8 @@ X0 = np.array([25.0, 25.0, 5.5])
 # output covariance (Tch, Tcw)
 R     = np.diag([0.5, 0.5])
 # state covariance (Tch, Tcw, Cop)
-Q     = np.diag([0.1**2, 0.1**2, 0.1*1.0**2])
+Q     = np.diag([0.1**2, 0.1**2, 0.1**2])
+# Q     = np.diag([1**2, 1**2, 1.0**2])
 
 # input measurement noise (Tch_in, Tcw_in, PowerCompressor)
 H     = np.diag([1.0**2, 1.0**2, 2000**2.0])
@@ -123,5 +125,49 @@ for n in range(N):
 	Psmooth[n,:,:] = np.dot(Ssmooth[n,:,:],Ssmooth[n,:,:].T)
 	covY[n,:,:]    = np.dot(Sy[n,:,:], Sy[n,:,:].T)
 
+
+###############################################################################################
+# THE NOISY MEASUREMENTS OF THE OUTPUTS ARE AVAILABLE, START THE AUGMENTED FILERING PROCEDURE
+
+# The UKF starts from the guessed initial value Xhat, and a guessed covarance matrix Q
+Xhat_Aug = np.zeros((numPoints,n_state))
+Yhat_Aug = np.zeros((numPoints,n_outputs))
+S_Aug    = np.zeros((numPoints,n_state,n_state))
+Sy_Aug   = np.zeros((numPoints,n_outputs,n_outputs))
+
+# initial knowledge
+X0_hat_Aug = np.array([23.0, 21.0, 3])
+Q0         = Q
+R0         = R
+Sq0        = np.linalg.cholesky(Q0)
+Sr0        = np.linalg.cholesky(R0)
+
+# UKF parameters
+UKFilter_Aug  = ukfAugmented(n_state,n_outputs)
+UKFilter_Aug.setAugmentedPars(0.995, 1.0/np.sqrt(3.0), 0.1*np.diag(np.ones(n_state)))
+
+
+# iteration of the UKF
+for i in range(numPoints):
+	
+	if i==0:	
+		Xhat_Aug[i,:] = X0_hat_Aug
+		S_Aug[i,:,:]  = Sq0
+		Yhat_Aug[i,:] = m.functionG(Xhat_Aug[i,:],U[i,:],time[i])
+		Sy_Aug[i,:,:] = Sr0
+		Sq            = Sq0
+		alpha_s       = 0.005
+	else:
+		Xhat_Aug[i,:], S_Aug[i,:,:], Yhat_Aug[i,:], Sy_Aug[i,:,:], Sq, alpha_s = UKFilter_Aug.ukfAugmented_step(Z[i],Xhat_Aug[i-1,:],S_Aug[i-1,:,:],Sq,Sr0,alpha_s,Um[i-1,:],Um[i,:],time[i-1],time[i],m,False)
+
+# converting the squared matrix into the covariance ones
+P_Aug         = np.zeros(S.shape)
+covY_Aug      = np.zeros(Sy.shape)
+(N, I, J)     = P_Aug.shape
+for n in range(N):
+	P_Aug[n,:,:]       = np.dot(S_Aug[n,:,:],S_Aug[n,:,:].T)
+	covY_Aug[n,:,:]    = np.dot(Sy_Aug[n,:,:], Sy_Aug[n,:,:].T)
+	
+	
 # plot the results
-plotResults(time,stopTime,X,Y,U,Um,Pch,Z,Xhat,Yhat,P,covY,Xsmooth,Psmooth)
+plotResults(time,stopTime,X,Y,U,Um,Pch,Z,Xhat,Yhat,P,covY,Xsmooth,Psmooth,Xhat_Aug,P_Aug)
