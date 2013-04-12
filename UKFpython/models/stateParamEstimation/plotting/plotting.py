@@ -63,5 +63,7 @@ def plotResults(time,stopTime,X,Y,Z,U,Um,Xhat,Yhat,P,covY,Xsmooth,Psmooth,Xaug,P
 	ax2.set_xlim([0, stopTime])
 	ax2.legend()
 	ax2.grid(True)
+	
+	
 
 	plt.show()

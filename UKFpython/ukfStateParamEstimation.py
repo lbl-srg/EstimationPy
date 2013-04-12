@@ -24,15 +24,15 @@ X0 = np.array([3.5, 5.0])
 
 # output measurement covariance noise
 # R     = np.diag([0.1**2])
-R     = np.diag([1**2])
+R     = np.diag([0.2**2])
 
 # input measurement covariance noise
-H     = np.diag([0.001*2])
+H     = np.diag([0.01*2])
 sqrtH = np.linalg.cholesky(H)
 
 # initial process noise
-# Q     = np.diag([0.05**2, 0.2**2])
-Q     = np.diag([1, 1])
+Q     = np.diag([0.05**2, 0.2**2])
+#Q     = np.diag([1, 1])
 
 # define the model
 m = model()
@@ -120,7 +120,7 @@ S_Aug    = np.zeros((numPoints,n_state,n_state))
 Sy_Aug   = np.zeros((numPoints,n_outputs,n_outputs))
 
 # initial knowledge
-X0_hat_Aug = np.array([12.5, 10.0])
+X0_hat_Aug = np.array([2.5, 2.0])
 Q0         = Q
 R0         = R
 Sq0        = np.linalg.cholesky(Q0)

@@ -326,7 +326,7 @@ class ukfAugmented():
 	"""
 	function call for prediction + update of the UKF
 	"""
-	def ukfAugmented_step(self,z,x,S,Sq,Sr,alpha_s,u_old,u,t_old,t,m,verbose=False):		
+	def ukfAugmented_step(self,z,x,S,Sq,Sr,alpha_s,u_old,u,t_old,t,m,verbose=False,adaptive=False):		
 		
 		# augmented state variables
 		x_Aug = np.hstack((x, np.zeros(self.n_state), np.zeros(self.n_outputs)))
@@ -334,19 +334,21 @@ class ukfAugmented():
 		# iterative weight of the computed covariance Sx		
 		alpha_s  = (alpha_s*self.lambda_s + self.A)
 		
-		# actual value of the process covariance
-		actualSq = Sq + alpha_s*S
-		if np.linalg.norm(actualSq,2) <= np.linalg.norm(self.minS,2):
-			actualSq = self.minS
+		if not adaptive:
+			actualSq = Sq
+		else:
+			# actual value of the process covariance
+			actualSq = Sq + alpha_s*S
+			if np.linalg.norm(actualSq,2) <= np.linalg.norm(self.minS,2):
+				actualSq = self.minS
+			# back propagate the initial squared covariance, reduced by alpha_q
+			Sq      = self.alpha_q*Sq
 		
 		# augmented square covariance matrix
 		S_1   = np.hstack((S, 									     np.zeros((self.n_state, self.n_state)),	np.zeros((self.n_state, self.n_outputs))))
 		S_2   = np.hstack((np.zeros((self.n_state, self.n_state)),   actualSq,						      	    np.zeros((self.n_state, self.n_outputs))))
 		S_3   = np.hstack((np.zeros((self.n_outputs, self.n_state)), np.zeros((self.n_outputs, self.n_state)), 	Sr))
 		S_Aug = np.vstack((S_1, S_2, S_3))
-		
-		# back propagate the initial squared covariance, reduced by alpha_q
-		Sq      = self.alpha_q*Sq
 		
 		# the list of sigma points (each signa point can be an array, the state variables)
 		Xs      = self.computeSigmaPoints(x_Aug,S_Aug)
