@@ -46,7 +46,6 @@ class ukfAugmented():
 		
 		# set parameters for the Augmented UKF modified version
 		self.setAugmentedPars(0.995, 1/np.sqrt(3.0), 0.1*np.diag(np.ones(self.n_state)))
-		# alpha=0.995, mu = , minS = 0.5*np.diag(np.ones(self.n_state)
 
 	"""
 	This method set the default parameters of the filter

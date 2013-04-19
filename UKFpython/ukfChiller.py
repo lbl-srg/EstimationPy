@@ -15,7 +15,7 @@ from plotting import *
 # time frame of the experiment
 dt = 5.0
 startTime = 0.0
-stopTime  = 3600.0
+stopTime  = 14400.0
 numPoints = int((stopTime - startTime)/dt)
 time = np.linspace(startTime, stopTime, numPoints)
 
@@ -146,7 +146,6 @@ Sr0        = np.linalg.cholesky(R0)
 UKFilter_Aug  = ukfAugmented(n_state,n_outputs)
 UKFilter_Aug.setAugmentedPars(0.995, 1.0/np.sqrt(3.0), 0.1*np.diag(np.ones(n_state)))
 
-
 # iteration of the UKF
 for i in range(numPoints):
 	
@@ -158,7 +157,7 @@ for i in range(numPoints):
 		Sq            = Sq0
 		alpha_s       = 0.005
 	else:
-		Xhat_Aug[i,:], S_Aug[i,:,:], Yhat_Aug[i,:], Sy_Aug[i,:,:], Sq, alpha_s = UKFilter_Aug.ukfAugmented_step(Z[i],Xhat_Aug[i-1,:],S_Aug[i-1,:,:],Sq,Sr0,alpha_s,Um[i-1,:],Um[i,:],time[i-1],time[i],m,False)
+		Xhat_Aug[i,:], S_Aug[i,:,:], Yhat_Aug[i,:], Sy_Aug[i,:,:], Sq, alpha_s = UKFilter_Aug.ukfAugmented_step(Z[i],Xhat_Aug[i-1,:],S_Aug[i-1,:,:],Sq,Sr0,alpha_s,Um[i-1,:],Um[i,:],time[i-1],time[i],m,False,True)
 
 # converting the squared matrix into the covariance ones
 P_Aug         = np.zeros(S.shape)

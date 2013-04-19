@@ -167,12 +167,17 @@ class model():
 		dCh    = np.max([np.min([dCh, 1]),-1])
 		dCw    = (np.absolute(Tcw - Tcw_in)-dTcw_nom)/dTcw_nom
 		dCw    = np.max([np.min([dCh, 1]),-1])
-		factor = np.max([np.min([1 -0.1*dW**2 -0.1*dCh**2 -0.1*dCw**2 , 1]),0.0])
-
-		# simulation of a fault
-		if t>=2000 and simulate:
-			COP = 0.5
-		else:
+		
+		# the simulated model contains a variable efficiency
+		if simulate :
+			factor = np.max([np.min([1 -0.1*dW**2 -0.2*dCh**2 -0.2*dCw**2 , 1]),0.0])
+			# simulation of a fault
+			if t>=2000 and t<=6000:
+				COP = 0.5
+			else:
+				COP = 5.0
+		else :
+			factor = 1
 			COP = x[2]
 				
 		Pch = dW*COP*W_nom*factor
