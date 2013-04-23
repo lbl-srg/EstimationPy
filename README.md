@@ -18,6 +18,9 @@ This project contains different resources for the project, mainly python and Mod
 * [chillerMeasurements](https://bitbucket.org/berkeleylab/eetd-estcp_ndw_eis/src/e6587e567beec08106400fdaeeed9030294ca2c6/chillerMeasurements?at=master)
 	Simple script that convert a collection of measurements contained into a .csv file, and create a .txt containing a table that can be used in Modelica.
 
+* [modelicaPY]()
+	Collection of examples for interfacing modelica models with python. Have been used both BuildingsPy and PyFMI.
+
 
 
 
