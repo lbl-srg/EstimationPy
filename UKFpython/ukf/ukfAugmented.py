@@ -153,14 +153,14 @@ class ukfAugmented():
 	"""
 	This function computes the state evolution of all the sigma points through the model
 	"""
-	def sigmaPointProj(self,m,Xs,u_old,t_old):
+	def sigmaPointProj(self,m,Xs,u_old,u,t_old,t):
 		# initialize the vector of the NEW STATES
 		X_proj = np.zeros((self.n_points,self.n_state))
 		
 		j = 0
 		for x in Xs:
 			processNoise =  x[self.n_state:2*self.n_state]
-			X_proj[j,:] = m.functionF(x,u_old,t_old,False) + processNoise
+			X_proj[j,:] = m.functionF(x,u_old,u,t_old,t,False) + processNoise
 			j += 1
 		return X_proj
 
@@ -356,7 +356,7 @@ class ukfAugmented():
 			print Xs
 	
 		# compute the projected (state) points (each sigma points is propagated through the state transition function)
-		X_proj = self.sigmaPointProj(m,Xs,u_old,t_old)
+		X_proj = self.sigmaPointProj(m,Xs,u_old,u,t_old,t)
 		if verbose:
 			print "Projection of sigma points"
 			print X_proj

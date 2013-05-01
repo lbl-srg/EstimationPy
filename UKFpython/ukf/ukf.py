@@ -3,9 +3,10 @@ import numpy as np
 
 class ukf():
 	# number of state variables, outputs and sigma points
-	n_state   = 0 
-	n_outputs = 0
-	n_points  = 0
+	n_state     = 0
+	n_state_obs = 0
+	n_outputs   = 0
+	n_points    = 0
 
 	# parameters of the Unscented Kalman Filter
 	alpha     = 0
@@ -14,20 +15,21 @@ class ukf():
 	lambd     = 0
 
 	# weights of the UKF
-	W_m       = np.zeros((2*n_state + 1, 1))
-	W_c       = np.zeros((2*n_state + 1, 1))
+	W_m       = np.zeros((2*n_state_obs + 1, 1))
+	W_c       = np.zeros((2*n_state_obs + 1, 1))
 	CstCov    = 0
 	
 	"""
 	initialization of the UKF and its parameters
 	"""
-	def __init__(self, n_state, n_outputs):
+	def __init__(self, n_state, n_state_obs, n_outputs):
 		# set the number of states variables and outputs
-		self.n_state   = n_state
-		self.n_outputs = n_outputs
+		self.n_state     = n_state
+		self.n_state_obs = n_state_obs
+		self.n_outputs   = n_outputs
 
 		# compute the sigma points
-		self.n_points  = 1 + 2*self.n_state
+		self.n_points    = 1 + 2*self.n_state_obs
 
 		# define UKF parameters
 		self.setUKFparams()
@@ -42,37 +44,37 @@ class ukf():
 		self.alpha    = 0.01
 		self.k        = 0
 		self.beta     = 2
-		self.lambd    = (self.alpha**2)*(self.n_state + self.k) - self.n_state
-		self.sqrtC    = self.alpha*np.sqrt(self.n_state + self.k)
+		self.lambd    = (self.alpha**2)*(self.n_state_obs + self.k) - self.n_state_obs
+		self.sqrtC    = self.alpha*np.sqrt(self.n_state_obs + self.k)
 
 	"""
 	This method set the non default parameters of the filter
 	"""
-	def setUKFparams(self, alpha = 1.0/np.sqrt(3.0), beta = 2, k=None):
+	def setUKFparams(self, alpha = 1.0/np.sqrt(3.0), beta = 2, k = None):
 		self.alpha     = alpha
 		self.beta      = beta
 
 		if k == None:
-			self.k = 3 - self.n_state
+			self.k = 3 - self.n_state_obs
 		else:
 			self.k = k
 		
-		self.lambd    = (self.alpha**2)*(self.n_state + self.k) - self.n_state
-		self.sqrtC    = self.alpha*np.sqrt(self.k + self.n_state)		
+		self.lambd    = (self.alpha**2)*(self.n_state_obs + self.k) - self.n_state_obs
+		self.sqrtC    = self.alpha*np.sqrt(self.k + self.n_state_obs)		
 
 	"""
 	This method computes the weights (both for covariance and mean value computation) of the UKF filter
 	"""
 	def computeWeights(self):
-		self.W_m       = np.zeros((1+self.n_state*2,1))
-		self.W_c       = np.zeros((1+self.n_state*2,1))
+		self.W_m       = np.zeros((1+self.n_state_obs*2,1))
+		self.W_c       = np.zeros((1+self.n_state_obs*2,1))
 		
-		self.W_m[0,0]  = self.lambd/(self.n_state + self.lambd)
-		self.W_c[0,0]  = self.lambd/(self.n_state + self.lambd) + (1 - self.alpha**2 + self.beta)
+		self.W_m[0,0]  = self.lambd/(self.n_state_obs + self.lambd)
+		self.W_c[0,0]  = self.lambd/(self.n_state_obs + self.lambd) + (1 - self.alpha**2 + self.beta)
 
-		for i in range(2*self.n_state):
-			self.W_m[i+1,0] = 1.0/(2.0*(self.n_state + self.lambd))
-			self.W_c[i+1,0] = 1.0/(2.0*(self.n_state + self.lambd))
+		for i in range(2*self.n_state_obs):
+			self.W_m[i+1,0] = 1.0/(2.0*(self.n_state_obs + self.lambd))
+			self.W_c[i+1,0] = 1.0/(2.0*(self.n_state_obs + self.lambd))
 
 	"""
 	get the square root matrix of a given one
@@ -115,36 +117,27 @@ class ukf():
 		#  [s13, s23, s33]]
 		i = 1
 		Xs[0,:] = x
+		
 		for row in sqrtP:
-			Xs[i,:]              = x + self.sqrtC*row
-			Xs[i+self.n_state,:] = x - self.sqrtC*row
+			Xs[i,:]									  = x
+			Xs[i+self.n_state_obs,:]				  = x
+			
+			Xs[i,0:self.n_state_obs]                  = x[0,0:self.n_state_obs] + self.sqrtC*row
+			Xs[i+self.n_state_obs,0:self.n_state_obs] = x[0,0:self.n_state_obs] - self.sqrtC*row
+			
 			i += 1
 		
 		return Xs
-	
-	"""
-	This function computes the state evolution x_old -> x_new
-	x_new = f(x_old, ...)
-	"""
-	def stateEvolution(self,m,x,u_old,t_old):
-		return m.functionF(x,u_old,t_old)
-
-	"""
-	This function computes the output evolution x -> y
-	y = f(x, ...)
-	"""
-	def outputMeasurement(self,m,x,u,t):
-		return m.functionG(x,u,t)
 
 	"""
 	This function computes the state evolution of all the sigma points through the model
 	"""
-	def sigmaPointProj(self,m,Xs,u_old,t_old):
+	def sigmaPointProj(self,m,Xs,u_old,u,t_old,t):
 		# initialize the vector of the NEW STATES
 		X_proj = np.zeros((self.n_points,self.n_state))
 		j = 0
 		for x in Xs:
-			X_proj[j,:] = m.functionF(x,u_old,t_old,False)
+			X_proj[j,:] = m.functionF(x,u_old,u,t_old,t,False)
 			j += 1
 		return X_proj
 
@@ -165,9 +158,11 @@ class ukf():
 	"""
 	def averageProj(self,X_proj):
 		# make sure that the stape is [1+2*n, n]
-		X_proj.reshape(1+self.n_state*2, self.n_state)
+		X_proj.reshape(self.n_points, self.n_state)
+		
 		# dot product of the two matrices
 		avg = np.dot(self.W_m.T, X_proj)
+		
 		return avg
 	
 	"""
@@ -175,7 +170,7 @@ class ukf():
 	"""
 	def averageOutProj(self,Z_proj):
 		# make sure that the stape is [1+2*n, n]
-		Z_proj.reshape(1+self.n_state*2, self.n_outputs)
+		Z_proj.reshape(self.n_points, self.n_outputs)
 		# dot product of the two matrices
 		avg = np.dot(self.W_m.T, Z_proj)
 		return avg
@@ -214,9 +209,11 @@ class ukf():
 	def computeCovXZ(self,X_p, Xa, Z_p, Za):
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
 		
-		Vx = np.zeros(X_p.shape)
+		# Old version
+		# Vx = np.zeros(X_p.shape)
+		Vx = np.zeros((self.n_points,self.n_state_obs))
 		for j in range(self.n_points):
-			Vx[j,:]   = X_p[j,:] - Xa[0]	
+			Vx[j,:]   = X_p[j,0:self.n_state_obs] - Xa[:,0:self.n_state_obs]	
 		
 		Vz = np.zeros(Z_p.shape)
 		for j in range(self.n_points):
@@ -230,25 +227,34 @@ class ukf():
 	"""
 	def computeS(self,X_proj,Xave,sqrtQ):
 		
+		# take the first part of the state vector
+		# The observed states
+		X_proj_obs = X_proj[:,0:self.n_state_obs]
+		
+		Xave_obs  = Xave[:,0:self.n_state_obs]
+		
 		weights = np.sqrt( np.abs(self.W_c[:,0]) )
 		signs   = np.sign( self.W_c[:,0] )
 		
 		A     = np.array([[]])
 		i     = 0
-		for x in X_proj:
-			error = signs[i]*weights[i]*(x - Xave)
+		for x in X_proj_obs:
+			error = signs[i]*weights[i]*(x - Xave_obs)
+			
 			if i==1:
 				A = error.T
 			elif i>1:
 				A = np.hstack((A,error.T))
 			i    += 1
+			
+		
 		A = np.hstack((A,sqrtQ))
 		
 		q,L = np.linalg.qr(A.T,mode='full')
-
+		
 		# NOW START THE CHOLESKY UPDATE
-		x = signs[0]*weights[0]*(X_proj[0,] - Xave)
-				
+		x = signs[0]*weights[0]*(X_proj_obs[0,] - Xave_obs)
+		
 		L = self.cholUpdate(L,x.T,self.W_c[:,0])
 		
 		return L
@@ -316,13 +322,13 @@ class ukf():
 	def computeCxx(self,X_next,Xave_next,X_now,Xave_now):
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
 		
-		Vnext = np.zeros(X_next.shape)
+		Vnext = np.zeros((self.n_points,self.n_state_obs))
 		for j in range(self.n_points):
-			Vnext[j,:]   = X_next[j,:] - Xave_next[0]	
+			Vnext[j,:]   = X_next[j,0:self.n_state_obs] - Xave_next[:,0:self.n_state_obs]	
 		
-		Vnow = np.zeros(X_now.shape)
+		Vnow = np.zeros((self.n_points,self.n_state_obs))
 		for j in range(self.n_points):
-			Vnow[j,:]   = X_now[j,:] - Xave_now[0]
+			Vnow[j,:]   = X_now[j,0:self.n_state_obs] - Xave_now[:,0:self.n_state_obs]
 	
 		Cxx = np.dot(np.dot(Vnext.T,W),Vnow)
 		return Cxx
@@ -335,29 +341,68 @@ class ukf():
 		# the list of sigma points (each signa point can be an array, the state variables)
 		Xs      = self.computeSigmaPoints(x,S)
 	
+		if verbose:
+			print "Sigma point Xs"
+			print Xs
+	
 		# compute the projected (state) points (each sigma points is propagated through the state transition function)
-		X_proj = self.sigmaPointProj(m,Xs,u_old,t_old)
+		X_proj = self.sigmaPointProj(m,Xs,u_old,u,t_old,t)
+		
+		if verbose:
+			print "Projected sigma points"
+			print X_proj
 	
 		# compute the average
 		Xave = self.averageProj(X_proj)
 		
+		if verbose:
+			print "Averaghed projected sigma points"
+			print Xave
+		
 		# compute the new squared covariance matrix S
 		Snew = self.computeS(X_proj,Xave,sqrtQ)
 		
+		if verbose:
+			print "New squared S matrix"
+			print Snew
+		
 		# redraw the sigma points, given the new covariance matrix
 		Xs      = self.computeSigmaPoints(Xave,Snew)
+		
+		# keep the last part of the projection for the other states not updated
+		Xs[:,self.n_state_obs:] = X_proj[:,self.n_state_obs:]
+		
+		if verbose:
+			print "New sigma points"
+			print Xs
 
 		# compute the projected (outputs) points (each sigma points is propagated through the state transition function)
 		Z_proj = self.sigmaPointOutProj(m,Xs,u,t)
+		
+		if verbose:
+			print "Output projection of new sigma points"
+			print Z_proj
 
 		# compute the average output
 		Zave = self.averageOutProj(Z_proj)
+		
+		if verbose:
+			print "Averaged output projection of new sigma points"
+			print Zave
 
 		# compute the innovation covariance (relative to the output)
 		Sy = self.computeSy(Z_proj,Zave,sqrtR)
-
+		
+		if verbose:
+			print "Output squared covariance matrix"
+			print Sy
+		
 		# compute the cross covariance matrix
 		CovXZ = self.computeCovXZ(X_proj, Xave, Z_proj, Zave)
+		
+		if verbose:
+			print "State output covariance matrix"
+			print CovXZ
 	
 		# Data assimilation step
 		# The information obtained in the prediction step are corrected with the information
@@ -367,7 +412,14 @@ class ukf():
 		K             = np.linalg.lstsq(Sy, firstDivision)[0]
 		K             = K.T
 		
-		X_corr = Xave + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
+		X_corr = Xave
+		X_corr[:,0:self.n_state_obs] = Xave[:,0:self.n_state_obs] + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
+		
+		if verbose:
+			print "New state corrected"
+			print X_corr
+			raw_input("?")
+		
 		U      = np.dot(K,Sy)
 		S_corr = self.cholUpdate(Snew,U,-1*np.ones(self.n_state))
 
@@ -376,7 +428,7 @@ class ukf():
 	"""
 	This method returns the smoothed state estimation
 	"""
-	def smooth(self,time,Xhat,S,sqrtQ,U,m):
+	def smooth(self,time,Xhat,S,sqrtQ,U,m,verbose=False):
 		
 		# initialize the smoothed states and covariance matrix
 		# the initial value of the smoothed state estimation are equal to the filtered ones
@@ -403,27 +455,70 @@ class ukf():
 
 			# compute the sigma points
 			Xs_i        = self.computeSigmaPoints(x_i,S_i)
+			
+			if verbose:
+				print "Sigma points"
+				print Xs_i
+			
 			# mean of the sigma points
 			Xs_i_ave    = self.averageProj(Xs_i)
+			
+			if verbose:
+				print "Mean of the sigma points"
+				print Xs_i_ave
+			
 			# propagate the sigma points
-			x_plus_1    = self.sigmaPointProj(m,Xs_i,U[i],time[i])
+			x_plus_1    = self.sigmaPointProj(m,Xs_i,U[i],U[i+1],time[i],time[i+1])
+			
+			if verbose:
+				print "Propagated sigma points"
+				print x_plus_1
+			
 			# average of the sigma points
 			Xave_plus_1 = self.averageProj(x_plus_1)
+			
+			if verbose:
+				print "Averaged propagated sigma points"
+				print Xave_plus_1
+			
 			# compute the new covariance matrix
 			Snew = self.computeS(x_plus_1,Xave_plus_1,sqrtQ)
+			
+			if verbose:
+				print "New Squared covaraince matrix"
+				print Snew
 			
 			# compute the cross covariance matrix of the two states
 			# (new state already corrected, coming from the "future", and the new just computed through the projection)
 			Cxx  = self.computeCxx(x_plus_1,Xave_plus_1,Xs_i,Xs_i_ave)
-
+			
+			if verbose:
+				print "Cross state-state covariance matrix"
+				print Cxx
+			
 			# gain for the back propagation
 			firstDivision = np.linalg.lstsq(Snew.T, Cxx.T)[0]
 			D             = np.linalg.lstsq(Snew, firstDivision)[0]
 			D             = D.T
 			
+			if verbose:
+				print "Old state"
+				print Xhat[i,:]
+				print "Error:"
+				print Xsmooth[i+1,0:self.n_state_obs] - Xave_plus_1[0,0:self.n_state_obs]
+				print "Correction:"
+				print np.dot(D, Xsmooth[i+1,0:self.n_state_obs] - Xave_plus_1[0,0:self.n_state_obs])
+				
 			# correction (i.e. smoothing, of the state estimation and covariance matrix)
-			Xsmooth[i,:]   = Xhat[i,:] + np.dot(D, Xsmooth[i+1,:] - Xave_plus_1[0])
+			Xsmooth[i,self.n_state_obs:]   = Xhat[i,self.n_state_obs:]
+			Xsmooth[i,0:self.n_state_obs]  = Xhat[i,0:self.n_state_obs] + np.dot(D, Xsmooth[i+1,0:self.n_state_obs] - Xave_plus_1[0,0:self.n_state_obs])
+			
+			if verbose:
+				print "New smoothed state"
+				print Xsmooth[i,:]
+				raw_input("?")
+			
 			V              = np.dot(D,Ssmooth[i+1,:,:] - Snew)
-			Ssmooth[i,:,:] = self.cholUpdate(S[i,:,:],V,-1*np.ones(self.n_state))
+			Ssmooth[i,:,:] = self.cholUpdate(S[i,:,:],V,-1*np.ones(self.n_state_obs))
 			
 		return (Xsmooth, Ssmooth)

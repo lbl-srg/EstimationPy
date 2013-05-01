@@ -53,6 +53,7 @@ Z = np.zeros((numPoints,n_outputs))
 U   = np.zeros((numPoints,3))
 Pch = np.zeros((numPoints,1))
 Um  = np.zeros((numPoints,3))
+
 for i in range(numPoints):
 	if time[i]>= 0.0 and time[i]<1300.0:
 		U[i,0] += 12.0
@@ -79,10 +80,17 @@ for i in range(numPoints):
 
 # noisy measured values (outputs)
 Z  = Y + np.dot(m.sqrtR, np.random.uniform(-1.0, 1.0, (n_outputs,numPoints))).T
+
 # noisy input measurements
 Um = U + np.dot(sqrtH, np.random.uniform(-1.0, 1.0, (n_inputs,numPoints))).T
 
-
+# add extra noises in the outputs and inputs
+for i in range(len(time)):
+	if time[i]>= 8000 and time[i]<=8020:
+		Z[i,:] = Z[i,:] + np.random.uniform(-5.0, 5.0, n_outputs)
+	elif time[i]>= 11500 and time[i]<=11570:
+		Um[i,:] = Um[i,:] + np.random.uniform(-10.0, 10.0, n_inputs)
+		
 ########################################################################################
 # THE NOISY MEASUREMENTS OF THE OUTPUTS ARE AVAILABLE, START THE FILERING PROCEDURE
 
@@ -90,7 +98,7 @@ Um = U + np.dot(sqrtH, np.random.uniform(-1.0, 1.0, (n_inputs,numPoints))).T
 Xhat = np.zeros((numPoints,n_state))
 Yhat = np.zeros((numPoints,n_outputs))
 S    = np.zeros((numPoints,n_state,n_state))
-Sy = np.zeros((numPoints,n_outputs,n_outputs))
+Sy   = np.zeros((numPoints,n_outputs,n_outputs))
 
 # initial knowledge
 X0_hat = np.array([23.0, 21.0, 3])
