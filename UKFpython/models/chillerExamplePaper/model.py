@@ -236,7 +236,7 @@ class model():
 			# with incremental PID controller
 			dsp = Tch_sp - SP_old
 			dpv = Tch_old - PV_old
-		 
+			
 			dp      = K*(b*dsp - dpv)
 			di      = K*dt/Ti*( Tch_sp - Tch_old)
 			if Td > 0:
@@ -262,8 +262,8 @@ class model():
 				valve1 = 0
 			
 			if t>=10*3600 and t<=12*3600:
-				# valve2 = 0.15
-				valve2  = dt/50*( - valve2_old + 0.15 ) + valve2_old
+				# valve2 = 0.2
+				valve2  = dt/50*( - valve2_old + 0.2 ) + valve2_old
 			else:
 				# valve2 = 0
 				valve2  = dt/50*( - valve2_old + 0.0 ) + valve2_old
@@ -310,7 +310,8 @@ class model():
 	"""
 	This function computes the evolution of the system over a DT step, which contains several dt steps
 	"""
-	def functionF(self,x,u_old,u,t_old,t,simulate):
+	def functionF(self,tuple):
+		(x,u_old,u,t_old,t,simulate) = tuple
 		x = x.copy()
 		
 		# number of steps to perform
@@ -453,6 +454,35 @@ class model():
 		 
 		return y  
 	
+	def plotEtaPL(self):
+		import matplotlib.pyplot as plt
+		from   pylab import figure
+		
+		x   = np.linspace(0.0, 1.0, 100)
+		eta = self.etaPL(x)
+		etaMin = eta - 0.1*np.ones(eta.shape)
+		etaMax = np.zeros(eta.shape)
+		i = 0
+		for e in eta:
+			etaMax[i] = np.min([e + 0.1, 1.05])
+			i        += 1
+		
+		fig = plt.figure()
+		fig.set_size_inches(10,5)
+		ax  = fig.add_subplot(111)
+		ax.plot(x,eta,'b',label='$\eta_{PL}$')
+		ax.fill_between(x, etaMin, etaMax, facecolor='blue', interpolate=True, alpha=0.3)
+		ax.set_ylabel('Efficiency [$\cdot$]')
+		ax.set_xlabel('Control Signal [$\cdot$]')
+		ax.set_xlim([0.0, 1.0])
+		ax.set_ylim([0.4, 1.1])
+		legend = ax.legend(loc='upper left',bbox_to_anchor=(0.5, 1.1), ncol=1, fancybox=True, shadow=True)
+		legend.draggable()
+		ax.grid(True)
+		plt.savefig('eta.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+		return
+		
+		
 	"""
 	get the number of states variables of interest
 	"""

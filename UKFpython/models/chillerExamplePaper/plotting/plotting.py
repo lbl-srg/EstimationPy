@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from   pylab import figure
 
-def plotBasic(time,timeSamples,startTime,stopTime,X,Y,U,Um,Z,Xhat,P,Yhat,CovY,Xsmooth,Psmooth):
+def plotBasic(time,timeSamples,startTime,stopTime,X,Y,U,Um,Z,Xhat,P,Yhat,CovY,Xsmooth,Psmooth,faultStatus,probFault):
 
 	#######################################################################
 	# TRUE SYSTEM
@@ -136,6 +136,96 @@ def plotBasic(time,timeSamples,startTime,stopTime,X,Y,U,Um,Z,Xhat,P,Yhat,CovY,Xs
 	legend.draggable()
 	ax8.grid(True)
 	plt.savefig('h.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+	
+	#######################################################################
+	fig9 = plt.figure()
+	fig9.set_size_inches(10,5)
+	ax9  = fig9.add_subplot(111)
+	ax9.plot(1.0/3600.0*timeSamples,faultStatus[:,0,0],'b',label='$Sensor$')
+	ax9.plot(1.0/3600.0*timeSamples,faultStatus[:,1,0],'b--',label='$Sensor^{SMOOTH}$')
+	ax9.set_xlabel('Time [h]')
+	ax9.set_ylabel('Fault states [$\cdot$]')
+	ax9.set_xlim([startTime/3600.0, stopTime/3600.0])
+	ax9.set_ylim([-0.1, 1.1])
+	legend = ax9.legend(loc='upper center',bbox_to_anchor=(0.5, 1.15), ncol=2, fancybox=True, shadow=True)
+	legend.draggable()
+	ax9.grid(True)
+	plt.savefig('i.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+	
+	#######################################################################
+	fig10 = plt.figure()
+	ax10  = fig10.add_subplot(211)
+	ax10.plot(1.0/3600.0*timeSamples,faultStatus[:,0,1],'r',label='$Chiller$')
+	ax10.plot(1.0/3600.0*timeSamples,faultStatus[:,1,1],'r--',label='$Chiller^{SMOOTH}$')
+	ax10.set_xlabel('Time [h]')
+	ax10.set_ylabel('Fault states [$\cdot$]')
+	ax10.set_xlim([startTime/3600.0, stopTime/3600.0])
+	ax10.set_ylim([-0.1, 1.1])
+	legend = ax10.legend(loc='upper center',bbox_to_anchor=(0.5, 1.15), ncol=2, fancybox=True, shadow=True)
+	legend.draggable()
+	ax10.grid(True)
+	
+	ax10  = fig10.add_subplot(212)
+	ax10.plot(1.0/3600.0*timeSamples,probFault[:,0,1],'r',label='$P_{fault}^{Chiller}$')
+	ax10.plot(1.0/3600.0*timeSamples,probFault[:,1,1],'r--',label='$P_{fault}^{Chiller}$')
+	ax10.set_xlabel('Time [h]')
+	ax10.set_ylabel('Probability of fault [%]')
+	ax10.set_xlim([startTime/3600.0, stopTime/3600.0])
+	ax10.set_ylim([0, 100])
+	legend = ax10.legend(loc='upper center',bbox_to_anchor=(0.5, 1.15), ncol=2, fancybox=True, shadow=True)
+	legend.draggable()
+	ax10.grid(True)
+	plt.savefig('l.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+	
+	#######################################################################
+	fig11 = plt.figure()
+	ax11  = fig11.add_subplot(211)
+	ax11.plot(1.0/3600.0*timeSamples,faultStatus[:,0,2],'g',label='$Valve_1$')
+	ax11.plot(1.0/3600.0*timeSamples,faultStatus[:,1,2],'g--',label='$Valve_1^{SMOOTH}$')
+	ax11.set_xlabel('Time [h]')
+	ax11.set_ylabel('Fault states [$\cdot$]')
+	ax11.set_xlim([startTime/3600.0, stopTime/3600.0])
+	ax11.set_ylim([-0.1, 1.1])
+	legend = ax11.legend(loc='upper center',bbox_to_anchor=(0.5, 1.15), ncol=2, fancybox=True, shadow=True)
+	legend.draggable()
+	ax11.grid(True)
+	
+	ax11  = fig11.add_subplot(212)
+	ax11.plot(1.0/3600.0*timeSamples,probFault[:,0,2],'g',label='$P_{fault}^{Valve_1}$')
+	ax11.plot(1.0/3600.0*timeSamples,probFault[:,1,2],'g--',label='$P_{fault}^{Valve_1}$')
+	ax11.set_xlabel('Time [h]')
+	ax11.set_ylabel('Probability of fault [%]')
+	ax11.set_xlim([startTime/3600.0, stopTime/3600.0])
+	ax11.set_ylim([0, 100])
+	legend = ax11.legend(loc='upper center',bbox_to_anchor=(0.5, 1.15), ncol=2, fancybox=True, shadow=True)
+	legend.draggable()
+	ax11.grid(True)
+	plt.savefig('m.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+	
+	#######################################################################
+	fig12 = plt.figure()
+	ax12  = fig12.add_subplot(211)
+	ax12.plot(1.0/3600.0*timeSamples,faultStatus[:,0,3],'k',label='$Valve_2$')
+	ax12.plot(1.0/3600.0*timeSamples,faultStatus[:,1,3],'k--',label='$Valve_2^{SMOOTH}$')
+	ax12.set_xlabel('Time [h]')
+	ax12.set_ylabel('Fault states [$\cdot$]')
+	ax12.set_xlim([startTime/3600.0, stopTime/3600.0])
+	ax12.set_ylim([-0.1, 1.1])
+	legend = ax12.legend(loc='upper center',bbox_to_anchor=(0.5, 1.15), ncol=2, fancybox=True, shadow=True)
+	legend.draggable()
+	ax12.grid(True)
+	
+	ax12  = fig12.add_subplot(212)
+	ax12.plot(1.0/3600.0*timeSamples,probFault[:,0,3],'k',label='$P_{fault}^{Valve_2}$')
+	ax12.plot(1.0/3600.0*timeSamples,probFault[:,1,3],'k--',label='$P_{fault}^{Valve_2}$')
+	ax12.set_xlabel('Time [h]')
+	ax12.set_ylabel('Probability of fault [%]')
+	ax12.set_xlim([startTime/3600.0, stopTime/3600.0])
+	ax12.set_ylim([0, 100.0])
+	legend = ax12.legend(loc='upper center',bbox_to_anchor=(0.5, 1.15), ncol=2, fancybox=True, shadow=True)
+	legend.draggable()
+	ax12.grid(True)
+	plt.savefig('n.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
 	
 	plt.show()
 

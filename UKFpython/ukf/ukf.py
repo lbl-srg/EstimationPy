@@ -1,5 +1,9 @@
 import numpy as np
+from multiprocessing import Pool
 
+def Function(tuple):
+	(m,x,u_old,u,t_old,t,False,) = tuple
+	return m.functionF((x,u_old,u,t_old,t,False,))
 
 class ukf():
 	# number of state variables, outputs and sigma points
@@ -192,10 +196,18 @@ class ukf():
 	def sigmaPointProj(self,m,Xs,u_old,u,t_old,t):
 		# initialize the vector of the NEW STATES
 		X_proj = np.zeros((self.n_points,self.n_state))
+		
+		# execute each state projection in parallel
+		pool = Pool()
+		res = pool.map_async(Function, ((m,x,u_old,u,t_old,t,False,) for x in Xs))
+		pool.close()
+		pool.join()
+		
 		j = 0
-		for x in Xs:
-			X_proj[j,:] = m.functionF(x,u_old,u,t_old,t,False)
+		for X in res.get():
+			X_proj[j,:] = X
 			j += 1
+			
 		return X_proj
 
 	"""
@@ -724,14 +736,20 @@ class ukf_Augmented(ukf):
 		# initialize the vector of the NEW STATES
 		X_proj = np.zeros((self.n_points,self.n_state))
 		
+		# execute each state projection in parallel
+		pool = Pool()
+		res = pool.map_async(Function, ((m,np.hstack((x[0:self.n_state_obs],x[self.n_augState:])),u_old,u,t_old,t,False,) for x in Xs))
+		pool.close()
+		pool.join()
+		
 		j = 0
-		for x in Xs:
-			processNoise                  = x[self.n_state_obs:2*self.n_state_obs]
-			X                             = np.hstack((x[0:self.n_state_obs],x[self.n_augState:]))
-			X_proj[j,:]                   = m.functionF(X,u_old,u,t_old,t,False) 
+		for X in res.get():
+			processNoise                  = Xs[j,self.n_state_obs:2*self.n_state_obs]
+			X_proj[j,:] 		      = X
 			X_proj[j,0:self.n_state_obs] += processNoise
 			j += 1
-		return X_proj
+			
+		return X_proj		
 
 	"""
 	This function computes the output measurement of all the sigma points through the model
