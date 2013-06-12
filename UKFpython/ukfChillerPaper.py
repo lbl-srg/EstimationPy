@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from   pylab import figure
-from scipy.stats import norm
+from   scipy.stats import norm
 
 import sys
 import os
+import time as TIM
 
 sys.path.insert(0,'./models/chillerExamplePaper')
 sys.path.insert(0,'./models/chillerExamplePaper/plotting')
@@ -52,13 +53,20 @@ Y = np.zeros((numPoints,n_outputs))
 # inputs vector: [Tch_in, Tcw_in, Tsp, CMD_P1, CMD_P2, CMD_V1, CMD_V2]
 U   = np.zeros((numPoints,n_inputs))
 
-U[:,0] = np.interp(time,[8*3600,9*3600,10*3600,10.5*3600,12*3600,15*3600,18*3600,21*3600],[10,11,13,14,15,16,13,11])
-U[:,1] = np.interp(time,[8*3600,9*3600,12*3600,15*3600,18*3600,21*3600],[16,18,19,18,17,16])
+#U[:,0] = np.interp(time,[8*3600,9*3600,10*3600,10.5*3600,12*3600,15*3600,18*3600,21*3600],[10,11,13,14,15,16,13,11])
+U[:,0] = np.interp(time,[8*3600,9*3600,10*3600,10.5*3600,12*3600,15*3600,18*3600,21*3600],[9,10,12,13,14,15,12,10])
+#U[:,1] = np.interp(time,[8*3600,9*3600,12*3600,15*3600,18*3600,21*3600],[16,18,19,18,17,16])
+U[:,1] = np.interp(time,[8*3600,9*3600,12*3600,15*3600,18*3600,21*3600],[24,26,27,26,25,24])
 U[:,2] = np.interp(time,[8*3600,21*3600],[3.9,3.9])
-U[:,3] = np.interp(time,[6*3600,7.5*3600,12*3600,12.1*3600,16*3600, 16.5*3600,21*3600,21.5*3600],[0.1,0.55,0.55,1,1,0.6,0.6,0.1])
-U[:,4] = np.interp(time,[6*3600,7.5*3600,12*3600,12.1*3600,16*3600, 16.5*3600,21*3600,21.5*3600],[0.1,0.55,0.55,1,1,0.6,0.6,0.1])
-U[:,5] = np.interp(time,[6*3600,7.5*3600,21*3600,21.5*3600],[0.1,1,1,0.1])
-U[:,6] = np.interp(time,[6*3600,7.5*3600,21*3600,21.5*3600],[0.1,1,1,0.1])	
+#U[:,3] = np.interp(time,[6*3600,7.5*3600,12*3600,12.1*3600,16*3600, 16.5*3600,21*3600,21.5*3600],[0.1,0.55,0.55,1,1,0.6,0.6,0.1])
+U[:,3] = np.interp(time,[6*3600,7.5*3600,12*3600,12.1*3600,16*3600, 16.5*3600,21*3600,21.5*3600],[0.6,0.75,0.75,1,1,0.85,0.85,0.7])
+#U[:,4] = np.interp(time,[6*3600,7.5*3600,12*3600,12.1*3600,16*3600, 16.5*3600,21*3600,21.5*3600],[0.1,0.55,0.55,1,1,0.6,0.6,0.1])
+U[:,4] = np.interp(time,[6*3600,7.5*3600,12*3600,12.1*3600,16*3600, 16.5*3600,21*3600,21.5*3600],[0.6,0.75,0.75,1,1,0.85,0.85,0.7])
+#U[:,5] = np.interp(time,[6*3600,7.5*3600,21*3600,21.5*3600],[0.1,1,1,0.1])
+#U[:,6] = np.interp(time,[6*3600,7.5*3600,21*3600,21.5*3600],[0.1,1,1,0.1])	
+U[:,5] = np.interp(time,[6*3600,7.5*3600,21*3600,21.5*3600],[0.2,0.5,0.5,0.2])
+U[:,6] = np.interp(time,[6*3600,7.5*3600,21*3600,21.5*3600],[0.5,1,1,0.5])	
+
 
 print "\n** Input defined..."
 
@@ -66,14 +74,19 @@ print "\n** Simulating..."
 # compute evolution of the system
 for i in range(numPoints):
 	perc = int(100*(i+1)/float(numPoints))
-	sys.stdout.write("\r%d%%" %perc)
+	stTime = TIM.clock()
 	if i==0:
 		X[i,:] = m.getInitialState()
 	else:	
 		X[i,:]= m.functionF_dt(X[i-1,:],U[i-1,:],time[i-1],simulate=True)
 
 	Y[i,:]   = m.functionG(X[i,:],U[i,:],time[i],simulate=True)
-
+	
+	endTime = TIM.clock()
+	elapsedTime = endTime - stTime
+	str2print = str(perc)+"% -- "+str(elapsedTime)+" s"
+	sys.stdout.write("\r%s" %str2print)
+	
 # THE TRUE SYSTEM END HERE
 ##################################################################
 
@@ -169,7 +182,8 @@ UKFilter.setLowConstraints(ConstrLow, ConstrValueLow)
 print "\n** Filtering..."
 for i in range(numSamples):
 	perc = int(100*(i+1)/float(numSamples))
-	sys.stdout.write("\r%d%%" %perc)
+	stTime = TIM.clock()
+	
 	if i==0:	
 		Xhat[i,:]   = X0_hat
 		S[i,:,:]    = S0
@@ -177,6 +191,13 @@ for i in range(numSamples):
 		Sy[i,:,:]   = sqrtR0
 	else:
 		Xhat[i,:], S[i,:,:], Yhat[i,:], Sy[i,:,:] = UKFilter.ukf_step(Z[i,0:3],Xhat[i-1,:],S[i-1,:,:],S0,sqrtR0,Uukf[i-1,:],Uukf[i,:],timeSamples[i-1],timeSamples[i],m,verbose=False)
+	
+	endTime = TIM.clock()
+	elapsedTime = endTime - stTime
+	str2print = str(perc)+"% -- "+str(elapsedTime)+" s"
+	sys.stdout.write("\r%s" %str2print)
+	
+	
 
 # converting the squared matrix into the covariance ones
 P         = np.zeros(S.shape)
@@ -246,9 +267,15 @@ Xsmooth = Xhat.copy()
 Ssmooth = S.copy()
 for i in range(numSamples-NsmoothSteps):
 	perc = int(100*i/float(numSamples-NsmoothSteps))
-	sys.stdout.write("\r%d%%" %perc)
+	stTime = TIM.clock()
+	
 	Xsmooth[i:i+NsmoothSteps+1, :], Ssmooth[i:i+NsmoothSteps+1, :, :] = UKFilter.smooth(timeSamples[i:i+NsmoothSteps+1],Xhat[i:i+NsmoothSteps+1, :],S[i:i+NsmoothSteps+1, :, :],S0,Uukf[i:i+NsmoothSteps+1, :],m,verbose=False)
-
+	
+	endTime = TIM.clock()
+	elapsedTime = endTime - stTime
+	str2print = str(perc)+"% -- "+str(elapsedTime)+" s"
+	sys.stdout.write("\r%s" %str2print)
+	
 # converting the squared matrix into the covariance ones
 Psmooth   = np.zeros(Ssmooth.shape)
 (N, I, J) = P.shape
