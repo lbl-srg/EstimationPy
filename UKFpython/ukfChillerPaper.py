@@ -74,7 +74,7 @@ print "\n** Simulating..."
 # compute evolution of the system
 for i in range(numPoints):
 	perc = int(100*(i+1)/float(numPoints))
-	stTime = TIM.clock()
+	stTime = TIM.time()
 	if i==0:
 		X[i,:] = m.getInitialState()
 	else:	
@@ -82,7 +82,7 @@ for i in range(numPoints):
 
 	Y[i,:]   = m.functionG(X[i,:],U[i,:],time[i],simulate=True)
 	
-	endTime = TIM.clock()
+	endTime = TIM.time()
 	elapsedTime = endTime - stTime
 	str2print = str(perc)+"% -- "+str(elapsedTime)+" s"
 	sys.stdout.write("\r%s" %str2print)
@@ -177,12 +177,14 @@ UKFilter.setUKFparams()
 UKFilter.setHighConstraints(ConstrHigh, ConstrValueHigh)
 UKFilter.setLowConstraints(ConstrLow, ConstrValueLow)
 
+# Modify Ts for numerical integration
+m.setDT(2.0)
 
 # iteration of the UKF
 print "\n** Filtering..."
 for i in range(numSamples):
 	perc = int(100*(i+1)/float(numSamples))
-	stTime = TIM.clock()
+	stTime = TIM.time()
 	
 	if i==0:	
 		Xhat[i,:]   = X0_hat
@@ -192,7 +194,7 @@ for i in range(numSamples):
 	else:
 		Xhat[i,:], S[i,:,:], Yhat[i,:], Sy[i,:,:] = UKFilter.ukf_step(Z[i,0:3],Xhat[i-1,:],S[i-1,:,:],S0,sqrtR0,Uukf[i-1,:],Uukf[i,:],timeSamples[i-1],timeSamples[i],m,verbose=False)
 	
-	endTime = TIM.clock()
+	endTime = TIM.time()
 	elapsedTime = endTime - stTime
 	str2print = str(perc)+"% -- "+str(elapsedTime)+" s"
 	sys.stdout.write("\r%s" %str2print)
@@ -267,11 +269,11 @@ Xsmooth = Xhat.copy()
 Ssmooth = S.copy()
 for i in range(numSamples-NsmoothSteps):
 	perc = int(100*i/float(numSamples-NsmoothSteps))
-	stTime = TIM.clock()
+	stTime = TIM.time()
 	
 	Xsmooth[i:i+NsmoothSteps+1, :], Ssmooth[i:i+NsmoothSteps+1, :, :] = UKFilter.smooth(timeSamples[i:i+NsmoothSteps+1],Xhat[i:i+NsmoothSteps+1, :],S[i:i+NsmoothSteps+1, :, :],S0,Uukf[i:i+NsmoothSteps+1, :],m,verbose=False)
 	
-	endTime = TIM.clock()
+	endTime = TIM.time()
 	elapsedTime = endTime - stTime
 	str2print = str(perc)+"% -- "+str(elapsedTime)+" s"
 	sys.stdout.write("\r%s" %str2print)
