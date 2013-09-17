@@ -1,45 +1,45 @@
-from numpy import *
+import numpy as np
 from os import system
 
-set_printoptions(precision=4)
+np.set_printoptions(precision=4)
 
 system('clear')
-Xtrue = array([[2.0, 3.0, 15.4]])
+Xtrue = np.array([[2.0, 3.0, 15.4]])
 
-Xpoints = array([[1.8, 3.3, 16.4],[1.9, 3.5, 14.4],[2.23, 4, 15.7],[1.5, 2.6, 12.4],[1.5, 2.6, 18.4],[1.5, 2.6, 13.4]])
-# Xpoints = array([[2.0, 3.0, 15.4],[2.0, 3.0, 15.4],[2.0, 3.0, 15.4],[2.0, 3.0, 15.4],[2.0, 3.0, 15.4],[2.0, 3.0, 15.4]])
+Xpoints = np.array([[1.8, 3.3, 16.4],[1.9, 3.5, 14.4],[2.23, 4, 15.7],[1.5, 2.6, 12.4],[1.5, 2.6, 18.4],[1.5, 2.6, 13.4]])
+# Xpoints = np.array([[2.0, 3.0, 15.4],[2.0, 3.0, 15.4],[2.0, 3.0, 15.4],[2.0, 3.0, 15.4],[2.0, 3.0, 15.4],[2.0, 3.0, 15.4]])
 
-Q = 0.5*eye(3)
+Q = 0.5*np.eye(3)
 
 n, N    = Xpoints.shape
 
-Weights = zeros(n)
+Weights = np.zeros(n)
 for i in range(n):
 	if i==0:
 		Weights[i] = -0.5
 	else:
-		Weights[i] = (1.0 - Weights[0])/float(n-1)
+		Weights[i] = (1.0 - Weights[0])/np.float(n-1)
 
 i = 0
 P = Q
 for x in Xpoints:
 	error = x - Xtrue 
-	P     = P + Weights[i]*dot(error.T,error)
+	P     = P + Weights[i]*np.dot(error.T,error)
 	i    += 1
-S = linalg.cholesky(P)
+S = np.linalg.cholesky(P)
 
 # doing the same with QR factorization + Cholesky Update
 i = 0
 for x in Xpoints:
-	error = sqrt(Weights[i])*(x - Xtrue)
+	error = np.sqrt(Weights[i])*(x - Xtrue)
 	if i==1:
 		A = error.T
 	elif i>1:
-		A     = hstack((A,error.T))
+		A     = np.hstack((A,error.T))
 	i    += 1
-A = hstack((A,linalg.cholesky(Q)))
+A = np.hstack((A,np.linalg.cholesky(Q)))
 
-q,r = linalg.qr(A.T,mode='full')
+q,r = np.linalg.qr(A.T,mode='full')
 
 
 # NOW START THE CHOLESKY UPDATE
@@ -49,15 +49,15 @@ error0 = Xpoints[0,]-Xtrue
 L = r.copy()
 x = error0[0].copy()
 
-absW  = abs(Weights[0])
-signW = sign(Weights[0])
-x     = signW*sqrt(absW)*x
+absW  = np.abs(Weights[0])
+signW = np.sign(Weights[0])
+x     = signW*np.sqrt(absW)*x
 
 print "\nCholupdate...\n"
 
 for k in range(N):
 	rr_arg    = L[k,k]**2 + signW*x[k]**2
-	rr        = 0.0 if rr_arg < 0 else sqrt(rr_arg)
+	rr        = 0.0 if rr_arg < 0 else np.sqrt(rr_arg)
 	c         = rr / L[k,k]
 	s         = x[k] / L[k,k]
 	L[k,k]    = rr
@@ -69,8 +69,8 @@ print P
 print "\nSquare root matrix with cholesky S"
 print S
 print "\nSquare root matrix with cholesky S*S'"
-print dot(S,S.T)
+print np.dot(S,S.T)
 print "\nSquare root matrix with QR + cholesky update L"
 print L.T
 print "\nSquare root matrix with QR + cholesky update L*L'"
-print dot(L.T,L)
+print np.dot(L.T,L)

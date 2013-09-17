@@ -1,11 +1,32 @@
 import numpy as np
 from multiprocessing import Pool
 
-def Function(tuple):
-	(m,x,u_old,u,t_old,t,False,) = tuple
+def Function(val):
+	"""
+	This function takes as argument a tuple of elements. These elements are then used to compute the state
+	transition function
+	
+	the tuple contains:
+	
+	* ** m **:     the model
+	* ** x **:     the state vector
+	* ** u_uld **: input vector at previous step
+	* ** u ** :     input vector at actual step
+	* ** t_old **: previous time step
+	* ** t **:     actual time step
+	* **other**: flags used for the simulation
+	
+	"""
+	# Get the values from the tuple 
+	(m,x,u_old,u,t_old,t,Flags,) = val
+	
+	# execute the state transition function associated to the model
 	return m.functionF((x,u_old,u,t_old,t,False,))
 
 class ukf():
+	"""
+	This class represents an Unscented Kalman Filter (UKF) that can be used for the state and parameter estimation of nonlinear dynamic systems
+	"""
 	# number of state variables, outputs and sigma points
 	n_state     = 0
 	n_state_obs = 0
@@ -33,10 +54,23 @@ class ukf():
 	# Min Value of the constraints
 	ConstrValueLow = np.zeros(n_state_obs)
 	
-	"""
-	initialization of the UKF and its parameters
-	"""
+	
 	def __init__(self, n_state, n_state_obs, n_outputs):
+		"""
+		Initialization of the UKF and its parameters. The dynamic system is characterized by
+		
+		** n_state     -- state variables,
+		** n_state_obs -- state variables that are observed (estimated)
+		** n_outputs   -- output variables
+		
+		The initialization assign these parameters then,
+		
+		1- compute the number of sigma points to be used
+		2- define the parameters of the filter
+		3- compute the weights associated to each sigma point
+		4- initialize the constraints on the observed state variables
+		 
+		"""
 		# set the number of states variables and outputs
 		self.n_state     = n_state
 		self.n_state_obs = n_state_obs
@@ -62,20 +96,22 @@ class ukf():
 		# Min Value of the constraints
 		self.ConstrValueLow  = np.zeros(self.n_state_obs)
 
-	"""
-	This method set the default parameters of the filter
-	"""
+	
 	def setDefaultUKFparams(self):
+		"""
+		This method set the default parameters of the UKF
+		"""
 		self.alpha    = 0.01
 		self.k        = 0
 		self.beta     = 2
 		self.lambd    = (self.alpha**2)*(self.n_state_obs + self.k) - self.n_state_obs
 		self.sqrtC    = self.alpha*np.sqrt(self.n_state_obs + self.k)
 
-	"""
-	This method set the non default parameters of the filter
-	"""
+	
 	def setUKFparams(self, alpha = 1.0/np.sqrt(3.0), beta = 2, k = None):
+		"""
+		This method set the non default parameters of the UKF
+		"""
 		self.alpha     = alpha
 		self.beta      = beta
 
@@ -87,24 +123,27 @@ class ukf():
 		self.lambd    = (self.alpha**2)*(self.n_state_obs + self.k) - self.n_state_obs
 		self.sqrtC    = self.alpha*np.sqrt(self.k + self.n_state_obs)		
 
-	"""
-	This method allows to define the HIGH constraints for the observed states
-	"""
+	
 	def setHighConstraints(self,flag,values):
+		"""
+		This method imposes the upper constraints of the observed state variables.
+		"""
 		self.ConstrHigh      = flag
 		self.ConstrValueHigh = values
 
-	"""
-	This method allows to define the LOW constraints for the observed states
-	"""
 	def setLowConstraints(self,flag,values):
+		"""
+		This method imposes the lower constraints of the observed state variables.
+		"""
 		self.ConstrLow      = flag
 		self.ConstrValueLow = values
 
-	"""
-	This method computes the weights (both for covariance and mean value computation) of the UKF filter
-	"""
+	
 	def computeWeights(self):
+		"""
+		This method computes the weights of the UKF filter. These weights are associated to each sigma point and are used to
+		compute the mean value (W_m) and the covariance (W_c) of the estimation
+		"""
 		self.W_m       = np.zeros((1+self.n_state_obs*2,1))
 		self.W_c       = np.zeros((1+self.n_state_obs*2,1))
 		
@@ -115,11 +154,10 @@ class ukf():
 			self.W_m[i+1,0] = 1.0/(2.0*(self.n_state_obs + self.lambd))
 			self.W_c[i+1,0] = 1.0/(2.0*(self.n_state_obs + self.lambd))
 
-	"""
-	get the square root matrix of a given one
-	"""
 	def squareRoot(self,A):
-		# square root of the matrix A using cholesky factorization
+		"""
+		This method computes the square root of a square matrix A, using the Cholesky factorization
+		"""
 		try:
 			sqrtA = np.linalg.cholesky(A)
 			return sqrtA
@@ -130,11 +168,10 @@ class ukf():
 			raw_input("press...")
 			return A	
 	
-	"""
-	Correct the state vector according to the constraints
-	"""
 	def constrainedState(self,X):
-				
+		"""
+		This method apply the constraints to the state vector (only to the estimated states)
+		"""		
 		# Check for every observed state
 		for i in range(self.n_state_obs):
 		
@@ -148,12 +185,15 @@ class ukf():
 		
 		return X
 				
-	"""
-	comnputes the matrix of sigma points, given the square root of the covariance matrix
-	and the previous state vector
-	"""
 	def computeSigmaPoints(self,x,sqrtP):
+		"""
+		This method computes the sigma points, Its inputs are
 		
+		* x     -- the state vector around the points will be propagated,
+		* sqrtP -- the square root matrix of the covariance P, that is used to spread the points
+		
+		"""
+	
 		# reshape the state vector
 		x = x.reshape(1,self.n_state)
 
@@ -182,18 +222,20 @@ class ukf():
 			Xs[i,0:self.n_state_obs]                  = x[0,0:self.n_state_obs] + self.sqrtC*row
 			Xs[i+self.n_state_obs,0:self.n_state_obs] = x[0,0:self.n_state_obs] - self.sqrtC*row
 			
+			# TODO:
 			# How to introduce constrained points
-			#Xs[i,0:self.n_state_obs]                  = self.constrainedState(Xs[i,0:self.n_state_obs])
-			#Xs[i+self.n_state_obs,0:self.n_state_obs] = self.constrainedState(Xs[i+self.n_state_obs,0:self.n_state_obs])
+			# Xs[i,0:self.n_state_obs]                  = self.constrainedState(Xs[i,0:self.n_state_obs])
+			# Xs[i+self.n_state_obs,0:self.n_state_obs] = self.constrainedState(Xs[i+self.n_state_obs,0:self.n_state_obs])
 			
 			i += 1
 		
 		return Xs
 
-	"""
-	This function computes the state evolution of all the sigma points through the model
-	"""
 	def sigmaPointProj(self,m,Xs,u_old,u,t_old,t):
+		"""
+		This function, given a set of sigma points Xs, propagate them using the state transition function.
+		The simulations are run in parallel
+		"""
 		# initialize the vector of the NEW STATES
 		X_proj = np.zeros((self.n_points,self.n_state))
 		
@@ -203,6 +245,7 @@ class ukf():
 		pool.close()
 		pool.join()
 		
+		# collect the results of the simulations
 		j = 0
 		for X in res.get():
 			X_proj[j,:] = X
@@ -210,10 +253,11 @@ class ukf():
 			
 		return X_proj
 
-	"""
-	This function computes the output measurement of all the sigma points through the model
-	"""
+	
 	def sigmaPointOutProj(self,m,Xs,u,t):
+		"""
+		This function computes the outputs of the model, given a set of sigma points Xs as well as inputs u and time step t
+		"""
 		# initialize the vector of the outputs
 		Z_proj = np.zeros((self.n_points,self.n_outputs))
 		j = 0
@@ -222,11 +266,11 @@ class ukf():
 			j += 1
 		return Z_proj
 
-	"""
-	This function computes the average of the sigma point evolution
-	"""
 	def averageProj(self,X_proj):
-		# make sure that the stape is [1+2*n, n]
+		"""
+		This function averages the projection of the sigma points using the weights vector W_m
+		"""
+		# make sure that the shape is [1+2*n, n]
 		X_proj.reshape(self.n_points, self.n_state)
 		
 		# dot product of the two matrices
@@ -234,21 +278,24 @@ class ukf():
 		
 		return avg
 	
-	"""
-	This function computes the average of the sigma point outputs
-	"""
 	def averageOutProj(self,Z_proj):
-		# make sure that the stape is [1+2*n, n]
+		"""
+		This function averages the outputs of the sigma points using the weights vector W_m
+		"""
+		# make sure that the shape is [1+2*n, n]
 		Z_proj.reshape(self.n_points, self.n_outputs)
+		
 		# dot product of the two matrices
 		avg = np.dot(self.W_m.T, Z_proj)
 		return avg
 
-	"""
-	This function computes the state covariance matrix P,
-	and it adds the Q matrix
-	"""
 	def computeP(self,X_p,Xa,Q):
+		"""
+		This function computes the state covariance matrix P as
+		
+		P[i,j] = W_c[i]*(Xs[i] - Xavg)^2 + Q[i,j]
+		
+		"""
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
 
 		V = np.zeros(X_p.shape)
@@ -258,11 +305,13 @@ class ukf():
 		Pnew = np.dot(np.dot(V.T,W),V) + Q
 		return Pnew
 
-	"""
-	This function computes the state covariance matrix between Z and Zave,
-	and it adds the R matrix
-	"""
 	def computeCovZ(self,Z_p,Za,R):
+		"""
+		This function computes the output covariance matrix CovZ as
+		
+		CovZ[i,j] = W_c[i]*(Zs[i] - Zavg)^2 + R[i,j]
+		
+		"""
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
 
 		V =  np.zeros(Z_p.shape)
@@ -272,10 +321,11 @@ class ukf():
 		CovZ = np.dot(np.dot(V.T,W),V) + R
 		return CovZ
 
-	"""
-	This function computes the state-output cross covariance matrix (between X and Z)
-	"""
+	
 	def computeCovXZ(self,X_p, Xa, Z_p, Za):
+		"""
+		This function computes the state-output cross covariance matrix (between X and Z)
+		"""
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
 		
 		# Old version
@@ -291,11 +341,10 @@ class ukf():
 		CovXZ = np.dot(np.dot(Vx.T,W),Vz)
 		return CovXZ
 	
-	"""
-	This function computes the squared covariance matrix using QR decomposition + a Cholesky update
-	"""
 	def computeS(self,X_proj,Xave,sqrtQ):
-		
+		"""
+		This function computes the squared covariance matrix using QR decomposition + a Cholesky update
+		"""
 		# take the first part of the state vector
 		# The observed states
 		X_proj_obs = X_proj[:,0:self.n_state_obs]
@@ -328,11 +377,11 @@ class ukf():
 		
 		return L
 		
-	"""
-	This function computes the squared covariance matrix using QR decomposition + a Cholesky update
-	"""
+	
 	def computeSy(self,Z_proj,Zave,sqrtR):
-		
+		"""
+		This function computes the squared covariance matrix using QR decomposition + a Cholesky update
+		"""
 		weights = np.sqrt( np.abs(self.W_c[:,0]) )
 		signs   = np.sign( self.W_c[:,0] )
 		
@@ -356,11 +405,11 @@ class ukf():
 		
 		return L
 	
-	"""
-	This function copmputes the Cholesky update
-	"""
-	def cholUpdate(self,L,X,W):
 	
+	def cholUpdate(self,L,X,W):
+		"""
+		This function computes the Cholesky update
+		"""
 		L = L.copy()
 		weights = np.sqrt( np.abs( W ) )
 		signs   = np.sign( W )
@@ -384,11 +433,12 @@ class ukf():
 				
 		return L
 	
-	"""
-	This function computes the state-state cross covariance matrix (between Xold and Xnew)
-	This is used in the smoothing process
-	"""
+	
 	def computeCxx(self,X_next,Xave_next,X_now,Xave_now):
+		"""
+		This function computes the state-state cross covariance matrix (between the old Xold and the new Xnew state vectors).
+		This is used by the smoothing process
+		"""
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
 		
 		Vnext = np.zeros((self.n_points,self.n_state_obs))
@@ -402,12 +452,17 @@ class ukf():
 		Cxx = np.dot(np.dot(Vnext.T,W),Vnow)
 		return Cxx
 
-	"""
-	function call for prediction + update of the UKF
-	"""
+	
 	def ukf_step(self,z,x,S,sqrtQ,sqrtR,u_old,u,t_old,t,m,verbose=False):		
-
-		# the list of sigma points (each signa point can be an array, the state variables)
+		"""
+		This methods contains all the steps that have to be performed by the UKF:
+		
+		1- prediction
+		2- correction and update
+		
+		"""
+		
+		# the list of sigma points (each signa point can be an array, containing the state variables)
 		Xs      = self.computeSigmaPoints(x,S)
 	
 		if verbose:
@@ -445,7 +500,8 @@ class ukf():
 			print "New sigma points"
 			print Xs
 
-		# compute the projected (outputs) points (each sigma points is propagated through the state transition function)
+		# compute the projected (outputs) points (each sigma points is propagated through the output function, this should not require a simulation,
+		# just the evaluation of a function since the output can be directly computed if the state vector and inputs are known )
 		Z_proj = self.sigmaPointOutProj(m,Xs,u,t)
 		
 		if verbose:
@@ -476,15 +532,16 @@ class ukf():
 		# Data assimilation step
 		# The information obtained in the prediction step are corrected with the information
 		# obtained by the measurement of the outputs
-		
+		# In other terms, the Kalman Gain (for the correction) is computed
 		firstDivision = np.linalg.lstsq(Sy.T,CovXZ.T)[0]
 		K             = np.linalg.lstsq(Sy, firstDivision)[0]
 		K             = K.T
 		
+		# State correction using the measurements
 		X_corr = Xave
 		X_corr[:,0:self.n_state_obs] = Xave[:,0:self.n_state_obs] + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
 		
-		# How to introduce constrained estimation
+		# If constraints are active, they are imposed in order to avoid the corrected value to fall outside
 		X_corr[0,0:self.n_state_obs] = self.constrainedState(X_corr[0,0:self.n_state_obs])
 		
 		if verbose:
@@ -492,16 +549,17 @@ class ukf():
 			print X_corr
 			raw_input("?")
 		
+		# The covariance matrix is corrected too
 		U      = np.dot(K,Sy)
 		S_corr = self.cholUpdate(Snew,U,-1*np.ones(self.n_state))
 
 		return (X_corr, S_corr, Zave, Sy)
 	
-	"""
-	This method returns the smoothed state estimation
-	"""
+	
 	def smooth(self,time,Xhat,S,sqrtQ,U,m,verbose=False):
-		
+		"""
+		This methods contains all the steps that have to be performed by the UKF Smoother.
+		"""
 		# initialize the smoothed states and covariance matrix
 		# the initial value of the smoothed state estimation are equal to the filtered ones
 		Xsmooth = Xhat.copy()
@@ -519,7 +577,7 @@ class ukf():
 		# new vector of states X[i+1] (one for each sigma point)
 		#
 		# NOTE that at time i+1 there is available a corrected estimation of the state Xcorr[i+1]
-		# thus the difference between these two states is backpropagated to the state at time i
+		# thus the difference between these two states is back-propagated to the state at time i
 		for i in range(nTimeStep-2,-1,-1):
 			# actual state estimation and covariance matrix
 			x_i = Xsmooth[i,:]
