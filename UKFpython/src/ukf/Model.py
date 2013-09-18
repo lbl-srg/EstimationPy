@@ -1,6 +1,11 @@
 '''
-Created on Sep 17, 2013
-@author: marco
+===========================================
+Module: **Model**
+===========================================
+
+The Module **Model** contains the class **Model** that is used as base class for representing the dynamic models used by
+the Unscented Kalman Filter and the Smoother.
+
 '''
 import numpy as np
 
