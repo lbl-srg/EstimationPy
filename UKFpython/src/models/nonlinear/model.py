@@ -92,15 +92,3 @@ class model(Model):
 
 		# return the output
 		return np.array([y])
-	
-	"""
-	get the number of states variables
-	"""
-	def getNstates(self):
-		return self.n_states
-
-	"""
-	get the number of states variables
-	"""
-	def getNoutputs(self):
-		return self.n_outputs
