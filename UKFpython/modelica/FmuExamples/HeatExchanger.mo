@@ -1,4 +1,4 @@
-within StateEstimationIdentificationFMU;
+within FmuExamples;
 model HeatExchanger "Model of a simple Heat Exchanger"
   parameter Modelica.SIunits.ThermalConductance G_hot = 200
     "Thermal conductance on the hot side";

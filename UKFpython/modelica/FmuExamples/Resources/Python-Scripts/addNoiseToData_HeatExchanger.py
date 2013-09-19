@@ -1,48 +1,12 @@
-import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import getCSVdata
 
-inputFileName = '../data/SimulationData.csv'
-outputFileName = '../data/NoisySimulationData.csv'
+inputFileName = '../data/SimulationData_HeatExchanger.csv'
+outputFileName = '../data/NoisySimulationData_HeatExchanger.csv'
 
-# open the csv file and instantiate the csv reader
-file_in  = open(inputFileName)
-csv_reader = csv.reader(file_in)
-print "Open file: "+str(inputFileName)
-
-# open the csv output file and delete it if already existing
-# instantiate the csv writer
-file_out = open(outputFileName,'w')
-csv_writer = csv.writer(file_out)
-print "Created file: "+str(outputFileName)
-
-rows = 0
-N = 0
-for line in csv_reader:
-	if rows==0 :
-		# Read the header
-		header = line
-		N = len(header)
-
-		# copy the header in the output csv file
-		csv_writer.writerow(header)
-	else :
-		r = np.zeros(N).astype(np.longdouble)
-		j = 0	
-		for item in line:
-			r[j] = np.longdouble(item)
-			#print "String "+str(item)+" => "+str(r[j])
-			j += 1
-
-		if rows == 1:
-			DataMatrix = r
-		else:
-			DataMatrix = np.vstack((DataMatrix,r)).astype(np.longdouble)
-	rows += 1
-
-I, J = np.shape(DataMatrix)
-print "Finished reading the input CSV file,"
-print "it has: "+str(I)+" rows and "+str(J)+" columns"
+dt = 5.0
+(DataMatrix, I, J, csv_writer) = getCSVdata.getCSVdata(inputFileName, outputFileName, dt)
 
 # the columns of the CSV file are
 # 1)Time,
@@ -115,4 +79,3 @@ ax2.legend()
 ax2.grid(True)
 
 plt.show()
-

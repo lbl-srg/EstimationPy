@@ -1,7 +1,5 @@
-within StateEstimationIdentificationFMU;
-model test
-
-
+within FmuExamples.Examples;
+model testHeatExchanger
 
   Modelica.Blocks.Sources.Step Hot_Mflow(
     height=0.2,
@@ -50,4 +48,4 @@ equation
       smooth=Smooth.None));
   annotation (                               Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
-end test;
+end testHeatExchanger;
