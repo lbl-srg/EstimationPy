@@ -238,19 +238,28 @@ class ukf():
 		"""
 		# initialize the vector of the NEW STATES
 		X_proj = np.zeros((self.n_points,self.n_state))
+		# this flag enables to run the simulation in parallel
+		parallel = False
 		
-		# execute each state projection in parallel
-		pool = Pool()
-		res = pool.map_async(Function, ((m,x,u_old,u,t_old,t,False,) for x in Xs))
-		pool.close()
-		pool.join()
-		
-		# collect the results of the simulations
-		j = 0
-		for X in res.get():
-			X_proj[j,:] = X
-			j += 1
+		if parallel: 
+			# execute each state projection in parallel
+			pool = Pool()
+			res = pool.map_async(Function, ((m,x,u_old,u,t_old,t,False,) for x in Xs))
+			pool.close()
+			pool.join()
 			
+			# collect the results of the simulations
+			j = 0
+			for X in res.get():
+				X_proj[j,:] = X
+				j += 1
+		else:
+			j = 0
+			for x in Xs:
+				values = (x, u_old, u, t_old, t, True)
+				X_proj[j,:] = m.functionF(values)
+				j += 1
+				
 		return X_proj
 
 	
