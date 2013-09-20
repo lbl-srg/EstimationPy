@@ -164,6 +164,7 @@ ConstrValueLow = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
 
 # UKF parameters
 UKFilter  = ukf.ukf(n_state=7, n_state_obs=5, n_outputs=3)
+#UKFilter.setUKFparams(0.01, 2, 1)
 
 # Initialize parameters of the filter
 UKFilter.setUKFparams()

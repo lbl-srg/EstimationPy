@@ -73,6 +73,9 @@ S0     = m.sqrtQ
 # UKF parameters
 UKFilter  = ukf(n_state,n_state,n_outputs)
 
+# Initialize parameters of the filter
+UKFilter.setUKFparams(0.01, 2, 1)
+
 # iteration of the UKF
 for i in range(numPoints):
 	

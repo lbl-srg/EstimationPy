@@ -7,4 +7,8 @@
 <pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
 <path>/UKFpython/src</path>
 </pydev_pathproperty>
+<pydev_variables_property name="org.python.pydev.PROJECT_VARIABLE_SUBSTITUTION">
+<key>LD_LIBRARY_PATH</key>
+<value>/opt/dymola2013_FD01/bin/lib/</value>
+</pydev_variables_property>
 </pydev_project>
