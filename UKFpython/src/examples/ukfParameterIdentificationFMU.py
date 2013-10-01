@@ -4,15 +4,12 @@ Created on Sep 19, 2013
 @author: marco
 '''
 import numpy as np
-import os
 
 from models.parameterIdentificationFMU.model import model
 from models.parameterIdentificationFMU.plotting import plotResults, intermediatePlot
 from utilities.getCsvData import getCsvData
 
 from ukf.ukfParameterEstimation import ukfParameterEstimation
-
-os.system("clear")
 
 # get the input and output from the csv file
 dataMatrix = getCsvData("/mnt/hgfs/Documents/Projects/ESTCP/eetd-estcp_ndw_eis/UKFpython/modelica/FmuExamples/Resources/data/NoisySimulationData_FirstOrder.csv")
@@ -21,85 +18,71 @@ simulationMatrix = getCsvData("/mnt/hgfs/Documents/Projects/ESTCP/eetd-estcp_ndw
 
 # time, input and output vectors (from CSV file)
 time = dataMatrix[:,0]
-U = dataMatrix[:,1]
-X = dataMatrix[:,2]
-Z = dataMatrix[:,3]
+U  = dataMatrix[:,1]
+Y1 = dataMatrix[:,3]
+Y2 = dataMatrix[:,2]
+Y1 = np.matrix(Y1)
+Y2 = np.matrix(Y2)
+Z  = np.hstack((Y1.T, Y2.T))
 
 # time, input and output vectors of the simulation (used to generate the data and unknown to the UKF)
 timeSim = simulationMatrix[:,0]
 Usim = simulationMatrix[:,1]
+Xsim = simulationMatrix[:,2]
 Ysim = simulationMatrix[:,3]
 
-# unknown parameters of the model
-x0 = 1.5
-a = -0.1
-b = 0.0
-c = 0.0
-d = 0.0
-# initial state vector (position, velocity)
-X0 = np.array([x0, a, b, c, d])
-# measurement covariance noise
-R     = np.diag([1.0])
-# process noise
-Q     = np.diag([1.0, 1.0, 1.0, 1.0, 1.0])
+# Define the parameters of the model
+x0 = 1.8
+a = -0.5
+b = 0.5
+c = 0.5
+d = 0.5
+Q = np.diag([0.5])
+R = np.diag([0.5, 0.5])
+X0 = np.array([x0])
+pars = np.array([a, b, c, d])
 
 # instantiate the model
 m = model(X0)
+m.setPars(pars)
 m.setQ(Q)
 m.setR(R)
 
-# initialize state and output vectors
-n_state   = m.getNstates()
-n_outputs = m.getNoutputs()
+# instantiate the filter
+filter = ukfParameterEstimation(1, 1, 4, 2, augmented = True)
+# alpha, beta, k
+filter.setUKFparams(0.05, 2.0, 1.0)
+# Covariance matrix
+Po = np.diag([1.0, 1.0, 1.0, 1.0, 1.0])
+sqrtPo = np.linalg.cholesky(Po)
+# define constraints for parameters
+flags = [True, True, True, True]
+valuesL = np.array([-10.0, 0.0, 0.0, 0.0])
+valuesH = np.array([-0.1, 20.0, 20.0, 20.0])
+filter.setParsLowConstraints(flags, valuesL)
+filter.setParsHighConstraints(flags, valuesH)
 
-# The UKF starts from the guessed initial value Xhat, and a guessed covariance matrix Q
-Xhat = np.zeros((numPoints,n_state))
-Yhat = np.zeros((numPoints,n_outputs))
-S    = np.zeros((numPoints,n_state,n_state))
-Sy   = np.zeros((numPoints,n_outputs,n_outputs))
+# Initialize the parameters estimated
+parV = pars
 
-# initial knowledge of the UKF
-X0_hat = X0
-S0     = m.sqrtQ
-
-# UKF for parameter estimation
-estimator  = ukfParameterEstimation(n_state,n_state,n_outputs)
-estimator.setUKFparams(0.01, 2, 1)
-
-# Set the constraints on the state variables
-ConstrHigh = np.array([True, True, False, False, False])
-ConstrLow  = np.array([True, True, True, True, True])
+# perform the iterations
+for i in range(400):
+    Xhat, S, Yhat, Xsmooth, Ssmooth = filter.estimation_step(X0, pars, U, Z, time, m, sqrtPo, Q, R)
+    X0     = np.array([Xsmooth[0,0]])
+    pars   = Xsmooth[-1,1:]
+    sqrtPo = S[-1,:,:]
+    parV = np.vstack((parV, pars))
+    print "Initial guess:"+str(Xhat[0,1:])
+    print "Final guess:"+str(Xsmooth[0,1:])
+    err1 = 0
+    err2 = 0
+    for i in range(len(Z)):
+        err1 += (Z[i,0]-Yhat[i,0])*(Z[i,0]-Yhat[i,0])
+        err2 += (Z[i,1]-Yhat[i,1])*(Z[i,1]-Yhat[i,1])
         
-# Max Value of the constraints
-ConstrValueHigh = np.array([10.0, 0.0, 0.0, 0.0, 0.0])
-
-# Min Value of the constraints
-ConstrValueLow = np.array([0.0, -10.0, 0.0, 0.0, 0.0])
-
-# Associate constraints
-estimator.setHighConstraints(ConstrHigh, ConstrValueHigh)
-estimator.setLowConstraints(ConstrLow, ConstrValueLow)
-
-# perform one step
-pars = X0_hat[1:].copy()
-i = 0
-while i < 100:
-    (Xhat, S, Yhat, Sy, Xsmooth, Ssmooth) = estimator.estimation_step(Z, X0_hat, U, time, m, S0, m.sqrtQ, m.sqrtR, False)
-    X0_hat[0] = Xsmooth[0,0]
-    X0_hat[1:] = Xsmooth[-1,1:]
-    #X0_hat[1] = np.average(Xsmooth[:,1])
-    #X0_hat[2] = np.average(Xsmooth[:,2])
-    #X0_hat[3] = np.average(Xsmooth[:,3])
-    #X0_hat[4] = np.average(Xsmooth[:,4])
-    S0 = Ssmooth[0,:,:]
-    pars = np.vstack((pars, np.average(Xsmooth[:,1:], 0)))
-    i += 1
-    print "Initial state: "+str(X0_hat[0])
-    print "Parameters: \n"+str(pars)
-    print "Covariances: "+str(np.diagonal(S0))
-    #intermediatePlot(time, X, Z, Xhat, S, Yhat, Sy, Xsmooth, Ssmooth)
-
-###############################################################################################
-# plot the results
-truePars = [-1.0, 2.5, 3.0, 0.1]
-plotResults(pars, truePars)
+    print "Error: "+str(err1)+" -- "+str(err2)
+    #intermediatePlot(time, timeSim, Xsim, Xhat, Yhat, Z, S, Xsmooth, Ssmooth)
+    
+intermediatePlot(time, timeSim, Xsim, Xhat, Yhat, Z, S, Xsmooth, Ssmooth)
+plotResults(parV, [-1, 2.5, 3.0, 0.1])
+    

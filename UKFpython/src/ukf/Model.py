@@ -21,25 +21,27 @@ class Model(object):
     
     """
     
-    def __init__(self, n_states, n_statesTot, n_outputs, X0 = None, pars = None, r = None, q = None ):
+    def __init__(self, n_states, n_states_obs, n_pars, n_outputs, X0 = None, pars = None, r = None, q = None ):
         """
         Initialize the model with:
         
-        * **n_states** is the number of state variables,
-        * **n_statesTot** is the number of state variables plus the additional parameters to be estimated,
+        * **n_states** is the number of state variables of the model,
+        * **n_states_obs** is the number of state variables observed (to be estimated),
+        * **n_pars** is the number of parameters to be identified,
         * **n_outputs** is the number of outputs of the system,
         * **X0** initial state values,
         * **pars** a tuple containing the parameters of the model,
         * **r** is an array containing the covariance of each output,
-        * **q** is an array containing the covariance of each state variable,
+        * **q** is an array containing the covariance of each observed state variable,
         * 
          
         """
         
         # initialize state and output vectors
-        self.n_states    = n_states
-        self.n_statesTot = n_statesTot
-        self.n_outputs   = n_outputs
+        self.n_states     = n_states
+        self.n_states_obs = n_states_obs
+        self.n_pars       = n_pars
+        self.n_outputs    = n_outputs
         
         # initial state vector
         if X0 != None:
@@ -70,21 +72,27 @@ class Model(object):
     
     def getNstates(self):
         """
-        Get the number of states variables of interest
+        Get the total number of states variables
+        """
+        return self.n_states
+    
+    def getNstatesObs(self):
+        """
+        Get the number of observed states variables
         """
         return self.n_states
 
     
-    def getALLstates(self):
+    def getNaugStates(self):
         """
-        Get the number of all the state variables
+        Get the number of all the augmented state variables
         """
-        return self.n_statesTot
+        return self.n_states + self.n_pars
 
     
     def getNoutputs(self):
         """
-        Get the number of states variables
+        Get the number of output variables
         """
         return self.n_outputs
    
@@ -109,18 +117,43 @@ class Model(object):
 
     def setQ(self,Q):
         """
-        This method define the state covariance matrix Q
+        This method define the observed state covariance matrix Q,
+        and its square root computed with the Cholesky factorization.
         """
         self.Q     = Q
         self.sqrtQ = np.linalg.cholesky(Q)
 
     def setR(self,R):
         """
-        This method define the output covariance matrix R
+        This method define the output covariance matrix R,
+        and its square root computed with the Cholesky factorization.
         """
         self.R     = R
         self.sqrtR = np.linalg.cholesky(R)        
            
+    def getQ(self):
+        """
+        This method returns the observed state covariance matrix Q.
+        """
+        return self.Q
+
+    def getR(self):
+        """
+        This method returns the output covariance matrix R.
+        """
+        return self.R
+    
+    def getSqrtQ(self):
+        """
+        This method returns the square root of the observed state covariance matrix Q.
+        """
+        return self.sqrtQ
+
+    def getSqrtR(self):
+        """
+        This method returns the square root of the output covariance matrix R.
+        """
+        return self.sqrtR
     
     def functionF(self, val):
         """
@@ -130,7 +163,7 @@ class Model(object):
         
         that contains
         
-        * **x** is the value of state vector at time *t_old*,
+        * **x** is the value of the augmented state vector at time *t_old*,
         * **u_old** is the old vector of inputs at time *t_old*,
         * **u** is the actual vector of inputs at time *t*,
         * **t_old** is the time at which starting the simulation,
@@ -142,11 +175,11 @@ class Model(object):
         """
         pass
 
-    def functionG(self, x, u, t, other):
+    def functionG(self, x, par, u, t, other):
         """
         This function represents the output function of the model, given
         
-        * **x** is the value of state vector at time *t*,
+        * **x** is the value of the augmented state vector at time *t*,
         * **u** is the actual vector of inputs at time *t*,
         * **t** is the actual time,
         * **other** are other flags or parameters to specify when computing the outputs

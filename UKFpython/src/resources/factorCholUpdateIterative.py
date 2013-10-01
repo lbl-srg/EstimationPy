@@ -9,7 +9,8 @@ system('clear')
 # Number of points for computing the covariance matrix
 n = 100
 # True mean vector
-Xtrue = np.array([[2.0, 3.0, 15.4, 21.3, 0.5, -8.35, 8.88, 34.5, 56.6, 21.9, 9]])
+#Xtrue = np.array([[2.0, 3.0, 15.4, 21.3, 0.5, -8.35, 8.88, 34.5, 56.6, 21.9, 9]])
+Xtrue = np.random.uniform(-8.0, 27.5, (1, 300))
 
 # Generate the sample for computing the covariance matrix
 noUsed, N = Xtrue.shape
