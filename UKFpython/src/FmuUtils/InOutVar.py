@@ -4,6 +4,7 @@ Created on Nov 6, 2013
 @author: marco
 '''
 from CsvReader import CsvReader
+import numpy
 
 class InOutVar():
     """
@@ -19,6 +20,7 @@ class InOutVar():
         """
         self.object = object
         self.CsvReader = CsvReader()
+        self.dataSeries = {}
         
     def SetObject(self, object):
         """
@@ -43,3 +45,23 @@ class InOutVar():
         Get the CsvReader class associated to the input/output
         """
         return self.CsvReader
+    
+    def ReadDataSeries(self):
+        """
+        This method reads the data series contained in the CSV file
+        """
+        self.dataSeries = self.CsvReader.GetDataSeries()
+        if self.dataSeries == {}:
+            return False
+        else:
+            return True
+        
+    def GetDataSeries(self):
+        """
+        This method returns the data series read from the csv file
+        """
+        return self.dataSeries
+    
+    def SetDataSeries(self, time, data):
+        self.dataSeries["time"] = numpy.array(time).astype(numpy.float)
+        self.dataSeries["data"] = numpy.matrix(data).astype(numpy.float)

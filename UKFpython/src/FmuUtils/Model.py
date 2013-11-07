@@ -81,6 +81,22 @@ class Model():
             self.__SetFMU(fmuFile)
             self.__SetTrees()
     
+    def __str__(self):
+        """
+        Built-in function to print description of the object
+        """
+        string = "\nFMU based Model:"
+        string += "\n-File: "+str(self.fmuFile)
+        string += "\n-Name: "+self.name
+        string += "\n-Author: "+self.author
+        string += "\n-Description: "+ self.description
+        string += "\n-Type: "+self.type
+        string += "\n-Version: "+self.version
+        string += "\n-GUID: "+self.guid
+        string += "\n-Tool: "+self.tool
+        string += "\n-NumStates: "+self.numStates+"\n"
+        return string
+    
     def GetFmuFilePath(self):
         """
         This method returns the filepath of the FMU
@@ -174,17 +190,114 @@ class Model():
             outputNames.append(outVar.GetObject().name)
         return outputNames
     
-    def InitializeSimulator(self, start_time, start_input):
+    def CheckInputData(self, align = True):
         """
-        This method performs a very short simulation to initialize the model
-        The next times the model will be simulated without the initialization phase
+        This method check if all the input data are ready to be used or not. If not because they are not aligned, this method
+        tries to correct them providing an interpolation
         """
+        dataSeries = []
+        for input in self.inputs:
+            dataSeries.append(input.GetDataSeries())
+        
+        Ninputs = len(dataSeries)
+        Tmin = 0.0
+        Tmax = 0.0
+        Npoints = 0
+        match = True
+        for i in range(Ninputs):
+            if i == 0:
+                Tmin = dataSeries[i]["time"][0]
+                Tmax = dataSeries[i]["time"][-1]
+                Npoints = len(dataSeries[i]["time"])
+            else:
+                if not numpy.array_equiv(dataSeries[i]["time"], dataSeries[i-1]["time"]):
+                    match = False
+                    Tmin = min(Tmin, dataSeries[i]["time"][0])
+                    Tmax = max(Tmax, dataSeries[i]["time"][-1])
+                    Npoints = max(Npoints, len(dataSeries[i]["time"]))
+                    
+        if match == False and align:
+            print "\tMismatch between data, fixing the problem..."
+            # New time vector to be shared between the data series
+            new_time = numpy.linspace(Tmin, Tmax, Npoints)
+            
+            for input in self.inputs:
+                old_time = input.GetDataSeries()["time"]
+                old_data = numpy.squeeze(numpy.asarray(input.GetDataSeries()["data"]))
+                new_data  = numpy.interp(new_time, old_time, old_data)
+                input.SetDataSeries(new_time, new_data)
+                
+            return False
+        else:
+            print "\tMatch between data series - OK"
+            return True
+        
+    def LoadInput(self, align = True):
+        """
+        This method loads all the input data series from the csv files. It returns a boolean if the import was successful
+        """
+        # Get all the data series from the CSV files (for every input of the model)
+        LoadedInputs = True
+        for input in self.inputs:
+            LoadedInputs = LoadedInputs and input.ReadDataSeries()
+        
+        if not LoadedInputs:
+            print "An error occurred while loading the inputs"
+        else:
+            # A check on the input data series should be performed: Are the initial times, final times and number of point
+            # aligned? If not perform an interpolation to align them is done. The boolean flag align deals with this.
+            print "Check the input data series..."
+            if not self.CheckInputData(align):
+                print "Re-Check the input data series..."
+                return self.CheckInputData(align)
+            
+        return LoadedInputs
+    
+    def InitializeSimulator(self, start_time = None):
+        """
+        This method performs a very short simulation to initialize the model.
+        The next times the model will be simulated without the initialization phase.
+        By default the simulation is performed at the initial time of the input data series, but the
+        user can specify an other point.
+        """
+        
+        # Load the inputs and check if any problem. If any exits.
+        if not self.LoadInput():
+            return
+          
+        # Take the time series: the first because now they are all the same
+        for input in self.inputs:
+            time = input.GetDataSeries()["time"]
+            break
+        
+        # Take all the data series
+        Ninputs = len(self.inputs)
+        dataInputMatrix = numpy.zeros((1, Ninputs))
+        i = 0
+        for input in self.inputs:
+            dataInput = input.GetDataSeries()["data"].reshape(-1,1)
+            dataInputMatrix[0, i] = dataInput[0,0]
+            i += 1
+        
+        # Initialize the model for the simulation
+        start_time = time[0]
+        start_input = dataInputMatrix
+        
+        
         self.opts["initialize"] = True
         try:
+            # Simulate from the initial time to initial time + epsilon
+            # thus we have 2 points
             input = numpy.hstack((start_input, start_input))
-            self.Simulate([start_time, start_input+1e-10], input)
+            input = input.reshape(2,-1)
+            time = numpy.array([start_time, start_time+1e-10])
+            time = time.reshape(2,-1)
+            
+            # Run the simulation
+            self.Simulate(time, input)
             self.opts["initialize"] = False
             return True
+        
         except ValueError:
             print "First simulation for initialize the model failed"
             return False
@@ -201,11 +314,17 @@ class Model():
         """
         
         # Define the input trajectory
-        row, col = numpy.size(input)
-        V = time
-        for j in range(col):
-            V = numpy.vstack((V, input[:,j]))
-        u_traj  = numpy.transpose(V)
+        Ninputs = len(self.inputs)
+        input = input.reshape(-1, Ninputs)
+        time  = time.reshape(-1, 1)
+        # place side by side the time and input values
+        V = numpy.hstack((time, input))
+        
+        # The input trajectory must be an array, otherwise pyfmi does not work
+        u_traj  = numpy.array(V)
+        
+        # Squeeze for access directly start and final time
+        time = time.squeeze()
         
         # Create input object
         names = self.GetInputNames()
@@ -222,7 +341,7 @@ class Model():
         i = 0
         while not simulated and i < self.SIMULATION_TRIES:
             try:
-                res = self.model.simulate(start_time = time[0], input = input_object, final_time = time[-1], options = self.opts)
+                res = self.fmu.simulate(start_time = time[0], input = input_object, final_time = time[-1], options = self.opts)
                 simulated = True
             except ValueError:
                 print "Simulation of the model failed, try again"
