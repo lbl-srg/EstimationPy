@@ -1,0 +1,131 @@
+'''
+Created on Sep 6, 2013
+
+@author: marco
+'''
+
+import csv
+
+class CsvReader():
+    """
+    
+    This class provides the functionalities necessary to open and manage a csv file.
+    This class is used because the input and output data series to be provided at the FMU are contained into
+    csv files.
+    
+    The csv files should be like
+    
+    time, x, y, zeta, kappa hat, T [k]
+    0.0, 3.4, 23.0, 22, 5, 77.5
+    0.1, 3.4, 23.0, 22, 5, 77.3
+    0.2, 3.4, 23.0, 22, 5, 76.8
+    0.3, 3.4, 23.0, 22, 5, 34.4
+    0.4, 3.4, 23.0, 22, 5, 72.22
+    0.5, 3.4, 23.0, 22, 5, 71.9
+    0.6, 3.4, 23.0, 22, 5, 70.9
+    
+    The first row IS ALWAYS the header of the file and contains a brief description of the columns.
+    The other rows contain the data separated by commas.
+    
+    The first column HAS to be the time associated to the data series.
+    
+    """
+    
+    def __init__(self, filename = ""):
+        """
+        
+        Initialization method of the CsvReader class
+        
+        """
+        
+        # The default dialect is e
+        self.dialect = csv.excel
+        
+        # file reference
+        self.filename = filename
+        
+        # columns names
+        self.columnNames = []
+        
+        # the identifier of the column selected in the CSV file
+        self.columnSelected = None
+       
+    def OpenCSV(self, filename):
+        """
+        
+        Open a CSV file
+        
+        """
+        # Reinitialize all
+        self.__init__(filename)
+        
+        # Open the file passed as parameter
+        f = open(self.filename, 'rb')
+        
+        # TODO:
+        # Read N lines and detect the dialect used
+        # N = 1024
+        # self.dialect = csv.Sniffer().sniff(self.f.read(N))
+        self.dialect.skipinitialspace = True
+        
+        # Move the file pointer to the beginning
+        f.seek(0)
+        
+        # Real the csv file and instantiate the reader
+        try:
+            reader = csv.DictReader(f, dialect = self.dialect)
+            self.columnNames = reader.fieldnames
+            f.close()
+            return True
+        except csv.Error:
+            print "ERROR:: The csv file "+filename+" is not correct, please check it..."
+            f.close()
+            return False
+        
+        #TODO: check if the file descriptor has to be closed
+    
+    def GetFileName(self):
+        """
+        This method returns the filename of the CSV file associated
+        """
+        return self.filename
+        
+    def GetColumnNames(self):
+        """
+        This method returns a list containing the names of the columns contained in the csv file
+        """
+        return self.columnNames
+    
+    def SetSelectedColumn(self, columnName):
+        """
+        This method allows to specify which is the column to be selected
+        """
+        if columnName in self.GetColumnNames():
+            self.columnSelected = columnName
+        else:
+            print "ERROR:: The column selected "+str(columnName)+"is not part of the columns names list"
+            print self.GetColumnNames()
+            
+    def GetSelectedColumn(self):
+        """
+        This method returns the column selected for this CSV reader
+        """
+        if self.columnSelected != None:
+            return self.columnSelected
+        else:
+            return ""
+            
+    def PrintDialectInformation(self):
+        """
+        
+        This method print the information about the dialect used by the Csv Reader
+        
+        """
+        print "CsvReader Dialect informations:"
+        print "* Delimiter: "+str(self.dialect.delimiter)
+        print "* Double quote char: "+str(self.dialect.doublequote)
+        print "* Escape char: "+str(self.dialect.escapechar)
+        print "* Skip initial space: "+str(self.dialect.skipinitialspace)
+        print "* Quoting char: "+str(self.dialect.quoting)
+        print "* Line terminator: "+str(self.dialect.lineterminator)
+        
