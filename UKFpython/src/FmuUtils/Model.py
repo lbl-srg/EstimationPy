@@ -253,7 +253,7 @@ class Model():
             
         return LoadedInputs
     
-    def InitializeSimulator(self, start_time = None):
+    def InitializeSimulator(self, startTime = None):
         """
         This method performs a very short simulation to initialize the model.
         The next times the model will be simulated without the initialization phase.
@@ -270,20 +270,47 @@ class Model():
             time = input.GetDataSeries()["time"]
             break
         
+        # Define the initial time for the initialization
+        if startTime == None:
+            index = 0
+            start_time = time[index]
+        else:
+            if startTime >= time[0] and startTime <= time[-1]:
+                index = 0
+                for t in time:
+                    if t < startTime:
+                        index += 1
+                    else:
+                        break
+                start_time = startTime
+            else:
+                index = 0
+                start_time = time[index]
+                print "The value selected as initialization start time is outside the time frame"
+        
         # Take all the data series
         Ninputs = len(self.inputs)
-        dataInputMatrix = numpy.zeros((1, Ninputs))
+        start_input = numpy.zeros((1, Ninputs))
+        start_input_1 = numpy.zeros((1, Ninputs))
+        start_input_2 = numpy.zeros((1, Ninputs))
         i = 0
-        for input in self.inputs:
-            dataInput = input.GetDataSeries()["data"].reshape(-1,1)
-            dataInputMatrix[0, i] = dataInput[0,0]
-            i += 1
-        
+        if index == 0:
+            for input in self.inputs:
+                dataInput = input.GetDataSeries()["data"].reshape(-1,1)
+                start_input[0, i] = dataInput[index,0]
+                i += 1
+        else:
+            for input in self.inputs:
+                dataInput = input.GetDataSeries()["data"].reshape(-1,1)
+                start_input_1[0, i] = dataInput[index-1,0]
+                start_input_2[0, i] = dataInput[index,0]
+                
+                # Linear interpolation between the two values
+                start_input[0, i] = ((time[index] - startTime)*start_input_1[0, i] + (startTime - time[index-1])*start_input_2[0, i])/(time[index] - time[index-1])
+                
+                i += 1
+               
         # Initialize the model for the simulation
-        start_time = time[0]
-        start_input = dataInputMatrix
-        
-        
         self.opts["initialize"] = True
         try:
             # Simulate from the initial time to initial time + epsilon
@@ -294,7 +321,7 @@ class Model():
             time = time.reshape(2,-1)
             
             # Run the simulation
-            self.Simulate(time, input)
+            self.Simulate(time = time, input = input)
             self.opts["initialize"] = False
             return True
         
@@ -302,7 +329,7 @@ class Model():
             print "First simulation for initialize the model failed"
             return False
     
-    def Simulate(self, time, input):
+    def Simulate(self, start_time = None, final_time = None, time = None, input = None):
         """
         This method simulates the model from the start_time to the final_time, using a given set of simulation
         options. Since it may happen that a simulation fails without apparent reason (!!), it is better to 
@@ -312,13 +339,34 @@ class Model():
                  ...
                  [u1(Tend), u2(Tend), ...,uM(Tend)]]
         """
-        
-        # Define the input trajectory
+        # Number of input variables needed by the model
         Ninputs = len(self.inputs)
-        input = input.reshape(-1, Ninputs)
+        
+        if time == None:
+            # Take the time series: the first because now they are all the same
+            for inp in self.inputs:
+                time = inp.GetDataSeries()["time"]
+                break
+        # Reshape to be consistent
         time  = time.reshape(-1, 1)
-        # place side by side the time and input values
-        V = numpy.hstack((time, input))
+        
+        if input == None:
+            # Take all the data series
+            Npoints = len(time)
+            inputMatrix = numpy.matrix(numpy.zeros((Npoints, Ninputs)))
+            i = 0
+            for input in self.inputs:
+                dataInput = inp.GetDataSeries()["data"].reshape(-1,1)
+                inputMatrix[:, i] = dataInput[:,:]
+                i += 1
+            # Define the input trajectory
+            V = numpy.hstack((time, inputMatrix))
+            
+        else:
+            # Reshape to be consistent
+            input = input.reshape(-1, Ninputs)
+            # Define the input trajectory
+            V = numpy.hstack((time, input))
         
         # The input trajectory must be an array, otherwise pyfmi does not work
         u_traj  = numpy.array(V)
@@ -326,22 +374,29 @@ class Model():
         # Squeeze for access directly start and final time
         time = time.squeeze()
         
+        # Define initial and start time
+        if start_time == None:
+            start_time = time[0]
+            
+        if final_time == None:
+            final_time = time[-1]
+        
         # Create input object
         names = self.GetInputNames()
         input_object = (names, u_traj)
         
         # assign the initial inputs
-        i = 0
-        for name in names:
-            self.fmu.set(name,input[0,i])
-            i += 1
+        #i = 0
+        #for name in names:
+        #    self.fmu.set(name,input[0,i])
+        #    i += 1
         
         # start the simulation
         simulated = False
         i = 0
         while not simulated and i < self.SIMULATION_TRIES:
             try:
-                res = self.fmu.simulate(start_time = time[0], input = input_object, final_time = time[-1], options = self.opts)
+                res = self.fmu.simulate(start_time = start_time, input = input_object, final_time = final_time, options = self.opts)
                 simulated = True
             except ValueError:
                 print "Simulation of the model failed, try again"

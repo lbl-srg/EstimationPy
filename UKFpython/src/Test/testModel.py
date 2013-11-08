@@ -3,10 +3,11 @@ Created on Nov 7, 2013
 
 @author: marco
 '''
-import numpy
+import pylab
 from FmuUtils import Model
 
 def main():
+    # This flag is used to choose the example
     FirstOrder = False
     
     # Initialize the FMU model empty
@@ -17,14 +18,18 @@ def main():
         filePath = "../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
     else:
         filePath = "../../modelica/FmuExamples/Resources/FMUs/HeatExchanger.fmu"
+    
+    # ReInit the model with the new FMU
     m.ReInit(filePath)
+    
+    # Show details
     print m
     
     # Show the inputs
     print "The names of the FMU inputs are: ", m.GetInputNames(), "\n"
     
-    # Show the inputs
-    # print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
+    # Show the outputs
+    print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
     
     # Set the CSV file associated to the input
     if FirstOrder:
@@ -53,26 +58,30 @@ def main():
         input.GetCsvReader().OpenCSV(inputPath)
         input.GetCsvReader().SetSelectedColumn("heatExchanger.Tcold_IN")
     
-    # Show the details of the CsvReader
-    # print input.GetCsvReader()
-    
-    # Get the data series
-    #dataSeries = input.GetCsvReader().GetDataSeries()
-    #if dataSeries == {}:
-    #    return
-    #time = dataSeries["time"]
-    #input = dataSeries["data"]    
-    
     # Initialize the model for the simulation
-    #start_time = time[0]
-    #start_input = numpy.matrix(input[0])
-    #m.InitializeSimulator(start_time, start_input)
     m.InitializeSimulator()
                           
     # Simulate
-    #m.Simulate(time, input)
+    time, results = m.Simulate()
+    
+    # Show the results
+    showResults(FirstOrder, time, results)
     
     
-    
+
+def showResults(FirstOrder, time, results):
+    if True:
+        # Display results
+        pylab.figure()
+        pylab.clf()
+        i = 1
+        for name, values in results.iteritems():
+            pylab.subplot(6,1,i)
+            pylab.plot(time, values, "")
+            pylab.xlabel('time')
+            i += 1
+            
+        pylab.show()
+   
 if __name__ == '__main__':
     main()
