@@ -151,6 +151,11 @@ protected
     initType=Modelica.Blocks.Types.Init.InitialOutput,
     y_start=mFlow_cold_start)
     annotation (Placement(transformation(extent={{-74,-86},{-62,-74}})));
+public
+  Modelica.Thermal.HeatTransfer.Sensors.TemperatureSensor Tmetal_sensor
+    annotation (Placement(transformation(extent={{22,10},{42,30}})));
+  Modelica.Blocks.Interfaces.RealOutput Tmetal "Temperature of the metal"
+    annotation (Placement(transformation(extent={{90,-10},{110,10}})));
 equation
   connect(hotPipe.port_b, hotWater_OUT.port_a) annotation (Line(
       points={{10,50},{20,50}},
@@ -262,6 +267,14 @@ equation
       smooth=Smooth.None));
   connect(firstOrder1.y, ColdWater.m_flow_in) annotation (Line(
       points={{-61.4,-80},{86,-80},{86,-2},{70,-2}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(metal.port, Tmetal_sensor.port) annotation (Line(
+      points={{-12,20},{22,20}},
+      color={191,0,0},
+      smooth=Smooth.None));
+  connect(Tmetal_sensor.T, Tmetal) annotation (Line(
+      points={{42,20},{86,20},{86,4.44089e-16},{100,4.44089e-16}},
       color={0,0,127},
       smooth=Smooth.None));
   annotation (                               Diagram(coordinateSystem(
