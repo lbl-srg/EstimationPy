@@ -1,7 +1,7 @@
 within FmuExamples;
 model FirstOrder
   "Model of a linear SISO first order system - Used to test how to couple FMUs with the UKF python"
-  Real x(start = 2.0) "State variable of the FO system";
+  output Real x(start = 2.0) "State variable of the FO system";
   input Real u "Input variable";
   output Real y "Output of the system";
   parameter Real a = -1 "A coefficient of the SISO linear system";
