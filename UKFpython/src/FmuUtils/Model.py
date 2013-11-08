@@ -6,9 +6,10 @@ Created on Sep 6, 2013
 
 import pyfmi
 import numpy
+import Strings
 from FmuUtils.InOutVar import InOutVar
 from FmuUtils.Tree import Tree
-from FmuUtils import Strings
+
 
 class Model():
     """
@@ -206,15 +207,15 @@ class Model():
         match = True
         for i in range(Ninputs):
             if i == 0:
-                Tmin = dataSeries[i]["time"][0]
-                Tmax = dataSeries[i]["time"][-1]
-                Npoints = len(dataSeries[i]["time"])
+                Tmin = dataSeries[i][Strings.TIME_STRING][0]
+                Tmax = dataSeries[i][Strings.TIME_STRING][-1]
+                Npoints = len(dataSeries[i][Strings.TIME_STRING])
             else:
-                if not numpy.array_equiv(dataSeries[i]["time"], dataSeries[i-1]["time"]):
+                if not numpy.array_equiv(dataSeries[i][Strings.TIME_STRING], dataSeries[i-1][Strings.TIME_STRING]):
                     match = False
-                    Tmin = min(Tmin, dataSeries[i]["time"][0])
-                    Tmax = max(Tmax, dataSeries[i]["time"][-1])
-                    Npoints = max(Npoints, len(dataSeries[i]["time"]))
+                    Tmin = min(Tmin, dataSeries[i][Strings.TIME_STRING][0])
+                    Tmax = max(Tmax, dataSeries[i][Strings.TIME_STRING][-1])
+                    Npoints = max(Npoints, len(dataSeries[i][Strings.TIME_STRING]))
                     
         if match == False and align:
             print "\tMismatch between data, fixing the problem..."
@@ -222,8 +223,8 @@ class Model():
             new_time = numpy.linspace(Tmin, Tmax, Npoints)
             
             for input in self.inputs:
-                old_time = input.GetDataSeries()["time"]
-                old_data = numpy.squeeze(numpy.asarray(input.GetDataSeries()["data"]))
+                old_time = input.GetDataSeries()[Strings.TIME_STRING]
+                old_data = numpy.squeeze(numpy.asarray(input.GetDataSeries()[Strings.DATA_STRING]))
                 new_data  = numpy.interp(new_time, old_time, old_data)
                 input.SetDataSeries(new_time, new_data)
                 
@@ -267,7 +268,7 @@ class Model():
           
         # Take the time series: the first because now they are all the same
         for input in self.inputs:
-            time = input.GetDataSeries()["time"]
+            time = input.GetDataSeries()[Strings.TIME_STRING]
             break
         
         # Define the initial time for the initialization
@@ -296,12 +297,12 @@ class Model():
         i = 0
         if index == 0:
             for input in self.inputs:
-                dataInput = input.GetDataSeries()["data"].reshape(-1,1)
+                dataInput = input.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
                 start_input[0, i] = dataInput[index,0]
                 i += 1
         else:
             for input in self.inputs:
-                dataInput = input.GetDataSeries()["data"].reshape(-1,1)
+                dataInput = input.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
                 start_input_1[0, i] = dataInput[index-1,0]
                 start_input_2[0, i] = dataInput[index,0]
                 
@@ -345,7 +346,7 @@ class Model():
         if time == None:
             # Take the time series: the first because now they are all the same
             for inp in self.inputs:
-                time = inp.GetDataSeries()["time"]
+                time = inp.GetDataSeries()[Strings.TIME_STRING]
                 break
         # Reshape to be consistent
         time  = time.reshape(-1, 1)
@@ -355,8 +356,8 @@ class Model():
             Npoints = len(time)
             inputMatrix = numpy.matrix(numpy.zeros((Npoints, Ninputs)))
             i = 0
-            for input in self.inputs:
-                dataInput = inp.GetDataSeries()["data"].reshape(-1,1)
+            for inp in self.inputs:
+                dataInput = inp.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
                 inputMatrix[:, i] = dataInput[:,:]
                 i += 1
             # Define the input trajectory
@@ -407,7 +408,7 @@ class Model():
             raise Exception
         
         # Obtain the results
-        t     = res['time']
+        t     = res[Strings.TIME_STRING]
         output_names = self.GetOutputNames()
         results = {}
         for name in output_names:

@@ -17,13 +17,13 @@ class P(Process):
     This class represents a single process running a simulation
     """
 
-    def __init__(self, model, x_start, startTime, stopTime, results_queue, index):
+    def __init__(self, model, x0, startTime, stopTime, results_queue, index):
         """
         Initialization method of the process that runs a simulation.
         """
         super(P, self).__init__()
         self.model = model
-        self.x0 = x_start
+        self.x0 = x0
         self.startTime = startTime
         self.stopTime = stopTime
         self.queue = results_queue
@@ -39,9 +39,9 @@ class P(Process):
         print "In process (in pid=%d)...\n" % os.getpid()
         
         # Assign the initial conditions to the model
-        self.model.setState(self.x0)
-        print "Initial condition = "+str(self.model.getState())
-    
+        self.model.SetState(self.x0)
+        print "Initial condition = "+str(self.model.GetState())
+        
         # Create an hidden folder named as the Process ID (e.g .4354/)
         dirPath = os.path.join(".","."+str(os.getpid()))
         if not os.path.exists(dirPath):
@@ -49,10 +49,10 @@ class P(Process):
     
         # Define the name of the file that will contain the results (e.g .4354/results.txt)
         fileName = os.path.join(dirPath,"results.txt")
-        self.model.setResultFile(fileName)
+        self.model.SetResultFile(fileName)
     
         # Simulate
-        results = self.model.simulate(start_time = self.startTime, final_time = self.stopTime)
+        results = self.model.Simulate(start_time = self.startTime, final_time = self.stopTime)
     
         # Put the results in a queue as
         # [index, result]
@@ -104,7 +104,7 @@ class FmuPool():
             print "The number of processes specified in a Pool must be >=1"
             self.N_MAX_PROCESS = 1
 
-    def Run(self, start, stop, initValues):
+    def Run(self, initValues, start = None, stop = None):
         """
         This method runs the multiple simulations across the processes
         """
@@ -117,10 +117,10 @@ class FmuPool():
         N_SIMULATIONS = len(initValues)
     
         j = 0
-        for i in initValues:
+        for x0 in initValues:
             # For every initial value a different simulation has to be run
             # Initialize a process that will perform the simulation
-            p = P(self.model, i, start, stop, results_queue, j)
+            p = P(self.model, x0, start, stop, results_queue, j)
 
             # Append the process to the list
             processes.append(p)

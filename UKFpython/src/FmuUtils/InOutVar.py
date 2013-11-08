@@ -3,8 +3,10 @@ Created on Nov 6, 2013
 
 @author: marco
 '''
-from CsvReader import CsvReader
 import numpy
+from CsvReader import CsvReader
+import Strings
+
 
 class InOutVar():
     """
@@ -63,5 +65,5 @@ class InOutVar():
         return self.dataSeries
     
     def SetDataSeries(self, time, data):
-        self.dataSeries["time"] = numpy.array(time).astype(numpy.float)
-        self.dataSeries["data"] = numpy.matrix(data).astype(numpy.float)
+        self.dataSeries[Strings.TIME_STRING] = numpy.array(time).astype(numpy.float)
+        self.dataSeries[Strings.DATA_STRING] = numpy.matrix(data).astype(numpy.float)
