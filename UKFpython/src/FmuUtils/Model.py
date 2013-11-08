@@ -76,6 +76,8 @@ class Model():
         
         # Set the number of states
         self.N_STATES = 0
+        # An array that contains the value references for every state variable
+        self.StateValueReferences = []
         
         # See what can be done in catching the exception/propagating it
         if fmuFile != None:
@@ -104,6 +106,25 @@ class Model():
         """
         return self.fmuFile
     
+    def GetVariableObject(self, name = None):
+        """
+        This method returns a PyFMI variable given its name
+        """
+        if name != None and name != "":
+            if self.fmu != None:
+                try:
+                    return self.fmu.get_model_variables()[name]
+                except Exception:
+                    print "The variable or parameter: "+str(name)+" is not available in the list:"
+                    print self.fmu.get_model_variables().keys()
+                    return None
+            else:
+                print "The FMU model has not yet been set. Impossible return the variable "+str(name)
+                return None
+        else:
+            print "Impossible to look for the name because it is None or empty"
+            return None
+    
     def SetResultFile(self, fileName):
         """
         This method modifies the name of the file that stores the simulation results
@@ -124,12 +145,20 @@ class Model():
             
             # Get the options for the simulation
             self.opts = self.fmu.simulate_options()
+            # The result handling can be one of
+            # "file", "memory", "custom" (in the latter case a result handler has to be specified)
+            self.opts["result_handling"] = "memory"
+            self.opts["CVode_options"]["rtol"]=1e-6
+            self.opts["CVode_options"]["atol"]=1e-6
             
             # Define the standard value for the result file
             self.SetResultFile(None)
             
             # set the number of states
             self.N_STATES = len(self.GetState())
+            
+            # get the value references of the state variables
+            self.StateValueReferences = self.fmu.get_state_value_references()
             
             # Properties of the FMU
             self.name = str(self.fmu.get_name())
@@ -170,6 +199,21 @@ class Model():
         This method sets the entire state variables vector of the model
         """
         self.fmu._set_continuous_states(stateVector)
+    
+    def SetStateSelected(self, vector):
+        """
+        This method sets the state variable contained in the list self.variables
+        to the values passed by the vector
+        """
+        if len(vector) == len(self.variables):
+            # The vector have compatible dimensions
+            i = 0
+            for v in self.variables:
+                self.fmu.set_real(v.value_reference, vector[i])
+            return True
+        else:
+            # the vectors are not compatibles
+            return False
     
     def GetInputNames(self):
         """
@@ -530,15 +574,14 @@ class Model():
             # Alias variable removed for clarity.
             dictParameter = self.fmu.get_model_variables(include_alias = False, variability = variability, causality = causality)
             
-            if onlyStates:
-                # This method return a list containing the reference value of the state variables
-                states = self.fmu.get_state_value_references()
-                if pedantic:
-                    print "Ref. values of the states: "+str(states)
+            if onlyStates and pedantic:
+                print "Ref. values of the states: "+str(self.StateValueReferences)
             
             for k in dictParameter.keys():
                 ####################################################################################
                 # TODO: check if it's true to don't add now the variables which have derivatives
+                #       I think in general is not true, but be careful with the extraction of the 
+                #       name with the dot notation
                 ####################################################################################
                 if "der(" not in k:
                     
@@ -553,7 +596,7 @@ class Model():
                     if onlyStates:
                         
                         # Add the variables that are in the state vector of the system
-                        if dictParameter[k].value_reference in states:
+                        if dictParameter[k].value_reference in self.StateValueReferences:
                             objectTree.addFromString(strNames, dictParameter[k])
                             if pedantic:
                                 print str(k) + " with Ref. value =" + str(dictParameter[k].value_reference)
@@ -737,36 +780,39 @@ class Model():
         """
         This method returns true is the parameter is contained in the list of parameters of the model
         """
-        try:
-            self.parameters.index(object)
-            return True
-        except ValueError:
-            # the object is not yet part of the list, add it
-            return False
+        val_ref = object.value_reference
+        for p in self.parameters:
+            if p.value_reference == val_ref:
+                # there is already a parameter in the list with the same value_reference
+                print "There is already a parameter in the list with the same value reference: "+str(val_ref)
+                return True
+        return False
     
     def IsVariablePresent(self, object):
         """
         This method returns true is the variable is contained in the list of variable of the model
         """
-        try:
-            self.variables.index(object)
-            return True
-        except ValueError:
-            # the object is not yet part of the list, add it
-            return False
+        val_ref = object.value_reference
+        for v in self.variables:
+            if v.value_reference == val_ref:
+                # there is already a variable in the list with the same value_reference
+                print "There is already a variable in the list with the same value reference: "+str(val_ref)
+                return True
+        return False
+
     
     def AddParameter(self, object):
         """
         This method add one object to the list of parameters. This list contains only the parameters that 
         will be modified during the further analysis
         """
-        print "Add parameter: ",object
         if self.IsParameterPresent(object):
+            print "Parameter: ", object, " not added, already present"
             return False
         else:
             # the object is not yet part of the list, add it
             self.parameters.append(object)
-            print self.parameters
+            print "Added parameter: ",object
             return True
     
     def RemoveParameter(self, object):
@@ -796,12 +842,13 @@ class Model():
         This method add one object to the list of variables. This list contains only the variables that 
         will be modified during the further analysis
         """
-        print "Add variable: ",object
         if self.IsVariablePresent(object):
+            print "Variable: ", object, " not added, already present"
             return False
         else:
             # the object is not yet part of the list, add it
             self.variables.append(object)
+            print "Added variable: ",object
             return True
     
     def RemoveVariable(self, object):

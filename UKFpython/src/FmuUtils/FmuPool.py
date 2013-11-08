@@ -29,18 +29,21 @@ class P(Process):
         self.queue = results_queue
         self.index = index
 
-    def run(self):
+    def run(self, pedantic=False):
         """
         This method will be called by the .start()  method of the process
         """
-        
-        print "*"*40
-        print "Start simulation"
-        print "In process (in pid=%d)...\n" % os.getpid()
+        if pedantic:
+            print "*"*40
+            print "Start simulation"
+            print "In process (in pid=%d)...\n" % os.getpid()
         
         # Assign the initial conditions to the model
-        self.model.SetState(self.x0)
-        print "Initial condition = "+str(self.model.GetState())
+        # self.model.SetState(self.x0)
+        # Assign the states selected
+        self.model.SetStateSelected(self.x0)
+        if pedantic:
+            print "Initial condition = "+str(self.model.GetState())
         
         # Create an hidden folder named as the Process ID (e.g .4354/)
         dirPath = os.path.join(".","."+str(os.getpid()))
