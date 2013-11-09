@@ -34,7 +34,7 @@ class Model():
     
     """
     
-    def __init__(self, fmuFile = None):
+    def __init__(self, fmuFile = None, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, setTrees = False, verbose = None):
         """
         
         Constructor of the class Model.
@@ -81,8 +81,9 @@ class Model():
         
         # See what can be done in catching the exception/propagating it
         if fmuFile != None:
-            self.__SetFMU(fmuFile)
-            self.__SetTrees()
+            self.__SetFMU(fmuFile, result_handler, solver, atol, rtol, verbose)
+            if setTrees:
+                self.__SetTrees()
     
     def __str__(self):
         """
@@ -134,7 +135,42 @@ class Model():
         else:
             self.opts["result_file_name"] = ""
     
-    def __SetFMU(self, fmuFile):
+    def SetSimulationOptions(self, result_handler, solver, atol, rtol, verbose):
+        """
+        This method set the options of the simulator
+        """
+        # The result handling can be one of
+        # "file", "memory", "custom" (in the latter case a result handler has to be specified)
+        # By default they are on memory
+        if result_handler != None and result_handler in Strings.SIMULATION_OPTION_RESHANDLING_LIST:
+            self.opts[Strings.SIMULATION_OPTION_RESHANDLING_STRING] = result_handler
+        else:
+            self.opts[Strings.SIMULATION_OPTION_RESHANDLING_STRING] = Strings.RESULTS_ON_MEMORY_STRING
+        
+        # Set solver verbose level
+        if verbose != None and  verbose in Strings.SOLVER_VERBOSITY_LEVELS:
+            for s in Strings.SOLVER_NAMES_OPTIONS:   
+                self.opts[s][Strings.SOLVER_OPTION_VERBOSITY_STRING] = verbose
+        else:
+            for s in Strings.SOLVER_NAMES_OPTIONS:   
+                self.opts[s][Strings.SOLVER_OPTION_VERBOSITY_STRING] = Strings.SOLVER_VERBOSITY_QUIET
+                
+        # Set the absolute and relative tolerance of each solver, otherwise the default value
+        # is left
+        if atol != None and atol > 0 and numpy.isreal(atol):
+            for s in Strings.SOLVER_NAMES_OPTIONS:   
+                self.opts[s][Strings.SOLVER_OPTION_ATOL_STRING] = atol
+        if rtol != None and rtol > 0 and numpy.isreal(rtol):
+            for s in Strings.SOLVER_NAMES_OPTIONS:   
+                self.opts[s][Strings.SOLVER_OPTION_RTOL_STRING] = rtol
+    
+    def GetSimulationOptions(self):
+        """
+        This method returns the simulation options of the simulator
+        """
+        return self.opts
+    
+    def __SetFMU(self, fmuFile, result_handler, solver, atol, rtol, verbose):
         """
         This method associate an FMU to a model, if not yet assigned
         """
@@ -145,11 +181,9 @@ class Model():
             
             # Get the options for the simulation
             self.opts = self.fmu.simulate_options()
-            # The result handling can be one of
-            # "file", "memory", "custom" (in the latter case a result handler has to be specified)
-            self.opts["result_handling"] = "memory"
-            self.opts["CVode_options"]["rtol"]=1e-6
-            self.opts["CVode_options"]["atol"]=1e-6
+            
+            # Define the simulation options
+            self.SetSimulationOptions(result_handler, solver, atol, rtol, verbose)
             
             # Define the standard value for the result file
             self.SetResultFile(None)
@@ -178,7 +212,7 @@ class Model():
         else:
             print "WARNING: The fmu has already been assigned to this model! Check your code!"
     
-    def ReInit(self, fmuFile):
+    def ReInit(self, fmuFile, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, setTrees = False):
         """
         This function reinitializes the FMU associated to the model
         """
@@ -186,7 +220,7 @@ class Model():
         print "Reinitialized model with: ",fmuFile
         if self.fmu != None:
             self.fmu = None
-        self.__init__(fmuFile)
+        self.__init__(fmuFile, result_handler, solver, atol, rtol, setTrees)
     
     def GetState(self):
         """
@@ -429,12 +463,6 @@ class Model():
         # Create input object
         names = self.GetInputNames()
         input_object = (names, u_traj)
-        
-        # assign the initial inputs
-        #i = 0
-        #for name in names:
-        #    self.fmu.set(name,input[0,i])
-        #    i += 1
         
         # start the simulation
         simulated = False

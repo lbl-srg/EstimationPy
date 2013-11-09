@@ -19,7 +19,7 @@ def main():
     filePath = "../../modelica/FmuExamples/Resources/FMUs/HeatExchanger.fmu"
     
     # ReInit the model with the new FMU
-    m.ReInit(filePath)
+    m.ReInit(filePath, atol=1e-5, rtol=1e-6)
     
     # Set the CSV file associated to the input
     inputPath = "../../modelica/FmuExamples/Resources/data/SimulationData_HeatExchanger.csv"
@@ -61,7 +61,7 @@ def main():
         initValues.append(numpy.array([v]))
     
     # Run simulations in parallel
-    poolResults = pool.Run(initValues, start=0.0, stop=700.0)
+    poolResults = pool.Run(initValues, stop=800.0)
     
     # plot all the results
     showResults(poolResults)    

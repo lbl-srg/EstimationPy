@@ -10,14 +10,14 @@ import shutil
 
 from multiprocessing import Process, Queue
 from threading import Thread
-
+import Strings
 
 class P(Process):
     """
     This class represents a single process running a simulation
     """
 
-    def __init__(self, model, x0, startTime, stopTime, results_queue, index):
+    def __init__(self, model, x0, startTime, stopTime, results_queue, index, debug = False):
         """
         Initialization method of the process that runs a simulation.
         """
@@ -28,12 +28,13 @@ class P(Process):
         self.stopTime = stopTime
         self.queue = results_queue
         self.index = index
+        self.debug = debug
 
-    def run(self, pedantic=False):
+    def run(self):
         """
         This method will be called by the .start()  method of the process
         """
-        if pedantic:
+        if self.debug:
             print "*"*40
             print "Start simulation"
             print "In process (in pid=%d)...\n" % os.getpid()
@@ -42,17 +43,21 @@ class P(Process):
         # self.model.SetState(self.x0)
         # Assign the states selected
         self.model.SetStateSelected(self.x0)
-        if pedantic:
+        if self.debug:
             print "Initial condition = "+str(self.model.GetState())
         
-        # Create an hidden folder named as the Process ID (e.g .4354/)
-        dirPath = os.path.join(".","."+str(os.getpid()))
-        if not os.path.exists(dirPath):
-                os.makedirs(dirPath)
-    
-        # Define the name of the file that will contain the results (e.g .4354/results.txt)
-        fileName = os.path.join(dirPath,"results.txt")
-        self.model.SetResultFile(fileName)
+        # Check if the options of the model contains the option for writing results to files
+        opts = self.model.GetSimulationOptions()
+        workWithFiles = opts[Strings.SIMULATION_OPTION_RESHANDLING_STRING] == Strings.RESULTS_ON_FILE_STRING
+        if workWithFiles:
+            # Create an hidden folder named as the Process ID (e.g .4354/)
+            dirPath = os.path.join(".","."+str(os.getpid()))
+            if not os.path.exists(dirPath):
+                    os.makedirs(dirPath)
+        
+            # Define the name of the file that will contain the results (e.g .4354/results.txt)
+            fileName = os.path.join(dirPath,"results.txt")
+            self.model.SetResultFile(fileName)
     
         # Simulate
         results = self.model.Simulate(start_time = self.startTime, final_time = self.stopTime)
@@ -63,7 +68,8 @@ class P(Process):
         self.queue.put([self.index, results])
     
         # Delete the results contained in the folder
-        shutil.rmtree(dirPath)
+        if workWithFiles:
+            shutil.rmtree(dirPath)
         
         return
 
@@ -123,7 +129,7 @@ class FmuPool():
         for x0 in initValues:
             # For every initial value a different simulation has to be run
             # Initialize a process that will perform the simulation
-            p = P(self.model, x0, start, stop, results_queue, j)
+            p = P(self.model, x0, start, stop, results_queue, j, self.debug)
 
             # Append the process to the list
             processes.append(p)

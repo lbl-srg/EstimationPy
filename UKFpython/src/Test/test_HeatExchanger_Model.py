@@ -15,7 +15,7 @@ def main():
     filePath = "../../modelica/FmuExamples/Resources/FMUs/HeatExchanger.fmu"
     
     # ReInit the model with the new FMU
-    m.ReInit(filePath)
+    m.ReInit(filePath, atol=1e-5, rtol=1e-6)
     
     # Show details
     print m
