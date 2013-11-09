@@ -7,6 +7,8 @@ Created on Sep 6, 2013
 import csv
 import numpy
 
+import Strings
+
 class CsvReader():
     """
     
@@ -185,8 +187,8 @@ class CsvReader():
                     # If the check of the cSV file is successful, return the data series, otherwise
                     # return an empty dictionary 
                     if self.CheckTimeSeries(time, self.filename):
-                        dataSeries["time"] = numpy.array(time).astype(numpy.float)
-                        dataSeries["data"] = numpy.matrix(data).astype(numpy.float)
+                        dataSeries[Strings.TIME_STRING] = numpy.array(time).astype(numpy.float)
+                        dataSeries[Strings.DATA_STRING] = numpy.matrix(data).astype(numpy.float)
                         
                     return dataSeries  
                     
