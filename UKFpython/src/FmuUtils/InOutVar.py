@@ -79,6 +79,7 @@ class InOutVar():
         time = self.dataSeries[Strings.TIME_STRING]
         data = numpy.squeeze(numpy.asarray(self.dataSeries[Strings.DATA_STRING]))
         
+        
         if t < time[0] or t > time[-1]:
             print "Time t="+str(t)+" is outside the range of the data series ["+str(time[0])+","+str(time[1])+"]"
             return False
@@ -89,7 +90,7 @@ class InOutVar():
             N = len(time)
             
             # if len(time) = 10 and index was 2, indexes is [2, 3, 4, 5, 6, 7, 8, 9, 0, 1]
-            indexes = numpy.concatenate((numpy.arange(index,N), numpy.arange(index)))
+            indexes = numpy.concatenate((numpy.arange(index,N), numpy.arange(index+1)))
             
             
             print "\n========="
@@ -97,15 +98,15 @@ class InOutVar():
             for i in range(N):
                 j = indexes[i]
                 print "j=",j
-                T = time[indexes[i+1]]
-                print "time ",t," and T =",T
+                T_a = time[indexes[i]]
+                T_b = time[indexes[i+1]]
+                T_0 = min(T_a, T_b)
+                T_1 = max(T_a, T_b)
+                print "time ",t," and [",T_0,",",T_1,"]"
                 
-                if j < N-1: 
-                    if t <= T and t>=time[j]:
-                        break
-                else:
-                    if t >= T and t<=time[j]:
-                        break
+                if j!=N-1 and t >= T_0 and t <= T_1:
+                    break
+                
                 j += 1
             
             
