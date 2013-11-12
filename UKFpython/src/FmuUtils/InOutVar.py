@@ -30,9 +30,6 @@ class InOutVar():
         self.cov = 1.0
     
     def SetCovariance(self, cov):
-        """
-        This method sets the covariance associated to the data series
-        """
         if cov > 0.0:
             self.cov = cov
             return True
@@ -40,12 +37,6 @@ class InOutVar():
             print "The covariance must be positive"
             self.cov = cov
             return False
-    
-    def GetCovariance(self):
-        """
-        This method returns the covariance of the data series
-        """
-        return self.cov
      
     def SetObject(self, object):
         """
