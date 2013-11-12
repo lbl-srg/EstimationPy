@@ -10,21 +10,43 @@ import Strings
 
 class InOutVar():
     """
-    
     This class either represent an input or output variable.
     Both are variable with associated a data series contained in a .csv file
-    
     """
     
     def __init__(self, object = None):
         """
-        Initialization method
+        Initialization method. This constructor defines the object (PyFmiVariable) that contains the
+        information about the variable, the CsvReader class associated to the input (that contains the data), 
+        a dictionary called dataSeries = {"time": [], "data": []} that contains the two arrays that represent
+        the data series (that are read from the csv file).
+        The integer index is used when the data values are read using the function ReadFromDataSeries, while
+        cov is the covariance associated to the data series.
         """
         self.object = object
         self.CsvReader = CsvReader()
         self.dataSeries = {}
         self.index = 0
-        
+        self.cov = 1.0
+    
+    def SetCovariance(self, cov):
+        """
+        This method sets the covariance associated to the data series
+        """
+        if cov > 0.0:
+            self.cov = cov
+            return True
+        else:
+            print "The covariance must be positive"
+            self.cov = cov
+            return False
+    
+    def GetCovariance(self):
+        """
+        This method returns the covariance of the data series
+        """
+        return self.cov
+     
     def SetObject(self, object):
         """
         Set the object <<pyfmi.ScalarVariable>> associated to the input/output
@@ -81,7 +103,7 @@ class InOutVar():
         
         
         if t < time[0] or t > time[-1]:
-            print "Time t="+str(t)+" is outside the range of the data series ["+str(time[0])+","+str(time[1])+"]"
+            #print "Time t="+str(t)+" is outside the range of the data series ["+str(time[0])+","+str(time[1])+"]"
             return False
         else:
             # identify the position of the time closest time steps
@@ -93,16 +115,16 @@ class InOutVar():
             indexes = numpy.concatenate((numpy.arange(index,N), numpy.arange(index+1)))
             
             
-            print "\n========="
-            print "Indexes = ",indexes
+            #print "\n========="
+            #print "Indexes = ",indexes
             for i in range(N):
                 j = indexes[i]
-                print "j=",j
+                #print "j=",j
                 T_a = time[indexes[i]]
                 T_b = time[indexes[i+1]]
                 T_0 = min(T_a, T_b)
                 T_1 = max(T_a, T_b)
-                print "time ",t," and [",T_0,",",T_1,"]"
+                #print "time ",t," and [",T_0,",",T_1,"]"
                 
                 if j!=N-1 and t >= T_0 and t <= T_1:
                     break

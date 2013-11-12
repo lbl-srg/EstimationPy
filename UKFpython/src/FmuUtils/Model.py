@@ -9,7 +9,7 @@ import numpy
 import Strings
 from FmuUtils.InOutVar import InOutVar
 from FmuUtils.Tree import Tree
-
+from FmuUtils.EstimationVariable import EstimationVariable
 
 class Model():
     """
@@ -259,6 +259,16 @@ class Model():
             inputNames.append(inVar.GetObject().name)
         return inputNames
     
+    def GetInputReaders(self, t):
+        """
+        This method returns a list of functions that read the input for a given time
+        """
+        outputs = []
+        for inVar in self.inputs:
+            # inVar is of type InOutVar and the object that it contains is a PyFMI variable
+            outputs.append(inVar.ReadFromDataSeries(t))
+        return outputs
+    
     def GetOutputNames(self):
         """
         This method returns a list of names for each output
@@ -463,6 +473,10 @@ class Model():
         # Create input object
         names = self.GetInputNames()
         input_object = (names, u_traj)
+        
+        # TODO
+        # Associate functions rather than a matrix that contains all the values
+        # input_object = (names, self.GetInputReaders)
         
         # start the simulation
         simulated = False
@@ -838,9 +852,11 @@ class Model():
             print "Parameter: ", object, " not added, already present"
             return False
         else:
-            # the object is not yet part of the list, add it
-            self.parameters.append(object)
-            print "Added parameter: ",object
+            # the object is not yet part of the list, add it            
+            par = EstimationVariable(object)
+            self.parameters.append(par)
+            print "Added variable: ",object," (",par,")"
+            
             return True
     
     def RemoveParameter(self, object):
@@ -875,8 +891,10 @@ class Model():
             return False
         else:
             # the object is not yet part of the list, add it
-            self.variables.append(object)
-            print "Added variable: ",object
+            # but before embed it into an EstimationVariable class
+            var = EstimationVariable(object)
+            self.variables.append(var)
+            print "Added variable: ",object," (",var,")"
             return True
     
     def RemoveVariable(self, object):
