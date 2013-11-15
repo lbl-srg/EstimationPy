@@ -5,6 +5,7 @@ Created on Nov 7, 2013
 '''
 import pylab
 from FmuUtils import Model
+from ukf.ukfFMU import ukfFMU
 
 def main():
     
@@ -35,37 +36,25 @@ def main():
     # Select the states to be identified, and add it to the list
     m.AddVariable(m.GetVariableObject("x"))
     
-    # Set initial value of state, and its covariance
+    # Set initial value of state, and its covariance and the limits (if any)
     var = m.GetVariables()[0]
     var.SetInitialValue(2.0)
     var.SetCovariance(0.5)
+    var.SetMinValue(0.0)
+    var.SetConstraintLow(True)
     
     # show the info about the variable to be estimated
     print var.Info()
     
+    # instantiate the UKF for the FMU
+    ukf = ukfFMU(m, augmented = False)
+    
+    # Show details
+    print ukf
+    
     return
 
     # Instantiate filter, and run it
-                        
-    # Simulate
-    time, results = m.Simulate()
-    
-    # Show the results
-    showResults(time, results)
-    
-def showResults(time, results):
-    # Display results
-    fig1 = pylab.figure()
-    pylab.clf()
-    i = 1
-    N = len(results.keys())
-    for name, values in results.iteritems():
-        pylab.subplot(N,1,i)
-        pylab.plot(time, values, label=name)
-        pylab.ylabel(name)
-        pylab.xlabel('Time')
-        i += 1
-    pylab.show()
    
 if __name__ == '__main__':
     main()

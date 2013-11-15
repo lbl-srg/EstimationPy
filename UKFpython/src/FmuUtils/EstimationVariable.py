@@ -4,14 +4,15 @@ Created on Nov 11, 2013
 @author: marco
 '''
 import Model
+import numpy
+import pyfmi
 
 class EstimationVariable():
     '''
     classdocs
     '''
 
-
-    def __init__(self, object):
+    def __init__(self, object, fmu):
         '''
         Constructor
         '''
@@ -24,12 +25,63 @@ class EstimationVariable():
         self.value_reference = object.value_reference
         self.variability = object.variability
         
-        self.initValue = 0.0
+        # Take the start, min and max value of this variable
+        type, value, start, min, max = fmu.GetVariableInfo_Numeric(object)
+        
+        # TODO: it can be either value[0] or start. Not yet sube about the difference...
+        if value[0]!= start:
+            print "Start value is different from value read"
+            print "Value read  =",value[0]
+            print "Start value =",start
+            self.initValue = start
+        else:
+            self.initValue = start
+        self.minValue = min
+        self.maxValue = max
         self.cov = 1.0
-        self.minValue = 0.0
-        self.maxValue = 0.0
-        self.constraintLow = False
-        self.constraintHigh = False
+        self.constraintLow = True
+        self.constraintHigh = True
+    
+    def ModifyInitialValueInFMU(self, fmu):
+        """
+        Given an FMU model, this method sets the value of the variable/parameter to
+        the one indicated by the initialValue
+        """
+        type = self.type
+        if type == pyfmi.fmi.FMI_REAL:
+            fmu.set_real(self.value_reference, self.initValue)
+        elif type == pyfmi.fmi.FMI_INTEGER:
+            fmu.set_integer(self.value_reference, self.initValue)
+        elif type == pyfmi.fmi.FMI_BOOLEAN:
+            fmu.set_boolean(self.value_reference, self.initValue)
+        elif type == pyfmi.fmi.FMI_ENUMERATION:
+            fmu.set_int(self.value_reference, self.initValue)
+        elif type == pyfmi.fmi.FMI_STRING:
+            fmu.set_string(self.value_reference, self.initValue)
+        else:
+            print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
+            return False
+        return True
+    
+    def ReadValueInFMU(self, fmu):
+        """
+        Given an FMU model, this method reads the value of the variable/parameter
+        """
+        type = self.type
+        if type == pyfmi.fmi.FMI_REAL:
+            val = fmu.get_real(self.value_reference)
+        elif type == pyfmi.fmi.FMI_INTEGER:
+            val = fmu.get_integer(self.value_reference)
+        elif type == pyfmi.fmi.FMI_BOOLEAN:
+            val = fmu.get_boolean(self.value_reference)
+        elif type == pyfmi.fmi.FMI_ENUMERATION:
+            val = fmu.get_int(self.value_reference)
+        elif type == pyfmi.fmi.FMI_STRING:
+            val = fmu.get_string(self.value_reference)
+        else:
+            print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
+            return None
+        return val[0]
     
     def Info(self):
         """
@@ -84,7 +136,7 @@ class EstimationVariable():
         self.constraintLow = setConstr
     
     def GetInitialValue(self):
-        return self.initValue
+        return numpy.array(self.initValue)
     
     def GetMinValue(self):
         return self.minValue

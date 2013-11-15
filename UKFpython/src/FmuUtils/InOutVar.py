@@ -28,6 +28,13 @@ class InOutVar():
         self.dataSeries = {}
         self.index = 0
         self.cov = 1.0
+        self.measOut = False
+    
+    def SetMeasuredOutput(self, flag = True):
+        self.measOut = flag
+    
+    def IsMeasuredOutput(self):
+        return self.measOut
     
     def SetCovariance(self, cov):
         if cov > 0.0:
