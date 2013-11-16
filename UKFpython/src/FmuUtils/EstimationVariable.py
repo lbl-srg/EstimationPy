@@ -122,6 +122,12 @@ class EstimationVariable():
             print "The covariance must be positive"
             self.cov = cov
             return False
+        
+    def GetCovariance(self):
+        """
+        This method returns the covariance of the variable
+        """
+        return self.cov
     
     def SetMinValue(self, value):
         self.minValue = value

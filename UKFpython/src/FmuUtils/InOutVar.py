@@ -6,7 +6,7 @@ Created on Nov 6, 2013
 import numpy
 from CsvReader import CsvReader
 import Strings
-
+import pyfmi
 
 class InOutVar():
     """
@@ -30,6 +30,26 @@ class InOutVar():
         self.cov = 1.0
         self.measOut = False
     
+    def ReadValueInFMU(self, fmu):
+        """
+        Given an FMU model, this method reads the value of the variable/parameter
+        """
+        type = self.object.type
+        if type == pyfmi.fmi.FMI_REAL:
+            val = fmu.get_real(self.object.value_reference)
+        elif type == pyfmi.fmi.FMI_INTEGER:
+            val = fmu.get_integer(self.object.value_reference)
+        elif type == pyfmi.fmi.FMI_BOOLEAN:
+            val = fmu.get_boolean(self.object.value_reference)
+        elif type == pyfmi.fmi.FMI_ENUMERATION:
+            val = fmu.get_int(self.object.value_reference)
+        elif type == pyfmi.fmi.FMI_STRING:
+            val = fmu.get_string(self.object.value_reference)
+        else:
+            print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
+            return None
+        return val[0]
+    
     def SetMeasuredOutput(self, flag = True):
         self.measOut = flag
     
@@ -44,6 +64,12 @@ class InOutVar():
             print "The covariance must be positive"
             self.cov = cov
             return False
+    
+    def GetCovariance(self):
+        """
+        This method returns the covariance of the variable
+        """
+        return self.cov
      
     def SetObject(self, object):
         """

@@ -1,4 +1,5 @@
 import numpy as np
+from FmuUtils.FmuPool import FmuPool
 
 class ukfFMU():
 	"""
@@ -21,6 +22,9 @@ class ukfFMU():
 		# set the model
 		self.model = model
 		
+		# Instantiate the pool that will run the simulation in parallel
+		self.pool = FmuPool(self.model, debug = False)
+		
 		# set the number of states variables (total and observed), parameters estimated and outputs
 		self.n_state     = self.model.GetNumStates()
 		self.n_state_obs = self.model.GetNumVariables()
@@ -30,7 +34,7 @@ class ukfFMU():
 		if not augmented:
 			self.N       = self.n_state_obs + self.n_pars
 		else:
-			self.N       = self.n_state_obs + self.n_pars + self.n_state_obs + self.n_outputs
+			self.N       = self.n_state_obs + self.n_pars + self.n_state_obs + self.n_pars + self.n_outputs
 		
 		# some check
 		if self.n_state_obs > self.n_state:
@@ -191,11 +195,11 @@ class ukfFMU():
 		try:
 			# reshape the state vector
 			x = np.squeeze(x)
-			x = x.reshape(1, self.n_state)
+			x = x.reshape(1, self.n_state_obs)
 		except ValueError:
 			print "The vector of state variables has a wrong size"
 			print x
-			print "It should be long: "+str(self.n_state)
+			print "It should be long: "+str(self.n_state_obs)
 			return np.array([])
 		
 		try:
@@ -218,9 +222,9 @@ class ukfFMU():
 		#  [0.0, 0.0, 0.0]]
 		
 		if self.augmented:
-			Xs = np.zeros((self.n_points, self.n_state + self.n_pars + self.n_state_obs + self.n_outputs))
+			Xs = np.zeros((self.n_points, self.n_state_obs + self.n_pars + self.n_state_obs + self.n_pars + self.n_outputs))
 		else:
-			Xs = np.zeros((self.n_points, self.n_state + self.n_pars))
+			Xs = np.zeros((self.n_points, self.n_state_obs + self.n_pars))
 
 		# Now using the sqrtP matrix that is lower triangular:
 		# create the sigma points by adding and subtracting the rows of the matrix sqrtP, to the lines of Xs
@@ -229,13 +233,13 @@ class ukfFMU():
 		#  [s13, s23, s33]]
 		
 		if self.augmented:
-			zerosQ = np.zeros((1, self.n_state_obs))
+			zerosQ = np.zeros((1, self.n_state_obs + self.n_pars))
 			zerosR = np.zeros((1, self.n_outputs))
 			xs0    = np.hstack((x, pars, zerosQ, zerosR))
 			
-			zero1 = np.zeros((self.n_state_obs+self.n_pars, self.n_state_obs))
+			zero1 = np.zeros((self.n_state_obs+self.n_pars, self.n_state_obs + self.n_pars))
 			zero2 = np.zeros((self.n_state_obs+self.n_pars, self.n_outputs))
-			zero3 = np.zeros((self.n_state_obs, self.n_outputs))
+			zero3 = np.zeros((self.n_state_obs+self.n_pars, self.n_outputs))
 			
 			row1 = np.hstack((sqrtP,   zero1,   zero2)) 
 			row2 = np.hstack((zero1.T, sqrtQ,   zero3))
@@ -253,7 +257,7 @@ class ukfFMU():
 			Xs[i+N,:] = xs0
 			
 			nso = self.n_state_obs
-			ns  = self.n_state 
+			ns  = nso
 			npa = self.n_pars
 			
 			try:
@@ -291,7 +295,7 @@ class ukfFMU():
 		
 		return Xs
 
-	def sigmaPointProj(self, m, Xs, u_old, u, t_old, t):
+	def sigmaPointProj(self, Xs, t_old, t):
 		"""
 		
 		This function, given a set of sigma points Xs, propagate them using the state transition function.
@@ -299,32 +303,38 @@ class ukfFMU():
 		
 		"""
 		# initialize the vector of the NEW STATES
-		X_proj = np.zeros((self.n_points, self.n_state + self.n_pars))
+		X_proj = np.zeros((self.n_points, self.n_state_obs + self.n_pars))
 		Z_proj = np.zeros((self.n_points, self.n_outputs))
+		Xfull_proj = np.zeros((self.n_points, self.n_state))
 		
-		# this flag enables to run the simulation in parallel
-		parallel = False
+		# from the sigma points, get the value of the states and parameters
+		values = []
+		for sigma in Xs:
+			x = sigma[0:self.n_state_obs]
+			pars = sigma[self.n_state_obs:self.n_state_obs+self.n_pars]
+			temp = {"state":x, "parameters":pars}
+			values.append(temp)
+
+		# Run simulations in parallel
+		poolResults = self.pool.Run(values, start = t_old, stop = t)
 		
-		if parallel: 
-			# execute each state projection in parallel
-			pool = Pool()
-			res = pool.map_async(Function, ((m, x, u_old, u, t_old, t, False,) for x in Xs))
-			pool.close()
-			pool.join()
+		i = 0
+		for r in poolResults:
+			time, results = r[0]
 			
-			# collect the results of the simulations
-			j = 0
-			for X in res.get():
-				X_proj[j,:], Z_proj[j,:] = X
-				j += 1
-		else:
-			j = 0
-			for x in Xs:
-				values = (m, x, u_old, u, t_old, t, False)
-				X_proj[j,:], Z_proj[j,:] = Function(values)
-				j += 1
-				
-		return X_proj, Z_proj
+			X  = results["__ALL_STATE__"]
+			Xo = results["__OBS_STATE__"]
+			p  = results["__PARAMS__"]
+			o  = results["__OUTPUTS__"]
+			
+			Xfull_proj[i,:] = X
+			X_proj[i,0:self.n_state_obs] = Xo
+			X_proj[i,self.n_state_obs:self.n_state_obs+self.n_pars] = p
+			Z_proj[i,:] = o
+			
+			i += 1
+			
+		return X_proj, Z_proj, Xfull_proj
 
 	def sigmaPointOutProj(self,m,Xs,u,t):
 		"""
@@ -359,6 +369,7 @@ class ukfFMU():
 		this method returns a vector that contains the augmented and observed states:
 		[ observed states, parameters estimated]
 		"""
+		return Xfull
 		if False:
 			row, col = np.shape(Xfull)
 			Xaug = np.zeros((row, self.n_state_obs + self.n_pars + self.n_state_obs + self.n_outputs))
@@ -388,6 +399,7 @@ class ukfFMU():
 		This method, given the covariance matrix of the process noise (n_state_obs x n_state_obs)
 		returns a new covariance matrix that has size (n_state_obs+n_pars x n_state_obs+n_pars)
 		"""
+		return Q
 		nso = self.n_state_obs
 		no  = self.n_outputs 
 		npa  = self.n_pars
@@ -577,8 +589,10 @@ class ukfFMU():
 		Cxx = np.dot(np.dot(Vnext.T, W), Vnow)
 		return Cxx
 
-	def ukf_step(self,z,x,S,sqrtQ,sqrtR,u_old,u,t_old,t,m,verbose=False):		
+	def ukf_step(self,t_old,t,verbose=False):
 		"""
+		z,x,S,sqrtQ,sqrtR,u_old,u,
+		
 		This methods contains all the steps that have to be performed by the UKF:
 		
 		1- prediction
@@ -586,15 +600,22 @@ class ukfFMU():
 		
 		"""
 		
+		x = self.model.GetStateObservedValues()
+		pars = self.model.GetParametersValues()
+		sqrtP = self.model.GetCovMatrixStatePars()
+		sqrtQ = sqrtP
+		sqrtR = self.model.GetCovMatrixOutputs()
+		
 		# the list of sigma points (each signa point can be an array, containing the state variables)
-		Xs      = self.computeSigmaPoints(x,S)
+		# x, pars, sqrtP, sqrtQ = None, sqrtR = None
+		Xs      = self.computeSigmaPoints(x, pars, sqrtP, sqrtQ, sqrtR)
 	
 		if verbose:
 			print "Sigma point Xs"
 			print Xs
 	
 		# compute the projected (state) points (each sigma points is propagated through the state transition function)
-		X_proj = self.sigmaPointProj(m,Xs,u_old,u,t_old,t)
+		X_proj, Z_proj, Xfull_proj = self.sigmaPointProj(Xs,t_old,t)
 		
 		if verbose:
 			print "Projected sigma points"
@@ -604,7 +625,7 @@ class ukfFMU():
 		Xave = self.averageProj(X_proj)
 		
 		if verbose:
-			print "Averaghed projected sigma points"
+			print "Averaged projected sigma points"
 			print Xave
 		
 		# compute the new squared covariance matrix S
@@ -615,7 +636,9 @@ class ukfFMU():
 			print Snew
 		
 		# redraw the sigma points, given the new covariance matrix
-		Xs      = self.computeSigmaPoints(Xave,Snew)
+		x    = Xave[0,0:self.n_state_obs]
+		pars = Xave[0,self.n_state_obs:]
+		Xs   = self.computeSigmaPoints(x, pars, Snew, sqrtQ, sqrtR)
 		
 		# keep the last part of the projection for the other states not updated
 		Xs[:,self.n_state_obs:] = X_proj[:,self.n_state_obs:]

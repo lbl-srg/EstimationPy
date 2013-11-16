@@ -17,13 +17,14 @@ class P(Process):
     This class represents a single process running a simulation
     """
 
-    def __init__(self, model, x0, startTime, stopTime, results_queue, index, debug = False):
+    def __init__(self, model, x0, pars, startTime, stopTime, results_queue, index, debug = False):
         """
         Initialization method of the process that runs a simulation.
         """
         super(P, self).__init__()
         self.model = model
         self.x0 = x0
+        self.pars = pars
         self.startTime = startTime
         self.stopTime = stopTime
         self.queue = results_queue
@@ -39,12 +40,15 @@ class P(Process):
             print "Start simulation"
             print "In process (in pid=%d)...\n" % os.getpid()
         
-        # Assign the initial conditions to the model
-        # self.model.SetState(self.x0)
-        # Assign the states selected
+        # Assign the initial conditions to the states selected
         self.model.SetStateSelected(self.x0)
         if self.debug:
-            print "Initial condition = "+str(self.model.GetState())
+            print "Initial condition = "+str(self.model.GetStateObservedValues())
+            
+        # Assign the values to the parameters selected
+        self.model.SetParametersSelected(self.pars)
+        if self.debug:
+            print "Parameters = "+str(self.model.GetParametersValues())
         
         # Check if the options of the model contains the option for writing results to files
         opts = self.model.GetSimulationOptions()
@@ -61,7 +65,7 @@ class P(Process):
     
         # Simulate
         results = self.model.Simulate(start_time = self.startTime, final_time = self.stopTime)
-    
+        
         # Put the results in a queue as
         # [index, result]
         # The index will be used to sort the results in the class that manages the processes
@@ -113,7 +117,7 @@ class FmuPool():
             print "The number of processes specified in a Pool must be >=1"
             self.N_MAX_PROCESS = 1
 
-    def Run(self, initValues, start = None, stop = None):
+    def Run(self, values, start = None, stop = None):
         """
         This method runs the multiple simulations across the processes
         """
@@ -123,13 +127,15 @@ class FmuPool():
         processes = []
         
         # number of simulations to perform
-        N_SIMULATIONS = len(initValues)
+        N_SIMULATIONS = len(values)
     
         j = 0
-        for x0 in initValues:
+        for v in values:
             # For every initial value a different simulation has to be run
             # Initialize a process that will perform the simulation
-            p = P(self.model, x0, start, stop, results_queue, j, self.debug)
+            x0 = v["state"]
+            pars = v["parameters"]
+            p = P(self.model, x0, pars, start, stop, results_queue, j, self.debug)
 
             # Append the process to the list
             processes.append(p)

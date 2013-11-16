@@ -101,9 +101,9 @@ def main():
     
     #################################################################
     # Initialize the model for the simulation
-    print "Before initialization: ", m.GetState()
-    print "State observed:",m.GetStateObservedValues()
-    print "Parameters estimated:",m.GetParametersValues()
+    #print "Before initialization: ", m.GetState()
+    #print "State observed:",m.GetStateObservedValues()
+    #print "Parameters estimated:",m.GetParametersValues()
     m.InitializeSimulator()
     print "After initialization: ", m.GetState()
     print "State observed:",m.GetStateObservedValues()
@@ -115,6 +115,9 @@ def main():
     
     # Show details
     print ukf_FMU
+    
+    # Perform an UKF estimation step
+    ukf_FMU.ukf_step(0.0, 5.0, verbose = True)
     
     return
 

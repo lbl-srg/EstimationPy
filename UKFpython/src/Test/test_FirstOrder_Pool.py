@@ -36,15 +36,16 @@ def main():
 
     # define the vector of initial conditions for which the simulations
     # have to be performed.
-    # initValues has to be a list of state vectors
-    # initValues = [ [x0_0], [x0_1], ... [x0_n]]
+    # values has to be a list of state vectors
+    # values = [ [x0_0], [x0_1], ... [x0_n]]
     vectorValues = numpy.linspace(1.0, 5.0, 1000)
-    initValues = []
+    values = []
     for v in vectorValues:
-        initValues.append(numpy.array([v]))
+        temp = {"state":numpy.array([v]), "parameters":[]}
+        values.append(temp)
     
     # Run simulations in parallel
-    poolResults = pool.Run(initValues)
+    poolResults = pool.Run(values)
     
     # plot all the results
     showResults(poolResults)    

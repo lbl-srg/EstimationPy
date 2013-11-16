@@ -158,7 +158,55 @@ class Model():
         else:
             print "\tMatch between data series - OK"
             return True
-            
+    
+    def GetCovMatrixStates(self):
+        """
+        This method returns the covariance matrix of the state variables
+        """
+        cov = numpy.diag(numpy.zeros(self.GetNumVariables()))
+        i = 0
+        for v in self.variables:
+            cov[i,i] = v.GetCovariance()
+            i += 1
+        return cov
+    
+    def GetCovMatrixStatePars(self):
+        """
+        This method returns the covariance matrix of the state variables and parameters
+        """
+        cov = numpy.diag(numpy.zeros(self.GetNumVariables() + self.GetNumParameters()))
+        i = 0
+        for v in self.variables:
+            cov[i,i] = v.GetCovariance()
+            i += 1
+        for p in self.parameters:
+            cov[i,i] = p.GetCovariance()
+            i += 1
+        return cov
+    
+    def GetCovMatrixParameters(self):
+        """
+        This method returns the covariance matrix of the parameters
+        """
+        cov = numpy.diag(numpy.zeros(self.GetNumParameters()))
+        i = 0
+        for p in self.parameters:
+            cov[i,i] = p.GetCovariance()
+            i += 1
+        return cov
+    
+    def GetCovMatrixOutputs(self):
+        """
+        This method returns the covariance matrix of the outputs
+        """
+        cov = numpy.diag(numpy.zeros(self.GetNumMeasuredOutputs()))
+        i = 0
+        for o in self.outputs:
+            if o.IsMeasuredOutput():
+                cov[i,i] = o.GetCovariance()
+                i += 1
+        return cov
+          
     def GetFMU(self):
         """
         This method return the FMU associated to the model
@@ -217,6 +265,19 @@ class Model():
         This method returns the tree associated to the inputs of the model
         """
         return self.treeInputs
+    
+    def GetMeasuredOutputsValues(self):
+        """
+        This method return a vector that contains the values of the observed state variables of the model
+        That are listed in self.variables
+        """
+        obsOut = numpy.zeros(self.GetNumMeasuredOutputs())
+        i = 0
+        for o in self.outputs:
+            if o.IsMeasuredOutput():
+                obsOut[i] = o.ReadValueInFMU(self.fmu)
+                i += 1
+        return obsOut
     
     def GetNumInputs(self):
         """
@@ -295,6 +356,16 @@ class Model():
         """
         return self.parameters
     
+    def GetParameterNames(self):
+        """
+        This method returns a list of names for each state variables observed
+        """
+        parNames = []
+        for par in self.variables:
+            # EstimationVariable
+            parNames.append(par.name)
+        return parNames
+    
     def GetParametersValues(self):
         """
         This method return a vector that contains the values of the observed state variables of the model
@@ -302,8 +373,8 @@ class Model():
         """
         obsPars = numpy.zeros(self.GetNumParameters())
         i = 0
-        for v in self.parameters:
-            obsPars[i] = v.ReadValueInFMU(self.fmu)
+        for p in self.parameters:
+            obsPars[i] = p.ReadValueInFMU(self.fmu)
             i += 1
         return obsPars
     
@@ -519,6 +590,16 @@ class Model():
                 # if the real value is not present for this parameter/variable
                 print "OnSelChanged::FMU-EXCEPTION :: No real value to read for this variable"
                 return ("", "", "", "", "")
+    
+    def GetVariableNames(self):
+        """
+        This method returns a list of names for each state variables observed
+        """
+        varNames = []
+        for var in self.variables:
+            # EstimationVariable
+            varNames.append(var.name)
+        return varNames
     
     def GetVariableObject(self, name = None):
         """
@@ -909,6 +990,23 @@ class Model():
             i = 0
             for v in self.variables:
                 self.fmu.set_real(v.value_reference, vector[i])
+                i += 1
+            return True
+        else:
+            # the vectors are not compatibles
+            return False
+    
+    def SetParametersSelected(self, vector):
+        """
+        This method sets the parameters contained in the list self.parameters
+        to the values passed by the vector
+        """
+        if len(vector) == len(self.parameters):
+            # The vector have compatible dimensions
+            i = 0
+            for p in self.parameters:
+                self.fmu.set_real(p.value_reference, vector[i])
+                i += 1
             return True
         else:
             # the vectors are not compatibles
@@ -1008,11 +1106,27 @@ class Model():
             raise Exception
         
         # Obtain the results
+        # TIME
         t     = res[Strings.TIME_STRING]
+        # OUTPUTS
         output_names = self.GetOutputNames()
         results = {}
         for name in output_names:
             results[name] = res[name]
+        # STATES OBSERVED
+        var_names = self.GetVariableNames()
+        for name in var_names:
+            results[name] = res[name]
+        # PARAMETERS
+        par_names = self.GetParameterNames()
+        for name in par_names:
+            results[name] = res[name]
+        
+        # THE OVERALL STATE
+        results["__ALL_STATE__"]=self.GetState()
+        results["__OBS_STATE__"]=self.GetStateObservedValues()
+        results["__PARAMS__"]=self.GetParametersValues()
+        results["__OUTPUTS__"]=self.GetMeasuredOutputsValues()
         
         # Return the results
         return (t, results)
