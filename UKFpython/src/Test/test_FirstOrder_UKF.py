@@ -28,6 +28,7 @@ def main():
     output = m.GetOutputByName("y")
     output.GetCsvReader().OpenCSV(csvPath)
     output.GetCsvReader().SetSelectedColumn("system.y")
+    output.SetMeasuredOutput()
     output.SetCovariance(2.0)
     
     # Initialize the model for the simulation
@@ -47,10 +48,13 @@ def main():
     print var.Info()
     
     # instantiate the UKF for the FMU
-    ukf = ukfFMU(m, augmented = False)
+    ukf_FMU = ukfFMU(m, augmented = False)
     
     # Show details
-    print ukf
+    print ukf_FMU
+    
+    # start filter
+    ukf_FMU.filter(0.0, 5.0)
     
     return
 

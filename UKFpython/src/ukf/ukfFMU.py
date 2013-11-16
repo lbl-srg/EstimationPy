@@ -589,7 +589,7 @@ class ukfFMU():
 		Cxx = np.dot(np.dot(Vnext.T, W), Vnow)
 		return Cxx
 
-	def ukf_step(self,t_old,t,verbose=False):
+	def ukf_step(self, x, sqrtP, sqrtQ, sqrtR, t_old, t, z = None, verbose=False):
 		"""
 		z,x,S,sqrtQ,sqrtR,u_old,u,
 		
@@ -597,16 +597,12 @@ class ukfFMU():
 		
 		1- prediction
 		2- correction and update
-		
 		"""
+		print x
+		pars = x[self.n_state_obs:]
+		x = x[:self.n_state_obs]
 		
-		x = self.model.GetStateObservedValues()
-		pars = self.model.GetParametersValues()
-		sqrtP = self.model.GetCovMatrixStatePars()
-		sqrtQ = sqrtP
-		sqrtR = self.model.GetCovMatrixOutputs()
-		
-		# the list of sigma points (each signa point can be an array, containing the state variables)
+		# the list of sigma points (each sigma point can be an array, containing the state variables)
 		# x, pars, sqrtP, sqrtQ = None, sqrtR = None
 		Xs      = self.computeSigmaPoints(x, pars, sqrtP, sqrtQ, sqrtR)
 	
@@ -623,10 +619,15 @@ class ukfFMU():
 	
 		# compute the average
 		Xave = self.averageProj(X_proj)
+		Xfull_ave = self.averageProj(Xfull_proj)
 		
 		if verbose:
 			print "Averaged projected sigma points"
 			print Xave
+		
+		if verbose:
+			print "Averaged projected full state"
+			print Xfull_ave
 		
 		# compute the new squared covariance matrix S
 		Snew = self.computeS(X_proj,Xave,sqrtQ)
@@ -640,8 +641,8 @@ class ukfFMU():
 		pars = Xave[0,self.n_state_obs:]
 		Xs   = self.computeSigmaPoints(x, pars, Snew, sqrtQ, sqrtR)
 		
-		# keep the last part of the projection for the other states not updated
-		Xs[:,self.n_state_obs:] = X_proj[:,self.n_state_obs:]
+		# Merge the real full state and the new ones
+		self.model.SetState(Xfull_ave[0])
 		
 		if verbose:
 			print "New sigma points"
@@ -649,14 +650,16 @@ class ukfFMU():
 
 		# compute the projected (outputs) points (each sigma points is propagated through the output function, this should not require a simulation,
 		# just the evaluation of a function since the output can be directly computed if the state vector and inputs are known )
-		Z_proj = self.sigmaPointOutProj(m,Xs,u,t)
+		X_proj, Z_proj, Xfull_proj = self.sigmaPointProj(Xs,t,t+1e-8)
 		
 		if verbose:
 			print "Output projection of new sigma points"
 			print Z_proj
+			print "State re-projection"
+			print X_proj
 
 		# compute the average output
-		Zave = self.averageOutProj(Z_proj)
+		Zave = self.averageProj(Z_proj)
 		
 		if verbose:
 			print "Averaged output projection of new sigma points"
@@ -684,12 +687,19 @@ class ukfFMU():
 		K             = np.linalg.lstsq(Sy, firstDivision)[0]
 		K             = K.T
 		
+		# Read the output value
+		if z == None:
+			z = self.model.GetMeasuredDataOuputs(t)
+		
+		if verbose:
+			print "Measured Output data to be compared against simulations"
+			print z
+		
 		# State correction using the measurements
-		X_corr = Xave
-		X_corr[:,0:self.n_state_obs] = Xave[:,0:self.n_state_obs] + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
+		X_corr = Xave + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
 		
 		# If constraints are active, they are imposed in order to avoid the corrected value to fall outside
-		X_corr[0,0:self.n_state_obs] = self.constrainedState(X_corr[0,0:self.n_state_obs])
+		X_corr[0,:] = self.constrainedState(X_corr[0,:])
 		
 		if verbose:
 			print "New state corrected"
@@ -699,9 +709,44 @@ class ukfFMU():
 		# The covariance matrix is corrected too
 		U      = np.dot(K,Sy)
 		S_corr = self.cholUpdate(Snew,U,-1*np.ones(self.n_state))
-
-		return (X_corr, S_corr, Zave, Sy)
+		
+		# Apply the corrections to the model and then returns
+		# Set observed states and parameters
+		self.model.SetStateSelected(X_corr[0,:self.n_state_obs])
+		self.model.SetParametersSelected(X_corr[0,self.n_state_obs:])
+		
+		return (X_corr[0], S_corr, Zave, Sy)
 	
+	def filter(self, start, stop, verbose=False):
+		"""
+		This method starts the filtering process and performs a loop of ukf-steps
+		"""
+		# Read the output measured data
+		measuredOuts = self.model.GetMeasuredOutputDataSeries()
+		
+		# Get the number of time steps
+		Ntimes = len(measuredOuts)
+		
+		# Initial conditions and other values
+		x = [np.hstack((self.model.GetStateObservedValues(), self.model.GetParametersValues()))]
+		sqrtP = [self.model.GetCovMatrixStatePars()]
+		sqrtQ = self.model.GetCovMatrixStatePars()
+		sqrtR = self.model.GetCovMatrixOutputs()
+		
+		for i in range(1,Ntimes):
+			t_old = measuredOuts[i-1,0]
+			t = measuredOuts[i,0]
+			z = measuredOuts[i,1:]
+			X_corr, sP, Zave, Sy = self.ukf_step(x[i-1], sqrtP[i-1], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
+			
+			x.append(X_corr)
+			sqrtP.append(sP)
+			
+			print X_corr
+			print Zave
+			
+		return
+		
 	
 	def smooth(self,time,Xhat,S,sqrtQ,U,m,verbose=False):
 		"""

@@ -49,11 +49,12 @@ def showResults(time, results):
     i = 1
     N = len(results.keys())
     for name, values in results.iteritems():
-        pylab.subplot(N,1,i)
-        pylab.plot(time, values, label=name)
-        pylab.ylabel(name)
-        pylab.xlabel('Time')
-        i += 1
+        if "__"not in name:
+            pylab.subplot(N,1,i)
+            pylab.plot(time, values, label=name)
+            pylab.ylabel(name)
+            pylab.xlabel('Time')
+            i += 1
     pylab.show()
    
 if __name__ == '__main__':

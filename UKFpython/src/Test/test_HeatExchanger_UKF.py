@@ -64,7 +64,7 @@ def main():
     
     # Set initial value of state, and its covariance and the limits (if any)
     var = m.GetVariables()[0]
-    var.SetInitialValue(298.15)
+    var.SetInitialValue(328.15)
     var.SetCovariance(1.5)
     var.SetMinValue(273.15)
     var.SetConstraintLow(True)
@@ -79,7 +79,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[0]
     par.SetInitialValue(100.0)
-    par.SetCovariance(5.0)
+    par.SetCovariance(50.0)
     par.SetMinValue(50.0)
     par.SetConstraintLow(True)
     
@@ -91,8 +91,8 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[1]
-    par.SetInitialValue(100.0)
-    par.SetCovariance(5.0)
+    par.SetInitialValue(150.0)
+    par.SetCovariance(50.0)
     par.SetMinValue(50.0)
     par.SetConstraintLow(True)
     
@@ -116,8 +116,8 @@ def main():
     # Show details
     print ukf_FMU
     
-    # Perform an UKF estimation step
-    ukf_FMU.ukf_step(0.0, 5.0, verbose = True)
+    # start filter
+    ukf_FMU.filter(0.0, 5.0)
     
     return
 

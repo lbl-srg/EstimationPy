@@ -85,36 +85,36 @@ class Model():
             if setTrees:
                 self.__SetTrees()
     
-    def AddParameter(self, object):
+    def AddParameter(self, obj):
         """
         This method add one object to the list of parameters. This list contains only the parameters that 
         will be modified during the further analysis
         """
-        if self.IsParameterPresent(object):
-            print "Parameter: ", object, " not added, already present"
+        if self.IsParameterPresent(obj):
+            print "Parameter: ", obj, " not added, already present"
             return False
         else:
             # the object is not yet part of the list, add it            
-            par = EstimationVariable(object, self)
+            par = EstimationVariable(obj, self)
             self.parameters.append(par)
-            print "Added variable: ",object," (",par,")"
+            print "Added variable: ",obj," (",par,")"
             
             return True
     
-    def AddVariable(self, object):
+    def AddVariable(self, obj):
         """
         This method add one object to the list of variables. This list contains only the variables that 
         will be modified during the further analysis
         """
-        if self.IsVariablePresent(object):
-            print "Variable: ", object, " not added, already present"
+        if self.IsVariablePresent(obj):
+            print "Variable: ", obj, " not added, already present"
             return False
         else:
             # the object is not yet part of the list, add it
             # but before embed it into an EstimationVariable class
-            var = EstimationVariable(object, self)
+            var = EstimationVariable(obj, self)
             self.variables.append(var)
-            print "Added variable: ",object," (",var,")"
+            print "Added variable: ",obj," (",var,")"
             return True
     
     def CheckInputData(self, align = True):
@@ -122,9 +122,16 @@ class Model():
         This method check if all the input data are ready to be used or not. If not because they are not aligned, this method
         tries to correct them providing an interpolation
         """
+        return self.CheckDataList(self.inputs, align)
+    
+    def CheckDataList(self, dataList, align = True):
+        """
+        This method check if all the data series provided by the dataList are ready to be used or not.
+        If not because they are not aligned, this method tries to correct them providing an interpolation
+        """
         dataSeries = []
-        for input in self.inputs:
-            dataSeries.append(input.GetDataSeries())
+        for inp in dataList:
+            dataSeries.append(inp.GetDataSeries())
         
         Ninputs = len(dataSeries)
         Tmin = 0.0
@@ -148,11 +155,11 @@ class Model():
             # New time vector to be shared between the data series
             new_time = numpy.linspace(Tmin, Tmax, Npoints)
             
-            for input in self.inputs:
-                old_time = input.GetDataSeries()[Strings.TIME_STRING]
-                old_data = numpy.squeeze(numpy.asarray(input.GetDataSeries()[Strings.DATA_STRING]))
+            for inp in dataList:
+                old_time = inp.GetDataSeries()[Strings.TIME_STRING]
+                old_data = numpy.squeeze(numpy.asarray(inp.GetDataSeries()[Strings.DATA_STRING]))
                 new_data  = numpy.interp(new_time, old_time, old_data)
-                input.SetDataSeries(new_time, new_data)
+                inp.SetDataSeries(new_time, new_data)
                 
             return False
         else:
@@ -278,6 +285,46 @@ class Model():
                 obsOut[i] = o.ReadValueInFMU(self.fmu)
                 i += 1
         return obsOut
+    
+    def GetMeasuredDataOuputs(self, t):
+        """
+        This method returns the measured data value of the observed outputs at a given time
+        instant t
+        """
+        obsOut = numpy.zeros(shape=(1, self.GetNumMeasuredOutputs()))
+        i = 0
+        for o in self.outputs:
+            if o.IsMeasuredOutput():
+                obsOut[0,i] = o.ReadFromDataSeries(t)
+                i += 1
+        return  obsOut
+    
+    def GetMeasuredOutputDataSeries(self):
+        """
+        This method returns the data series associated to each measured output
+        """
+        # Get all the data series from the CSV files (for every input of the model)
+        outDataSeries = []
+        for o in self.outputs:
+            if o.IsMeasuredOutput():
+                outDataSeries.append(o)
+        
+        # Try to align the measured output data
+        self.CheckDataList(outDataSeries, align = True)
+        
+        # Now transform it into a matrix with time as first column and the measured outputs
+        time = outDataSeries[0].GetDataSeries()[Strings.TIME_STRING]
+        Npoints = len(time)
+        Nouts = self.GetNumMeasuredOutputs()
+        dataMatrix = numpy.zeros(shape=(Npoints, Nouts+1))
+        
+        dataMatrix[:,0] = time
+        i = 1
+        for o in outDataSeries:
+            dataMatrix[:,i] = o.GetDataSeries()[Strings.DATA_STRING]
+            i += 1
+        
+        return dataMatrix 
     
     def GetNumInputs(self):
         """
@@ -470,17 +517,17 @@ class Model():
             print "FMU not yet loaded..."
             return False
     
-    def GetTreeByType(self, type):
+    def GetTreeByType(self, Type):
         """
         This method given a string that describes a given type of tree, it returns that tree
         """
-        if type == Strings.PARAMETER_STRING:
+        if Type == Strings.PARAMETER_STRING:
             return self.treeParameters
-        if type == Strings.VARIABLE_STRING:
+        if Type == Strings.VARIABLE_STRING:
             return self.treeVariables
-        if type == Strings.INPUT_STRING:
+        if Type == Strings.INPUT_STRING:
             return self.treeInputs
-        if type == Strings.OUTPUT_STRING:
+        if Type == Strings.OUTPUT_STRING:
             return self.treeOutputs
         else:
             print "No Match between the type passes and the available trees"
@@ -500,26 +547,26 @@ class Model():
         
         try:
             # Take the data type associated to the variable
-            type  = self.fmu.get_variable_data_type(variableInfo.name)
+            Type  = self.fmu.get_variable_data_type(variableInfo.name)
             
             # According to the data type read, select one of these methods to get the information
-            if type == pyfmi.fmi.FMI_REAL:
+            if Type == pyfmi.fmi.FMI_REAL:
                 value = self.fmu.get_real( variableInfo.value_reference )
-            elif type == pyfmi.fmi.FMI_INTEGER:
+            elif Type == pyfmi.fmi.FMI_INTEGER:
                 value = self.fmu.get_integer( variableInfo.value_reference )
-            elif type == pyfmi.fmi.FMI_BOOLEAN:
+            elif Type == pyfmi.fmi.FMI_BOOLEAN:
                 value = self.fmu.get_boolean( variableInfo.value_reference )
-            elif type == pyfmi.fmi.FMI_ENUMERATION:
+            elif Type == pyfmi.fmi.FMI_ENUMERATION:
                 value = self.fmu.get_int( variableInfo.value_reference )
-            elif type == pyfmi.fmi.FMI_STRING:
+            elif Type == pyfmi.fmi.FMI_STRING:
                 value = self.fmu.get_string( variableInfo.value_reference )
             else:
                 print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
                 value = 0.0
  
             # TODO: check the min and max value if the variables are not real or integers
-            min   = self.fmu.get_variable_min(variableInfo.name)
-            max   = self.fmu.get_variable_max(variableInfo.name)
+            Min   = self.fmu.get_variable_min(variableInfo.name)
+            Max   = self.fmu.get_variable_max(variableInfo.name)
                 
             try:
                 start = self.fmu.get_variable_start(variableInfo.name)
@@ -527,7 +574,7 @@ class Model():
                 print "Default start value defined as 0.0"
                 start = 0.0
             
-            return (type, value, start, min, max)
+            return (type, value, start, Min, Max)
         
         except pyfmi.fmi.FMUException:
                 # if the real value is not present for this parameter/variable
@@ -542,22 +589,22 @@ class Model():
         
         try:
             # Take the data type associated to the variable
-            type  = self.fmu.get_variable_data_type(variableInfo.name)
+            Type  = self.fmu.get_variable_data_type(variableInfo.name)
             
             # According to the data type read, select one of these methods to get the information
-            if type == pyfmi.fmi.FMI_REAL:
+            if Type == pyfmi.fmi.FMI_REAL:
                 value = self.fmu.get_real( variableInfo.value_reference )
                 strType = "Real"
-            elif type == pyfmi.fmi.FMI_INTEGER:
+            elif Type == pyfmi.fmi.FMI_INTEGER:
                 value = self.fmu.get_integer( variableInfo.value_reference )
                 strType = "Integer"
-            elif type == pyfmi.fmi.FMI_BOOLEAN:
+            elif Type == pyfmi.fmi.FMI_BOOLEAN:
                 value = self.fmu.get_boolean( variableInfo.value_reference )
                 strType = "Boolean"
-            elif type == pyfmi.fmi.FMI_ENUMERATION:
+            elif Type == pyfmi.fmi.FMI_ENUMERATION:
                 value = self.fmu.get_int( variableInfo.value_reference )
                 strType = "Enum"
-            elif type == pyfmi.fmi.FMI_STRING:
+            elif Type == pyfmi.fmi.FMI_STRING:
                 value = self.fmu.get_string( variableInfo.value_reference )
                 strType = "String"
             else:
@@ -566,8 +613,8 @@ class Model():
                 strType = "Unknown"
  
             # TODO: check the min and max value if the variables are not real or integers
-            min   = self.fmu.get_variable_min(variableInfo.name)
-            max   = self.fmu.get_variable_max(variableInfo.name)
+            Min   = self.fmu.get_variable_min(variableInfo.name)
+            Max   = self.fmu.get_variable_max(variableInfo.name)
                 
             try:
                 start = str(self.fmu.get_variable_start(variableInfo.name))
@@ -577,8 +624,8 @@ class Model():
                 start = ""
                 
             strVal = str(value[0])
-            strMin = str(min)
-            strMax = str(max)
+            strMin = str(Min)
+            strMax = str(Max)
             if min < -1.0e+20:
                 strMin = "-Inf"
             if max > 1.0e+20:
@@ -671,13 +718,13 @@ class Model():
         start_input_2 = numpy.zeros((1, Ninputs))
         i = 0
         if index == 0:
-            for input in self.inputs:
-                dataInput = input.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
+            for inp in self.inputs:
+                dataInput = inp.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
                 start_input[0, i] = dataInput[index,0]
                 i += 1
         else:
-            for input in self.inputs:
-                dataInput = input.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
+            for inp in self.inputs:
+                dataInput = inp.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
                 start_input_1[0, i] = dataInput[index-1,0]
                 start_input_2[0, i] = dataInput[index,0]
                 
@@ -691,13 +738,13 @@ class Model():
         try:
             # Simulate from the initial time to initial time + epsilon
             # thus we have 2 points
-            input = numpy.hstack((start_input, start_input))
-            input = input.reshape(2,-1)
+            Input = numpy.hstack((start_input, start_input))
+            Input = Input.reshape(2,-1)
             time = numpy.array([start_time, start_time+1e-10])
             time = time.reshape(2,-1)
             
             # Run the simulation
-            self.Simulate(time = time, input = input)
+            self.Simulate(time = time, Input = Input)
             self.opts["initialize"] = False
             
             # Initialize the selected variables and parameters to the values indicated 
@@ -714,11 +761,11 @@ class Model():
             print "First simulation for initialize the model failed"
             return False
     
-    def IsParameterPresent(self, object):
+    def IsParameterPresent(self, obj):
         """
         This method returns true is the parameter is contained in the list of parameters of the model
         """
-        val_ref = object.value_reference
+        val_ref = obj.value_reference
         for p in self.parameters:
             if p.value_reference == val_ref:
                 # there is already a parameter in the list with the same value_reference
@@ -726,11 +773,11 @@ class Model():
                 return True
         return False
     
-    def IsVariablePresent(self, object):
+    def IsVariablePresent(self, obj):
         """
         This method returns true is the variable is contained in the list of variable of the model
         """
-        val_ref = object.value_reference
+        val_ref = obj.value_reference
         for v in self.variables:
             if v.value_reference == val_ref:
                 # there is already a variable in the list with the same value_reference
@@ -744,8 +791,8 @@ class Model():
         """
         # Get all the data series from the CSV files (for every input of the model)
         LoadedInputs = True
-        for input in self.inputs:
-            LoadedInputs = LoadedInputs and input.ReadDataSeries()
+        for inp in self.inputs:
+            LoadedInputs = LoadedInputs and inp.ReadDataSeries()
         
         if not LoadedInputs:
             print "An error occurred while loading the inputs"
@@ -765,9 +812,9 @@ class Model():
         """
         # Get all the data series from the CSV files (for every input of the model)
         LoadedOutputs = True
-        for output in self.outputs:
-            if output.IsMeasuredOutput():
-                LoadedOutputs = LoadedOutputs and output.ReadDataSeries()
+        for o in self.outputs:
+            if o.IsMeasuredOutput():
+                LoadedOutputs = LoadedOutputs and o.ReadDataSeries()
         
         if not LoadedOutputs:
             print "An error occurred while loading the outputs"
@@ -784,26 +831,26 @@ class Model():
             self.fmu = None
         self.__init__(fmuFile, result_handler, solver, atol, rtol, setTrees)
     
-    def RemoveParameter(self, object):
+    def RemoveParameter(self, obj):
         """
         This method remove one object to the list of parameters. This list contains only the parameters that 
         will be modified during the further analysis
         """
         try:
-            index = self.parameters.index(object)
+            index = self.parameters.index(obj)
             self.parameters.pop(index)
             return True
         except ValueError:
             # the object cannot be removed because it is not present
             return False
     
-    def RemoveVariable(self, object):
+    def RemoveVariable(self, obj):
         """
         This method remove one object to the list of variables. This list contains only the parameters that 
         will be modified during the further analysis
         """
         try:
-            index = self.variables.index(object)
+            index = self.variables.index(obj)
             self.variables.pop(index)
             return True
         except ValueError:
@@ -1030,7 +1077,7 @@ class Model():
             print "Problems while creating the variables tree"
             self.treeVariables = Tree(Strings.VARIABLE_STRING)
     
-    def Simulate(self, start_time = None, final_time = None, time = None, input = None):
+    def Simulate(self, start_time = None, final_time = None, time = None, Input = None):
         """
         This method simulates the model from the start_time to the final_time, using a given set of simulation
         options. Since it may happen that a simulation fails without apparent reason (!!), it is better to 
@@ -1051,7 +1098,7 @@ class Model():
         # Reshape to be consistent
         time  = time.reshape(-1, 1)
         
-        if input == None:
+        if Input == None:
             # Take all the data series
             Npoints = len(time)
             inputMatrix = numpy.matrix(numpy.zeros((Npoints, Ninputs)))
@@ -1065,9 +1112,9 @@ class Model():
             
         else:
             # Reshape to be consistent
-            input = input.reshape(-1, Ninputs)
+            Input = Input.reshape(-1, Ninputs)
             # Define the input trajectory
-            V = numpy.hstack((time, input))
+            V = numpy.hstack((time, Input))
         
         # The input trajectory must be an array, otherwise pyfmi does not work
         u_traj  = numpy.array(V)
@@ -1147,20 +1194,20 @@ class Model():
         string += "\n-NumStates: "+self.numStates+"\n"
         return string
     
-    def ToggleParameter(self, object):
+    def ToggleParameter(self, obj):
         """
         If the parameter is already present it is removed, otherwise it is added
         """
-        if self.IsParameterPresent(object):
-            self.RemoveParameter(object)
+        if self.IsParameterPresent(obj):
+            self.RemoveParameter(obj)
         else:
-            self.AddParameter(object)
+            self.AddParameter(obj)
     
-    def ToggleVariable(self, object):
+    def ToggleVariable(self, obj):
         """
         If the variable is already present it is removed, otherwise it is added
         """
-        if self.IsVariablePresent(object):
-            self.RemoveVariable(object)
+        if self.IsVariablePresent(obj):
+            self.RemoveVariable(obj)
         else:
-            self.AddVariable(object)
+            self.AddVariable(obj)
