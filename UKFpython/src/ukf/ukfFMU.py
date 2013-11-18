@@ -724,28 +724,31 @@ class ukfFMU():
 		# Read the output measured data
 		measuredOuts = self.model.GetMeasuredOutputDataSeries()
 		
+		# time
+		time = measuredOuts[:,0]
+		
 		# Get the number of time steps
 		Ntimes = len(measuredOuts)
 		
 		# Initial conditions and other values
-		x = [np.hstack((self.model.GetStateObservedValues(), self.model.GetParametersValues()))]
+		x     = [np.hstack((self.model.GetStateObservedValues(), self.model.GetParametersValues()))]
 		sqrtP = [self.model.GetCovMatrixStatePars()]
 		sqrtQ = self.model.GetCovMatrixStatePars()
 		sqrtR = self.model.GetCovMatrixOutputs()
-		
+		y     = [measuredOuts[0,1:]]
+		Sy    = [sqrtR]
 		for i in range(1,Ntimes):
 			t_old = measuredOuts[i-1,0]
 			t = measuredOuts[i,0]
 			z = measuredOuts[i,1:]
-			X_corr, sP, Zave, Sy = self.ukf_step(x[i-1], sqrtP[i-1], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
+			X_corr, sP, Zave, S_y = self.ukf_step(x[i-1], sqrtP[i-1], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
 			
 			x.append(X_corr)
 			sqrtP.append(sP)
+			y.append(Zave)
+			Sy.append(S_y)
 			
-			print X_corr
-			print Zave
-			
-		return
+		return time, x, sqrtP, y, Sy
 		
 	
 	def smooth(self,time,Xhat,S,sqrtQ,U,m,verbose=False):

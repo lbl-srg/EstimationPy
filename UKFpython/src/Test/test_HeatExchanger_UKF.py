@@ -117,11 +117,13 @@ def main():
     print ukf_FMU
     
     # start filter
-    ukf_FMU.filter(0.0, 5.0)
+    time, x, sqrtP, y, Sy = ukf_FMU.filter(0.0, 5.0)
     
-    return
-
-    # Instantiate filter, and run it
+    print time
+    print x
+    print sqrtP
+    print y
+    print Sy
    
 if __name__ == '__main__':
     main()
