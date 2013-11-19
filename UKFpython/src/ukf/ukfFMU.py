@@ -52,22 +52,18 @@ class ukfFMU():
 		self.setUKFparams()
 		
 		# set the default constraints for the observed state variables (not active by default)
-		self.ConstrStateHigh = np.empty(self.n_state_obs)
-		self.ConstrStateHigh.fill(False)
-		self.ConstrStateLow = np.empty(self.n_state_obs)
-		self.ConstrStateLow.fill(False)
+		self.ConstrStateHigh = self.model.GetConstrObsStatesHigh()
+		self.ConstrStateLow = self.model.GetConstrObsStatesLow()
 		# Max and Min Value of the states constraints
-		self.ConstrStateValueHigh = np.zeros(self.n_state_obs)
-		self.ConstrStateValueLow  = np.zeros(self.n_state_obs)
+		self.ConstrStateValueHigh = self.model.GetStateObservedMax()
+		self.ConstrStateValueLow  = self.model.GetStateObservedMin()
 		
 		# set the default constraints for the estimated parameters (not active by default)
-		self.ConstrParsHigh = np.empty(self.n_pars)
-		self.ConstrParsHigh.fill(False)
-		self.ConstrParsLow = np.empty(self.n_pars)
-		self.ConstrParsLow.fill(False)
+		self.ConstrParsHigh = self.model.GetConstrParsHigh()
+		self.ConstrParsLow = self.model.GetConstrParsLow()
 		# Max and Min Value of the parameters constraints
-		self.ConstrParsValueHigh = np.zeros(self.n_pars)
-		self.ConstrParsValueLow  = np.zeros(self.n_pars)
+		self.ConstrParsValueHigh = self.model.GetParametersMax()
+		self.ConstrParsValueLow  = self.model.GetParametersMin()
 	
 	def __str__(self):
 		"""
@@ -173,12 +169,12 @@ class ukfFMU():
 		for i in range(self.n_pars):
 		
 			# if the constraint is active and the threshold is violated
-			if self.ConstrParsHigh[i] and X[self.n_state+i] > self.ConstrParsValueHigh[i]:
-				X[self.n_state+i] = self.ConstrParsValueHigh[i]
+			if self.ConstrParsHigh[i] and X[self.n_state_obs+i] > self.ConstrParsValueHigh[i]:
+				X[self.n_state_obs+i] = self.ConstrParsValueHigh[i]
 				
 			# if the constraint is active and the threshold is violated	
-			if self.ConstrParsLow[i] and X[self.n_state+i] < self.ConstrParsValueLow[i]:
-				X[self.n_state+i] = self.ConstrParsValueLow[i]
+			if self.ConstrParsLow[i] and X[self.n_state_obs+i] < self.ConstrParsValueLow[i]:
+				X[self.n_state_obs+i] = self.ConstrParsValueLow[i]
 		
 		return X
 				
@@ -598,7 +594,7 @@ class ukfFMU():
 		1- prediction
 		2- correction and update
 		"""
-		print x
+		
 		pars = x[self.n_state_obs:]
 		x = x[:self.n_state_obs]
 		
@@ -737,6 +733,7 @@ class ukfFMU():
 		sqrtR = self.model.GetCovMatrixOutputs()
 		y     = [measuredOuts[0,1:]]
 		Sy    = [sqrtR]
+		
 		for i in range(1,Ntimes):
 			t_old = measuredOuts[i-1,0]
 			t = measuredOuts[i,0]

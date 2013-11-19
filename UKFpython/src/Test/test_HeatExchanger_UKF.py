@@ -4,7 +4,9 @@ Created on Nov 7, 2013
 @author: marco
 '''
 import pylab
+import numpy
 from FmuUtils import Model
+from FmuUtils import CsvReader
 from ukf.ukfFMU import ukfFMU
 
 def main():
@@ -78,7 +80,7 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[0]
-    par.SetInitialValue(100.0)
+    par.SetInitialValue(1000.0)
     par.SetCovariance(50.0)
     par.SetMinValue(50.0)
     par.SetConstraintLow(True)
@@ -91,7 +93,7 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[1]
-    par.SetInitialValue(150.0)
+    par.SetInitialValue(1000.0)
     par.SetCovariance(50.0)
     par.SetMinValue(50.0)
     par.SetConstraintLow(True)
@@ -119,11 +121,40 @@ def main():
     # start filter
     time, x, sqrtP, y, Sy = ukf_FMU.filter(0.0, 5.0)
     
-    print time
-    print x
-    print sqrtP
-    print y
-    print Sy
-   
+    # Path of the csv file containing the True data series
+    csvTrue = "../../modelica/FmuExamples/Resources/data/SimulationData_HeatExchanger.csv"
+    
+    # Get the measured outputs
+    showResults(time, x, sqrtP, y, Sy, csvTrue)
+
+def showResults(time, x, sqrtP, y, Sy, csvTrue):
+    # Display results
+    fig1 = pylab.figure()
+    pylab.clf()
+    
+    simResults = CsvReader.CsvReader()
+    simResults.OpenCSV(csvTrue)
+    simResults.SetSelectedColumn("heatExchanger.metal.T")
+    res = simResults.GetDataSeries()
+    
+    t = res["time"]
+    d = numpy.squeeze(numpy.asarray(res["data"]))
+    
+    x = numpy.asarray(x)
+    y = numpy.asarray(y)
+    
+    pylab.subplot(2,1,1)
+    pylab.plot(time, x[:,0],"r--")
+    pylab.plot(t, d, "g")
+    pylab.ylabel("x")
+    pylab.xlabel('Time')
+    
+    #pylab.subplot(2,1,2)
+    #pylab.plot(time, y)
+    #pylab.ylabel("x")
+    #pylab.xlabel('Time')
+    
+    pylab.show()
+  
 if __name__ == '__main__':
     main()

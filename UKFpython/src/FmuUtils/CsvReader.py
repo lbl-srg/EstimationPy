@@ -60,7 +60,7 @@ class CsvReader():
         string += "\n-Selected: "+str(self.columnSelected)
         return string
       
-    def OpenCSV(self, filename):
+    def OpenCSV(self, filename=""):
         """
         
         Open a CSV file

@@ -166,6 +166,54 @@ class Model():
             print "\tMatch between data series - OK"
             return True
     
+    def GetConstrObsStatesHigh(self):
+        """
+        This method returns an array of boolean flags that indicate if an observed state variable is either
+        constrained or not
+        """
+        constrHi = numpy.empty(self.GetNumVariables())
+        i = 0
+        for v in self.variables:
+            constrHi[i] = v.GetConstraintHigh()
+            i += 1
+        return constrHi
+    
+    def GetConstrObsStatesLow(self):
+        """
+        This method returns an array of boolean flags that indicate if an observed state variable is either
+        constrained or not
+        """
+        constrLow = numpy.empty(self.GetNumVariables())
+        i = 0
+        for v in self.variables:
+            constrLow[i] = v.GetConstraintLow()
+            i += 1
+        return constrLow
+    
+    def GetConstrParsHigh(self):
+        """
+        This method returns an array of boolean flags that indicate if an estimated parameter is either
+        constrained or not
+        """
+        constrHi = numpy.empty(self.GetNumParameters())
+        i = 0
+        for p in self.parameters:
+            constrHi[i] = p.GetConstraintHigh()
+            i += 1
+        return constrHi
+    
+    def GetConstrParsLow(self):
+        """
+        This method returns an array of boolean flags that indicate if an estimated parameter is either
+        constrained or not
+        """
+        constrLow = numpy.empty(self.GetNumParameters())
+        i = 0
+        for p in self.parameters:
+            constrLow[i] = p.GetConstraintLow()
+            i += 1
+        return constrLow
+    
     def GetCovMatrixStates(self):
         """
         This method returns the covariance matrix of the state variables
@@ -403,6 +451,28 @@ class Model():
         """
         return self.parameters
     
+    def GetParametersMin(self):
+        """
+        This method return a vector that contains the values of the min value possible for the estimated parameters
+        """
+        minValues = numpy.zeros(self.GetNumParameters())
+        i = 0
+        for p in self.parameters:
+            minValues[i] = p.GetMinValue()
+            i += 1
+        return minValues
+    
+    def GetParametersMax(self):
+        """
+        This method return a vector that contains the values of the max value possible for the estimated parameters
+        """
+        maxValues = numpy.zeros(self.GetNumParameters())
+        i = 0
+        for p in self.parameters:
+            maxValues[i] = p.GetMaxValue()
+            i += 1
+        return maxValues
+    
     def GetParameterNames(self):
         """
         This method returns a list of names for each state variables observed
@@ -460,6 +530,28 @@ class Model():
             obsState[i] = v.ReadValueInFMU(self.fmu)
             i += 1
         return obsState
+    
+    def GetStateObservedMin(self):
+        """
+        This method return a vector that contains the values of the min value possible for the observed states
+        """
+        minValues = numpy.zeros(self.GetNumVariables())
+        i = 0
+        for v in self.variables:
+            minValues[i] = v.GetMinValue()
+            i += 1
+        return minValues
+    
+    def GetStateObservedMax(self):
+        """
+        This method return a vector that contains the values of the max value possible for the observed states
+        """
+        maxValues = numpy.zeros(self.GetNumVariables())
+        i = 0
+        for v in self.variables:
+            maxValues[i] = v.GetMaxValue()
+            i += 1
+        return maxValues
     
     def GetTree(self, objectTree, variability, causality, onlyStates = False, pedantic = False):
         """
