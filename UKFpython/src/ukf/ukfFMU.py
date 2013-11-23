@@ -659,21 +659,21 @@ class ukfFMU():
 		
 		if verbose:
 			print "Averaged output projection of new sigma points"
-			print Zave
+			print "Yav =",Zave
 
 		# compute the innovation covariance (relative to the output)
 		Sy = self.computeSy(Z_proj,Zave,sqrtR)
 		
 		if verbose:
 			print "Output squared covariance matrix"
-			print Sy
+			print "Sy =",Sy
 		
 		# compute the cross covariance matrix
 		CovXZ = self.computeCovXZ(X_proj, Xave, Z_proj, Zave)
 		
 		if verbose:
 			print "State output covariance matrix"
-			print CovXZ
+			print "Cxy =",CovXZ
 	
 		# Data assimilation step
 		# The information obtained in the prediction step are corrected with the information
@@ -689,7 +689,9 @@ class ukfFMU():
 		
 		if verbose:
 			print "Measured Output data to be compared against simulations"
-			print z
+			print "Z=",z
+			print "Z - Yav =",z.reshape(self.n_outputs,1)-Zave.T
+			print "K=",K
 		
 		# State correction using the measurements
 		X_corr = Xave + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
