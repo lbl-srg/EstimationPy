@@ -3,9 +3,6 @@ model ValveStuckInputs
   extends FmuExamples.ValveStuckBase;
   inner Modelica.Fluid.System system
     annotation (Placement(transformation(extent={{60,60},{80,80}})));
-  Modelica.Blocks.Nonlinear.VariableLimiter
-                                    limiter
-    annotation (Placement(transformation(extent={{-20,50},{0,70}})));
   Modelica.Blocks.Interfaces.RealInput leakPosition "leak position" annotation (
       Placement(transformation(extent={{-84,16},{-44,56}}),  iconTransformation(
         extent={{-20,-20},{20,20}},
@@ -17,21 +14,29 @@ model ValveStuckInputs
         extent={{-20,-20},{20,20}},
         rotation=270,
         origin={60,80})));
+  Buildings.Utilities.Math.SmoothMax smoothMax(deltaX=0.01)
+    annotation (Placement(transformation(extent={{4,32},{24,52}})));
+  Buildings.Utilities.Math.SmoothMin smoothMin(deltaX=0.01)
+    annotation (Placement(transformation(extent={{-28,56},{-8,76}})));
 equation
-  connect(limiter.u, cmd) annotation (Line(
-      points={{-22,60},{-80,60}},
+  connect(cmd, smoothMin.u2) annotation (Line(
+      points={{-80,60},{-30,60}},
       color={0,0,127},
       smooth=Smooth.None));
-  connect(limiter.y, valve.opening) annotation (Line(
-      points={{1,60},{20,60},{20,18}},
+  connect(smoothMin.y, smoothMax.u1) annotation (Line(
+      points={{-7,66},{-2,66},{-2,48},{2,48}},
       color={0,0,127},
       smooth=Smooth.None));
-  connect(leakPosition, limiter.limit2) annotation (Line(
-      points={{-64,36},{-44,36},{-44,52},{-22,52}},
+  connect(leakPosition, smoothMax.u2) annotation (Line(
+      points={{-64,36},{2,36}},
       color={0,0,127},
       smooth=Smooth.None));
-  connect(stuckPosition, limiter.limit1) annotation (Line(
-      points={{-56,80},{-40,80},{-40,68},{-22,68}},
+  connect(stuckPosition, smoothMin.u1) annotation (Line(
+      points={{-56,80},{-34,80},{-34,72},{-30,72}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(smoothMax.y, valve.opening) annotation (Line(
+      points={{25,42},{32,42},{32,26},{20,26},{20,18}},
       color={0,0,127},
       smooth=Smooth.None));
   annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,

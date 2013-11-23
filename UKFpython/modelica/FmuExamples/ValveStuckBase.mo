@@ -81,12 +81,12 @@ equation
       points={{-79,-30},{-68,-30},{-68,4},{-56,4}},
       color={0,0,127},
       smooth=Smooth.None));
-  connect(add.u1, dp) annotation (Line(
-      points={{-56,16},{-78,16},{-78,1.77636e-15},{-100,1.77636e-15}},
-      color={0,0,127},
-      smooth=Smooth.None));
   connect(mFlow.m_flow, m_flow) annotation (Line(
       points={{50,21},{50,0},{110,0}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(dp, add.u1) annotation (Line(
+      points={{-100,1.11022e-15},{-79,1.11022e-15},{-79,16},{-56,16}},
       color={0,0,127},
       smooth=Smooth.None));
   annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,

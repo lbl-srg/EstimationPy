@@ -1,31 +1,46 @@
 within FmuExamples;
 model ValveStuck
   extends FmuExamples.ValveStuckBase;
-  parameter Real leakPosition(min=0.0, max=1.0) = 0.2;
-  parameter Real stuckPosition(min=0.0, max=1.0) = 0.8;
-  Modelica.Blocks.Nonlinear.VariableLimiter
-                                    limiter
-    annotation (Placement(transformation(extent={{-20,50},{0,70}})));
-  Modelica.Blocks.Sources.RealExpression Max(y=stuckPosition)
-    annotation (Placement(transformation(extent={{-60,70},{-40,90}})));
-  Modelica.Blocks.Sources.RealExpression Min(y=leakPosition)
-    annotation (Placement(transformation(extent={{-60,30},{-40,50}})));
+  parameter Real valveCmd(min=0.0, max=1.0) = 1.0;
 
+  Modelica.Blocks.Math.Feedback sub
+    annotation (Placement(transformation(extent={{40,30},{60,50}})));
+  Modelica.Blocks.Interfaces.RealOutput err
+    annotation (Placement(transformation(extent={{100,30},{120,50}})));
+  Modelica.Blocks.Math.Product product1
+    annotation (Placement(transformation(extent={{-20,30},{0,50}})));
+  Modelica.Blocks.Continuous.Integrator command(initType=Modelica.Blocks.Types.Init.InitialOutput,
+      y_start=valveCmd)
+    annotation (Placement(transformation(extent={{-60,30},{-40,50}})));
+  Modelica.Blocks.Sources.Constant const(k=0)
+    annotation (Placement(transformation(extent={{-100,30},{-80,50}})));
 equation
-  connect(Max.y, limiter.limit1) annotation (Line(
-      points={{-39,80},{-32,80},{-32,68},{-22,68}},
+  connect(cmd, sub.u1) annotation (Line(
+      points={{-80,60},{32,60},{32,40},{42,40}},
       color={0,0,127},
       smooth=Smooth.None));
-  connect(Min.y, limiter.limit2) annotation (Line(
-      points={{-39,40},{-30,40},{-30,52},{-22,52}},
+  connect(sub.y, err) annotation (Line(
+      points={{59,40},{110,40}},
       color={0,0,127},
       smooth=Smooth.None));
-  connect(cmd, limiter.u) annotation (Line(
-      points={{-80,60},{-22,60}},
+  connect(cmd, product1.u1) annotation (Line(
+      points={{-80,60},{-30,60},{-30,46},{-22,46}},
       color={0,0,127},
       smooth=Smooth.None));
-  connect(limiter.y, valve.opening) annotation (Line(
-      points={{1,60},{20,60},{20,18}},
+  connect(product1.y, valve.opening) annotation (Line(
+      points={{1,40},{20,40},{20,18}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(product1.y, sub.u2) annotation (Line(
+      points={{1,40},{26,40},{26,26},{50,26},{50,32}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(command.y, product1.u2) annotation (Line(
+      points={{-39,40},{-26,40},{-26,34},{-22,34}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(const.y, command.u) annotation (Line(
+      points={{-79,40},{-62,40}},
       color={0,0,127},
       smooth=Smooth.None));
   annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,
