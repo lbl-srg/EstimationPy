@@ -2,18 +2,15 @@ within FmuExamples;
 model ValveStuck
   extends FmuExamples.ValveStuckBase;
   parameter Real valveCmd(min=0.0, max=1.0) = 1.0;
-
   Modelica.Blocks.Math.Feedback sub
     annotation (Placement(transformation(extent={{40,30},{60,50}})));
   Modelica.Blocks.Interfaces.RealOutput err
     annotation (Placement(transformation(extent={{100,30},{120,50}})));
-  Modelica.Blocks.Math.Product product1
-    annotation (Placement(transformation(extent={{-20,30},{0,50}})));
+  Modelica.Blocks.Sources.Constant const(k=0)
+    annotation (Placement(transformation(extent={{-40,30},{-20,50}})));
   Modelica.Blocks.Continuous.Integrator command(initType=Modelica.Blocks.Types.Init.InitialOutput,
       y_start=valveCmd)
-    annotation (Placement(transformation(extent={{-60,30},{-40,50}})));
-  Modelica.Blocks.Sources.Constant const(k=0)
-    annotation (Placement(transformation(extent={{-100,30},{-80,50}})));
+    annotation (Placement(transformation(extent={{-8,30},{12,50}})));
 equation
   connect(cmd, sub.u1) annotation (Line(
       points={{-80,60},{32,60},{32,40},{42,40}},
@@ -23,24 +20,16 @@ equation
       points={{59,40},{110,40}},
       color={0,0,127},
       smooth=Smooth.None));
-  connect(cmd, product1.u1) annotation (Line(
-      points={{-80,60},{-30,60},{-30,46},{-22,46}},
+  connect(command.y, valve.opening) annotation (Line(
+      points={{13,40},{20,40},{20,18}},
       color={0,0,127},
       smooth=Smooth.None));
-  connect(product1.y, valve.opening) annotation (Line(
-      points={{1,40},{20,40},{20,18}},
-      color={0,0,127},
-      smooth=Smooth.None));
-  connect(product1.y, sub.u2) annotation (Line(
-      points={{1,40},{26,40},{26,26},{50,26},{50,32}},
-      color={0,0,127},
-      smooth=Smooth.None));
-  connect(command.y, product1.u2) annotation (Line(
-      points={{-39,40},{-26,40},{-26,34},{-22,34}},
+  connect(command.y, sub.u2) annotation (Line(
+      points={{13,40},{26,40},{26,28},{50,28},{50,32}},
       color={0,0,127},
       smooth=Smooth.None));
   connect(const.y, command.u) annotation (Line(
-      points={{-79,40},{-62,40}},
+      points={{-19,40},{-10,40}},
       color={0,0,127},
       smooth=Smooth.None));
   annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,

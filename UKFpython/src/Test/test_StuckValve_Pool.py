@@ -11,7 +11,7 @@ from FmuUtils.FmuPool import FmuPool
 def main():
     
     # Assign an existing FMU to the model
-    filePath = "../../modelica/FmuExamples/Resources/FMUs/FmuExamples_ValveStuck.fmu"
+    filePath = "../../modelica/FmuExamples/Resources/FMUs/FmuExamples_ValveStuck_Quad.fmu"
     
     # Initialize the FMU model empty
     m = Model.Model(filePath, atol=1e-5, rtol=1e-6)
@@ -20,7 +20,7 @@ def main():
     print m
     
     # Path of the csv file containing the data series
-    csvPath = "../../modelica/FmuExamples/Resources/data/SimulationData_StuckValve.csv"
+    csvPath = "../../modelica/FmuExamples/Resources/data/NoisyData_StuckValve_quad_noDyn.csv"
     
     # Show the inputs
     print "The names of the FMU inputs are: ", m.GetInputNames(), "\n"
@@ -60,7 +60,7 @@ def main():
     # have to be performed.
     # values has to be a list of state vectors
     # values = [ [x0_0], [x0_1], ... [x0_n]]
-    vectorValues = numpy.linspace(0.1, 0.9, 10)
+    vectorValues = numpy.linspace(0.1, 1.0, 100)
     values = []
     for v in vectorValues:
         temp = {"state":numpy.array([v]), "parameters":[]}

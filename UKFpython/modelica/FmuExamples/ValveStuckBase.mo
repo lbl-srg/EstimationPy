@@ -1,21 +1,23 @@
 within FmuExamples;
 partial model ValveStuckBase
-  parameter Real Kv=0.5*3600/1000 "Kv (metric) flow coefficient [m3/h]";
+  parameter Real Kv=m_flow_nominal*3600/1000
+    "Kv (metric) flow coefficient [m3/h]";
   parameter Modelica.SIunits.Time riseTime=3 "Time constant of the filter";
   parameter Modelica.Media.Interfaces.PartialMedium.MassFlowRate m_flow_nominal=
-     0.5 "Nominal mass flowrate";
-  parameter Modelica.SIunits.Pressure dp_nominal=2 "Nominal pressure drop";
+     1.5 "Nominal mass flowrate";
+  parameter Modelica.SIunits.Pressure dp_nominal=2*101325
+    "Nominal pressure drop";
 
   Modelica.Fluid.Valves.ValveIncompressible valve(
-    redeclare function valveCharacteristic =
-        Modelica.Fluid.Valves.BaseClasses.ValveCharacteristics.quadratic,
     CvData=Modelica.Fluid.Types.CvTypes.Kv,
-    filteredOpening=true,
     redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater,
     Kv=Kv,
     dp_nominal=dp_nominal,
     m_flow_nominal=m_flow_nominal,
-    riseTime=riseTime)
+    riseTime=riseTime,
+    filteredOpening=false,
+    redeclare function valveCharacteristic =
+        Modelica.Fluid.Valves.BaseClasses.ValveCharacteristics.quadratic)
     annotation (Placement(transformation(extent={{10,0},{30,20}})));
 
   Modelica.Fluid.Sources.Boundary_pT Source(
@@ -55,7 +57,6 @@ partial model ValveStuckBase
   Modelica.Blocks.Interfaces.RealOutput m_flow "Mass flow rate from"
     annotation (Placement(transformation(extent={{100,-10},{120,10}}),
         iconTransformation(extent={{100,-10},{120,10}})));
-
 equation
   connect(Source.ports[1], valve.port_a) annotation (Line(
       points={{4.44089e-16,10},{10,10}},
