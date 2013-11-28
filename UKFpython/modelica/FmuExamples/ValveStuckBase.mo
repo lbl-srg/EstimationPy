@@ -7,6 +7,10 @@ partial model ValveStuckBase
      1.5 "Nominal mass flowrate";
   parameter Modelica.SIunits.Pressure dp_nominal=2*101325
     "Nominal pressure drop";
+  parameter Real bias = 0 "biasing of mass flow rate sensor";
+  parameter Real lambda = 0
+    "scale factor of mass flow rate sensor [Delta Mass flow rate/ Delta T]";
+  parameter Real Tref = 273.15 + 20 "Reference temperature for thermal drift";
 
   Modelica.Fluid.Valves.ValveIncompressible valve(
     CvData=Modelica.Fluid.Types.CvTypes.Kv,
@@ -23,8 +27,8 @@ partial model ValveStuckBase
   Modelica.Fluid.Sources.Boundary_pT Source(
     nPorts=1,
     redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater,
-    use_T_in=false,
-    use_p_in=true)
+    use_p_in=true,
+    use_T_in=true)
     annotation (Placement(transformation(extent={{-20,0},{0,20}})));
 
   Modelica.Fluid.Sources.Boundary_pT   Sink(
@@ -43,21 +47,30 @@ partial model ValveStuckBase
   inner Modelica.Fluid.System system
     annotation (Placement(transformation(extent={{60,60},{80,80}})));
   Modelica.Blocks.Sources.RealExpression Pref(y=101325)
-    annotation (Placement(transformation(extent={{-100,-40},{-80,-20}})));
+    annotation (Placement(transformation(extent={{-100,-70},{-80,-50}})));
   Modelica.Blocks.Math.Add add
-    annotation (Placement(transformation(extent={{-54,0},{-34,20}})));
+    annotation (Placement(transformation(extent={{-60,0},{-40,20}})));
   Modelica.Blocks.Interfaces.RealInput cmd "Valve command" annotation (
       Placement(transformation(extent={{-100,40},{-60,80}}), iconTransformation(
         extent={{-20,-20},{20,20}},
         rotation=270,
         origin={0,100})));
   Modelica.Blocks.Interfaces.RealInput dp "Pressure difference" annotation (
-      Placement(transformation(extent={{-120,-20},{-80,20}}),
-        iconTransformation(extent={{-120,-20},{-80,20}})));
+      Placement(transformation(extent={{-120,-52},{-80,-12}}),
+        iconTransformation(extent={{-120,-52},{-80,-12}})));
   Modelica.Blocks.Interfaces.RealOutput m_flow "Mass flow rate from"
-    annotation (Placement(transformation(extent={{100,-10},{120,10}}),
-        iconTransformation(extent={{100,-10},{120,10}})));
+    annotation (Placement(transformation(extent={{100,-30},{120,-10}}),
+        iconTransformation(extent={{100,-30},{120,-10}})));
+  Modelica.Blocks.Interfaces.RealOutput m_flow_real "Mass flow rate from"
+    annotation (Placement(transformation(extent={{100,10},{120,30}}),
+        iconTransformation(extent={{100,10},{120,30}})));
+  Modelica.Blocks.Interfaces.RealInput T_in "Prescribed boundary temperature"
+    annotation (Placement(transformation(extent={{-120,10},{-80,50}}),
+        iconTransformation(extent={{-120,10},{-80,50}})));
 equation
+
+  m_flow = (1+lambda*(T_in - Tref))*mFlow.m_flow + bias;
+
   connect(Source.ports[1], valve.port_a) annotation (Line(
       points={{4.44089e-16,10},{10,10}},
       color={0,127,255},
@@ -71,23 +84,27 @@ equation
       color={0,127,255},
       smooth=Smooth.None));
   connect(Pref.y, Sink.p_in) annotation (Line(
-      points={{-79,-30},{96,-30},{96,18},{86,18}},
+      points={{-79,-60},{96,-60},{96,18},{86,18}},
       color={0,0,127},
       smooth=Smooth.None));
   connect(add.y, Source.p_in) annotation (Line(
-      points={{-33,10},{-28,10},{-28,18},{-22,18}},
+      points={{-39,10},{-28,10},{-28,18},{-22,18}},
       color={0,0,127},
       smooth=Smooth.None));
   connect(Pref.y, add.u2) annotation (Line(
-      points={{-79,-30},{-68,-30},{-68,4},{-56,4}},
-      color={0,0,127},
-      smooth=Smooth.None));
-  connect(mFlow.m_flow, m_flow) annotation (Line(
-      points={{50,21},{50,0},{110,0}},
+      points={{-79,-60},{-68,-60},{-68,4},{-62,4}},
       color={0,0,127},
       smooth=Smooth.None));
   connect(dp, add.u1) annotation (Line(
-      points={{-100,1.11022e-15},{-79,1.11022e-15},{-79,16},{-56,16}},
+      points={{-100,-32},{-79,-32},{-79,16},{-62,16}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(mFlow.m_flow, m_flow_real) annotation (Line(
+      points={{50,21},{50,40},{96,40},{96,20},{110,20}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(Source.T_in, T_in) annotation (Line(
+      points={{-22,14},{-26,14},{-26,30},{-100,30}},
       color={0,0,127},
       smooth=Smooth.None));
   annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,
@@ -118,11 +135,19 @@ equation
           smooth=Smooth.None,
           visible=showDesignFlowDirection),
         Text(
-          extent={{-160,-20},{-100,-60}},
+          extent={{-160,-40},{-100,-80}},
           lineColor={0,0,127},
           textString="Dp"),
         Text(
           extent={{100,-20},{160,-60}},
           lineColor={0,0,127},
-          textString="m_flow")}));
+          textString="m_flow"),
+        Text(
+          extent={{100,60},{180,20}},
+          lineColor={0,0,127},
+          textString="m_flow_real"),
+        Text(
+          extent={{-160,80},{-100,40}},
+          lineColor={0,0,127},
+          textString="T")}));
 end ValveStuckBase;

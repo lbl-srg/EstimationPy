@@ -30,6 +30,8 @@ class ukfFMU():
 		self.n_state_obs = self.model.GetNumVariables()
 		self.n_pars      = self.model.GetNumParameters()
 		self.n_outputs   = self.model.GetNumMeasuredOutputs()
+		self.n_outputsTot= self.model.GetNumOutputs()
+		
 		self.augmented   = augmented
 		if not augmented:
 			self.N       = self.n_state_obs + self.n_pars
@@ -302,6 +304,7 @@ class ukfFMU():
 		X_proj = np.zeros((self.n_points, self.n_state_obs + self.n_pars))
 		Z_proj = np.zeros((self.n_points, self.n_outputs))
 		Xfull_proj = np.zeros((self.n_points, self.n_state))
+		Zfull_proj = np.zeros((self.n_points, self.n_outputsTot))
 		
 		# from the sigma points, get the value of the states and parameters
 		values = []
@@ -322,29 +325,17 @@ class ukfFMU():
 			Xo = results["__OBS_STATE__"]
 			p  = results["__PARAMS__"]
 			o  = results["__OUTPUTS__"]
+			o_all = results["__ALL_OUTPUTS__"]
 			
 			Xfull_proj[i,:] = X
 			X_proj[i,0:self.n_state_obs] = Xo
 			X_proj[i,self.n_state_obs:self.n_state_obs+self.n_pars] = p
 			Z_proj[i,:] = o
+			Zfull_proj[i,:] = o_all
 			
 			i += 1
 			
-		return X_proj, Z_proj, Xfull_proj
-
-	def sigmaPointOutProj(self,m,Xs,u,t):
-		"""
-		This function computes the outputs of the model, given a set of sigma points Xs as well as inputs u and time step t
-		"""
-		# initialize the vector of the outputs
-		Z_proj = np.zeros((self.n_points, self.n_outputs))
-		
-		#TODO: implement parallel 
-		j = 0
-		for x in Xs:
-			Z_proj[j,:] = m.functionG(x, u, t, False)
-			j += 1
-		return Z_proj
+		return X_proj, Z_proj, Xfull_proj, Zfull_proj
 
 	def averageProj(self,X_proj):
 		"""
@@ -607,7 +598,7 @@ class ukfFMU():
 			print Xs
 	
 		# compute the projected (state) points (each sigma points is propagated through the state transition function)
-		X_proj, Z_proj, Xfull_proj = self.sigmaPointProj(Xs,t_old,t)
+		X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigmaPointProj(Xs,t_old,t)
 		
 		if verbose:
 			print "Projected sigma points"
@@ -646,7 +637,7 @@ class ukfFMU():
 
 		# compute the projected (outputs) points (each sigma points is propagated through the output function, this should not require a simulation,
 		# just the evaluation of a function since the output can be directly computed if the state vector and inputs are known )
-		X_proj, Z_proj, Xfull_proj = self.sigmaPointProj(Xs,t,t+1e-8)
+		X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigmaPointProj(Xs,t,t+1e-8)
 		
 		if verbose:
 			print "Output projection of new sigma points"
@@ -656,6 +647,7 @@ class ukfFMU():
 
 		# compute the average output
 		Zave = self.averageProj(Z_proj)
+		Zfull_ave = self.averageProj(Zfull_proj)
 		
 		if verbose:
 			print "Averaged output projection of new sigma points"
@@ -713,7 +705,7 @@ class ukfFMU():
 		self.model.SetStateSelected(X_corr[0,:self.n_state_obs])
 		self.model.SetParametersSelected(X_corr[0,self.n_state_obs:])
 		
-		return (X_corr[0], S_corr, Zave, Sy)
+		return (X_corr[0], S_corr, Zave, Sy, Zfull_ave)
 	
 	def filter(self, start, stop, verbose=False):
 		"""
@@ -734,22 +726,54 @@ class ukfFMU():
 		sqrtQ = self.model.GetCovMatrixStatePars()
 		sqrtR = self.model.GetCovMatrixOutputs()
 		y     = [measuredOuts[0,1:]]
+		y_full= [measuredOuts[0,1:]]
 		Sy    = [sqrtR]
 		
 		for i in range(1,Ntimes):
 			t_old = measuredOuts[i-1,0]
 			t = measuredOuts[i,0]
 			z = measuredOuts[i,1:]
-			X_corr, sP, Zave, S_y = self.ukf_step(x[i-1], sqrtP[i-1], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
+			X_corr, sP, Zave, S_y, Zfull_ave = self.ukf_step(x[i-1], sqrtP[i-1], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
 			
 			x.append(X_corr)
 			sqrtP.append(sP)
 			y.append(Zave)
+			y_full.append(Zfull_ave)
 			Sy.append(S_y)
-			
-		return time, x, sqrtP, y, Sy
 		
+		# The first of the overall output vector is missing, copy from the second element
+		y_full[0] = y_full[1]
+			
+		return time, x, sqrtP, y, Sy, y_full
 	
+	def filterAndSmooth(self, start, stop, verbose=False):
+		"""
+		This method executes the filter and then the smoothing of the data
+		"""
+		# Run the filter
+		time, X, sqrtP, y, Sy = self.filter(start, stop, verbose = verbose)
+		
+		# get the number of time steps		
+		s = np.reshape(time,(-1,1)).shape
+		nTimeStep = s[0]
+		
+		# initialize the smoothed states and covariance matrix
+		# the initial value of the smoothed state estimation are equal to the filtered ones
+		Xsmooth = X.copy()
+		Ssmooth = sqrtP.copy()
+		
+		# iterating starting from the end and back
+		# i : nTimeStep-2 -> 0
+		#
+		# From point i with an estimation Xave[i], and S[i]
+		# new sigma points are created and propagated, the result is a 
+		# new vector of states X[i+1] (one for each sigma point)
+		#
+		# NOTE that at time i+1 there is available a corrected estimation of the state Xcorr[i+1]
+		# thus the difference between these two states is back-propagated to the state at time i
+		for i in range(nTimeStep-2,-1,-1):
+			pass
+			
 	def smooth(self,time,Xhat,S,sqrtQ,U,m,verbose=False):
 		"""
 		This methods contains all the steps that have to be performed by the UKF Smoother.

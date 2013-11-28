@@ -439,6 +439,17 @@ class Model():
             outputNames.append(outVar.GetObject().name)
         return outputNames
     
+    def GetOutputsValues(self):
+        """
+        This method return a vector that contains the values of the outputs of the model
+        """
+        obsOut = numpy.zeros(self.GetNumOutputs())
+        i = 0
+        for o in self.outputs:
+            obsOut[i] = o.ReadValueInFMU(self.fmu)
+            i += 1
+        return obsOut
+    
     def GetOutputsTree(self):
         """
         This method returns the tree associated to the outputs of the model
@@ -506,6 +517,12 @@ class Model():
         This method returns a tuple containing the properties of the FMU
         """
         return (self.name, self.author, self.description, self.type, self.version, self.guid, self.tool, self.numStates)
+    
+    def GetReal(self, var):
+        """
+        Set a real variablein the FMU model, given the PyFmi variable description
+        """
+        return self.fmu.get_real(var.value_reference)[0]
     
     def GetSimulationOptions(self):
         """
@@ -1119,6 +1136,13 @@ class Model():
         """
         self.fmu._set_continuous_states(stateVector)
     
+    def SetReal(self, var, value):
+        """
+        Set a real variablein the FMU model, given the PyFmi variable description
+        """
+        self.fmu.set_real(var.value_reference, value)
+        return
+    
     def SetStateSelected(self, vector):
         """
         This method sets the state variable contained in the list self.variables
@@ -1266,6 +1290,7 @@ class Model():
         results["__OBS_STATE__"]=self.GetStateObservedValues()
         results["__PARAMS__"]=self.GetParametersValues()
         results["__OUTPUTS__"]=self.GetMeasuredOutputsValues()
+        results["__ALL_OUTPUTS__"]=self.GetOutputsValues()
         
         # Return the results
         return (t, results)

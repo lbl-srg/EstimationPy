@@ -1,11 +1,11 @@
 within FmuExamples.Examples;
 model TestStuckValve
-  ValveStuckInputs valveStuck
+  ValveStuckInputs valveStuck(bias=0.05, lambda=0.01)
     annotation (Placement(transformation(extent={{-10,-10},{10,10}})));
   Modelica.Blocks.Sources.Ramp Press(
     duration=50,
     height=101325*3)
-    annotation (Placement(transformation(extent={{-42,-10},{-22,10}})));
+    annotation (Placement(transformation(extent={{-62,-40},{-42,-20}})));
   Modelica.Blocks.Sources.Step leak(
     height=0.2,
     offset=0.0,
@@ -21,9 +21,14 @@ model TestStuckValve
     offset=0,
     startTime=0)
     annotation (Placement(transformation(extent={{-60,50},{-40,70}})));
+  Modelica.Blocks.Sources.Ramp Temp(
+    duration=100,
+    offset=273.15 + 15,
+    height=30)
+    annotation (Placement(transformation(extent={{-80,-10},{-60,10}})));
 equation
   connect(Press.y, valveStuck.dp) annotation (Line(
-      points={{-21,6.66134e-16},{-18,6.66134e-16},{-18,0},{-10,0}},
+      points={{-41,-30},{-18,-30},{-18,-3.2},{-10,-3.2}},
       color={0,0,127},
       smooth=Smooth.None));
   connect(leak.y, valveStuck.leakPosition) annotation (Line(
@@ -36,6 +41,10 @@ equation
       smooth=Smooth.None));
   connect(cmd.y, valveStuck.cmd) annotation (Line(
       points={{-39,60},{0,60},{0,10}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(Temp.y, valveStuck.T_in) annotation (Line(
+      points={{-59,0},{-34,0},{-34,3},{-10,3}},
       color={0,0,127},
       smooth=Smooth.None));
   annotation (

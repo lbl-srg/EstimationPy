@@ -42,7 +42,7 @@ def main():
     output.SetCovariance(0.05)
     
     #################################################################
-    # Select the parameter to be identified
+    # Select the variable to be estimated
     m.AddVariable(m.GetVariableObject("command.y"))
     
     # Set initial value of parameter, and its covariance and the limits (if any)

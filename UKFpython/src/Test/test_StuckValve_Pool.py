@@ -32,38 +32,29 @@ def main():
     input = m.GetInputByName("dp")
     input.GetCsvReader().OpenCSV(csvPath)
     input.GetCsvReader().SetSelectedColumn("valveStuck.dp")
-    input.SetCovariance(1000.0)
     
     # Set the CSV file associated to the input, and its covariance
     input = m.GetInputByName("cmd")
     input.GetCsvReader().OpenCSV(csvPath)
     input.GetCsvReader().SetSelectedColumn("valveStuck.cmd")
-    input.SetCovariance(0.0)
-    
-    # Set the CSV file associated to the output, and its covariance
-    output = m.GetOutputByName("m_flow")
-    output.GetCsvReader().OpenCSV(csvPath)
-    output.GetCsvReader().SetSelectedColumn("valveStuck.m_flow")
-    output.SetMeasuredOutput()
-    output.SetCovariance(0.05)
     
     # Select the states to be modified
-    m.AddVariable(m.GetVariableObject("command.y"))
+    m.AddParameter(m.GetVariableObject("valve.Kv"))
 
     # Initialize the simulator
     m.InitializeSimulator()
 
     # Instantiate the pool
-    pool = FmuPool(m, debug = False)
+    pool = FmuPool(m, debug = True)
 
     # define the vector of initial conditions for which the simulations
     # have to be performed.
     # values has to be a list of state vectors
     # values = [ [x0_0], [x0_1], ... [x0_n]]
-    vectorValues = numpy.linspace(0.1, 1.0, 100)
+    vectorValues = numpy.linspace(0.1, 5.0, 2)
     values = []
     for v in vectorValues:
-        temp = {"state":numpy.array([v]), "parameters":[]}
+        temp = {"state":[], "parameters":numpy.array([v])}
         values.append(temp)
     
     # Run simulations in parallel
