@@ -81,7 +81,7 @@ def main():
     
     # instantiate the UKF for the FMU
     ukf_FMU = ukfFMU(m, augmented = False)
-    #ukf_FMU.setUKFparams()
+    ukf_FMU.setUKFparams()
     
     # start filter
     time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(0.0, 5.0, verbose=False)
@@ -110,12 +110,23 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, m):
     t = res["time"]
     d_temp = numpy.squeeze(numpy.asarray(res["data"]))
     
+    simResults.SetSelectedColumn("valveStuck.dp")
+    res = simResults.GetDataSeries()
+    
+    d_dp = numpy.squeeze(numpy.asarray(res["data"]))
+    
     input = m.GetInputByName("T_in")
     input.GetCsvReader().SetSelectedColumn("valveStuck.T_in")
-    res = simResults.GetDataSeries()
+    res = input.GetCsvReader().GetDataSeries()
     
     t_t = res["time"]
     d_temp_noisy = numpy.squeeze(numpy.asarray(res["data"]))
+    
+    input = m.GetInputByName("dp")
+    input.GetCsvReader().SetSelectedColumn("valveStuck.dp")
+    res = input.GetCsvReader().GetDataSeries()
+    
+    d_dp_noisy = numpy.squeeze(numpy.asarray(res["data"]))
     
     simResults.SetSelectedColumn("valveStuck.m_flow_real")
     res = simResults.GetDataSeries()
@@ -139,14 +150,14 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, m):
     fig0.set_size_inches(12,8)
     ax0  = fig0.add_subplot(111)
     ax0.plot(t,d_real,'g',label='$\dot{m}^{Real}$',alpha=1.0)
-    ax0.plot(to,do,'go',label='$\dot{m}^{Noisy}$',alpha=0.5)
-    ax0.plot(time,y,'r',label='$\dot{m}^{Filter}$')
-    ax0.plot(time,y_full[:,0],'b',label='$\dot{m}_{Filter}^{Clean}$')
+    ax0.plot(to,do,'go',label='$\dot{m}^{Noise+Drift}$',alpha=0.5)
+    #ax0.plot(time,y,'r',label='$\dot{m}^{Filter}$')
+    ax0.plot(time,y_full[:,0],'b',label='$\dot{m}_{UKF}$')
     ax0.set_xlabel('Time [s]')
     ax0.set_ylabel('Mass flow rate [kg/s]')
     ax0.set_xlim([t[0], t[-1]])
     ax0.set_ylim([0, 3.5])
-    legend = ax0.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=4, fancybox=True, shadow=True)
+    legend = ax0.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=2, fancybox=True, shadow=True)
     legend.draggable()
     ax0.grid(False)
     plt.savefig('Flow.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
@@ -168,8 +179,8 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, m):
     fig1.set_size_inches(12,8)
     ax1  = fig1.add_subplot(111)
     ax1.plot(t,command,'g',label='$Cmd$',alpha=1.0)
-    ax1.plot(t,opening,'b',label='$Pos$',alpha=1.0)
-    ax1.plot(time,x[:,idx],'r',label='$Pos^{UKF}$')
+    ax1.plot(t,opening,'b',label='$x$',alpha=1.0)
+    ax1.plot(time,x[:,idx],'r',label='$x_{UKF}$')
     ax1.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='red', interpolate=True, alpha=0.3)
     ax1.set_xlabel('Time [s]')
     ax1.set_ylabel('Valve opening [$\cdot$]')
@@ -183,17 +194,29 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, m):
     fig2 = plt.figure()
     idx = 0
     fig2.set_size_inches(12,8)
-    ax2  = fig2.add_subplot(111)
-    ax2.plot(t,d_temp,'b',label='$Cmd$',alpha=1.0)
-    ax2.plot(t_t,d_temp_noisy,'bo',label='$Pos$',alpha=1.0)
+    ax2  = fig2.add_subplot(211)
+    ax2.plot(t,d_temp,'b',label='$T$',alpha=1.0)
+    ax2.plot(t_t,d_temp_noisy,'bo',label='$T^{Noisy}$',alpha=0.5)
     ax2.set_xlabel('Time [s]')
     ax2.set_ylabel('Water temperature [$K$]')
     ax2.set_xlim([t[0], t[-1]])
-    ax2.set_ylim([273.15+10, 273.15+55])
+    ax2.set_ylim([273.15+14, 273.15+50])
     legend = ax2.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=4, fancybox=True, shadow=True)
     legend.draggable()
     ax2.grid(False)
     plt.savefig('Temperature.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    
+    ax4  = fig2.add_subplot(212)
+    ax4.plot(t,d_dp/1e5,'g',label='$\Delta p$',alpha=1.0)
+    ax4.plot(t_t,d_dp_noisy/1e5,'go',label='$\Delta p^{Noisy}$',alpha=0.5)
+    ax4.set_xlabel('Time [s]')
+    ax4.set_ylabel('Pressure difference [$bar$]')
+    ax4.set_xlim([t[0], t[-1]])
+    ax4.set_ylim([0, 3.5])
+    legend = ax4.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=4, fancybox=True, shadow=True)
+    legend.draggable()
+    ax4.grid(False)
+    plt.savefig('Pressure.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
     
     fig3 = plt.figure()
     idx = 1
@@ -203,15 +226,13 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, m):
     ax3.plot(time,x[:,idx],'r',label='$\lambda^{UKF}$')
     ax3.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='red', interpolate=True, alpha=0.3)
     ax3.set_xlabel('Time [s]')
-    ax3.set_ylabel('Sensor thermal drift [$\cdot$]')
+    ax3.set_ylabel('Sensor thermal drift [$1/K$]')
     ax3.set_xlim([t[0], t[-1]])
-    ax3.set_ylim([-0.02, 0.02])
+    ax3.set_ylim([-0.005, 0.02])
     legend = ax3.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=4, fancybox=True, shadow=True)
     legend.draggable()
     ax3.grid(False)
     plt.savefig('Drift.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
-    
-    
     
     plt.show()
     

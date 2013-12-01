@@ -11,7 +11,7 @@ from FmuUtils.FmuPool import FmuPool
 def main():
     
     # Assign an existing FMU to the model
-    filePath = "../../modelica/FmuExamples/Resources/FMUs/Pump.fmu"
+    filePath = "../../modelica/FmuExamples/Resources/FMUs/Pump_MBL2.fmu"
     
     # Initialize the FMU model empty
     m = Model.Model(filePath, atol=1e-4, rtol=1e-4)
@@ -20,7 +20,7 @@ def main():
     print m
     
     # Path of the csv file containing the data series
-    csvPath = "../../modelica/FmuExamples/Resources/data/DataPump2.csv"
+    csvPath = "../../modelica/FmuExamples/Resources/data/DataPumpShort.csv"
     
     # Show the inputs
     print "The names of the FMU inputs are: ", m.GetInputNames(), "\n"
@@ -33,30 +33,25 @@ def main():
     input.GetCsvReader().OpenCSV(csvPath)
     input.GetCsvReader().SetSelectedColumn("Pump.Speed")
     
-    # Set the CSV file associated to the output, and its covariance
-    output = m.GetOutputByName("P_el")
-    output.GetCsvReader().OpenCSV(csvPath)
-    output.GetCsvReader().SetSelectedColumn("Pump.kW")
-    output.SetMeasuredOutput()
-    output.SetCovariance(0.5)
-    
     # Select the states to be modified
-    m.AddParameter(m.GetVariableObject("P_nom"))
+    m.AddParameter(m.GetVariableObject("pump.power.P[1]"))
+    m.AddParameter(m.GetVariableObject("pump.power.P[2]"))
+    m.AddParameter(m.GetVariableObject("pump.power.P[3]"))
 
     # Initialize the simulator
     m.InitializeSimulator()
-
+    
     # Instantiate the pool
-    pool = FmuPool(m, debug = False)
+    pool = FmuPool(m, debug = True)
 
     # define the vector of initial conditions for which the simulations
     # have to be performed.
     # values has to be a list of state vectors
     # values = [ [x0_0], [x0_1], ... [x0_n]]
-    vectorValues = numpy.linspace(3.5, 4.5, 5)
+    vectorValues = numpy.linspace(0.2, 1.0, 5)
     values = []
     for v in vectorValues:
-        temp = {"state":[], "parameters":numpy.array([v])}
+        temp = {"state":[], "parameters":numpy.array([v,v,v])}
         values.append(temp)
     
     # Run simulations in parallel

@@ -705,9 +705,9 @@ class ukfFMU():
 		self.model.SetStateSelected(X_corr[0,:self.n_state_obs])
 		self.model.SetParametersSelected(X_corr[0,self.n_state_obs:])
 		
-		return (X_corr[0], S_corr, Zave, Sy, Zfull_ave)
+		return (X_corr[0], S_corr, Zave, Sy, Zfull_ave, Xfull_ave[0])
 	
-	def filter(self, start, stop, verbose=False):
+	def filter(self, start, stop, verbose=False, forSmoothing = False):
 		"""
 		This method starts the filtering process and performs a loop of ukf-steps
 		"""
@@ -722,6 +722,7 @@ class ukfFMU():
 		
 		# Initial conditions and other values
 		x     = [np.hstack((self.model.GetStateObservedValues(), self.model.GetParametersValues()))]
+		x_full= [self.model.GetState()]
 		sqrtP = [self.model.GetCovMatrixStatePars()]
 		sqrtQ = self.model.GetCovMatrixStatePars()
 		sqrtR = self.model.GetCovMatrixOutputs()
@@ -733,25 +734,29 @@ class ukfFMU():
 			t_old = measuredOuts[i-1,0]
 			t = measuredOuts[i,0]
 			z = measuredOuts[i,1:]
-			X_corr, sP, Zave, S_y, Zfull_ave = self.ukf_step(x[i-1], sqrtP[i-1], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
+			X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1], sqrtP[i-1], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
 			
 			x.append(X_corr)
 			sqrtP.append(sP)
 			y.append(Zave)
 			y_full.append(Zfull_ave)
 			Sy.append(S_y)
+			x_full.append(X_full)
 		
 		# The first of the overall output vector is missing, copy from the second element
 		y_full[0] = y_full[1]
-			
-		return time, x, sqrtP, y, Sy, y_full
+		
+		if forSmoothing:
+			return time, x, sqrtP, y, Sy, y_full, x_full
+		else:
+			return time, x, sqrtP, y, Sy, y_full
 	
 	def filterAndSmooth(self, start, stop, verbose=False):
 		"""
 		This method executes the filter and then the smoothing of the data
 		"""
 		# Run the filter
-		time, X, sqrtP, y, Sy = self.filter(start, stop, verbose = verbose)
+		time, X, sqrtP, y, Sy, y_full, x_full = self.filter(start, stop, verbose = verbose, forSmoothing = True)
 		
 		# get the number of time steps		
 		s = np.reshape(time,(-1,1)).shape
