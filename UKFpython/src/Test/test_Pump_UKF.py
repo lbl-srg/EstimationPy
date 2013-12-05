@@ -17,10 +17,10 @@ def main():
     filePath = "../../modelica/FmuExamples/Resources/FMUs/Pump_MBL3.fmu"
     
     # Initialize the FMU model empty
-    m = Model.Model(filePath, atol=1e-3, rtol=1e-3)
+    m = Model.Model(filePath, atol=1e-4, rtol=1e-3)
     
     # Path of the csv file containing the data series
-    csvPath = "../../modelica/FmuExamples/Resources/data/DataPump2.csv"
+    csvPath = "../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
     
     # Set the CSV file associated to the input, and its covariance
     input = m.GetInputByName("Nrpm")
@@ -43,7 +43,6 @@ def main():
     output.SetMeasuredOutput()
     output.SetCovariance(50.0)
     """
-    
     
     #################################################################
     # Select the parameter to be identified
@@ -105,12 +104,15 @@ def main():
     ukf_FMU.setUKFparams()
     
     # start filter
-    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(0.0, 5.0, verbose=False)
-     
+    #time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filterAndSmooth(0.0, 5.0, verbose=False)
+    
+    pars = ukf_FMU.ParameterEstimation()
+    print pars
+    
     # Get the measured outputs
-    showResults(time, x, sqrtP, y, Sy, csvPath)
+    #showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvPath)
 
-def showResults(time, x, sqrtP, y, Sy, csvTrue):
+def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvTrue):
     # Convert list to arrays
     time = time/3600.0
     x = numpy.squeeze(numpy.array(x))
@@ -118,8 +120,9 @@ def showResults(time, x, sqrtP, y, Sy, csvTrue):
     sqrtP = numpy.squeeze(numpy.array(sqrtP))
     Sy = numpy.squeeze(numpy.array(Sy))
     
-    print y
-    print numpy.shape(y)
+    xs = numpy.array(Xsmooth)
+    Ss = numpy.array(Ssmooth)
+    Ys = numpy.array(Yfull_smooth)
     
     ####################################################################
     # Display results
@@ -145,14 +148,27 @@ def showResults(time, x, sqrtP, y, Sy, csvTrue):
     ax0  = fig0.add_subplot(111)
     #ax0.plot(time,x,'r',label='$a_5$',alpha=1.0)
     #ax0.fill_between(time, x - sqrtP, x + sqrtP, facecolor='red', interpolate=True, alpha=0.3)
-    ax0.plot(time,x[:,0],'r',label='$a_1$',alpha=1.0)
-    ax0.fill_between(time, x[:,0] - sqrtP[:,0,0], x[:,0] + sqrtP[:,0,0], facecolor='red', interpolate=True, alpha=0.3)
-    ax0.plot(time,x[:,1],'b',label='$a_3$',alpha=1.0)
-    ax0.fill_between(time, x[:,1] - sqrtP[:,1,1], x[:,1] + sqrtP[:,1,1], facecolor='blue', interpolate=True, alpha=0.3)
-    ax0.plot(time,x[:,2],'k',label='$a_5$',alpha=1.0)
-    ax0.fill_between(time, x[:,2] - sqrtP[:,2,2], x[:,2] + sqrtP[:,2,2], facecolor='black', interpolate=True, alpha=0.3)
-    ax0.plot(time,x[:,3],'c',label='$a_7$',alpha=1.0)
-    ax0.fill_between(time, x[:,3] - sqrtP[:,3,3], x[:,3] + sqrtP[:,3,3], facecolor='cyan', interpolate=True, alpha=0.3)
+    idx = 0
+    ax0.plot(time,x[:,idx],'r',label='$a_1$',alpha=1.0)
+    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='red', interpolate=True, alpha=0.3)
+    ax0.plot(time,xs[:,idx],'r--',label='$a_1$',alpha=1.0)
+    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='red', interpolate=True, alpha=0.3)
+    idx = 1
+    ax0.plot(time,x[:,idx],'b',label='$a_3$',alpha=1.0)
+    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='blue', interpolate=True, alpha=0.3)
+    ax0.plot(time,xs[:,idx],'b--',label='$a_3$',alpha=1.0)
+    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='blue', interpolate=True, alpha=0.3)
+    idx = 2
+    ax0.plot(time,x[:,idx],'k',label='$a_5$',alpha=1.0)
+    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='black', interpolate=True, alpha=0.3)
+    ax0.plot(time,xs[:,idx],'k--',label='$a_5$',alpha=1.0)
+    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='black', interpolate=True, alpha=0.3)
+    idx = 3
+    ax0.plot(time,x[:,idx],'c',label='$a_7$',alpha=1.0)
+    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='cyan', interpolate=True, alpha=0.3)
+    ax0.plot(time,xs[:,idx],'c--',label='$a_7$',alpha=1.0)
+    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='cyan', interpolate=True, alpha=0.3)
+    
     ax0.set_xlabel('Time [hours]')
     ax0.set_ylabel('Coefficients [$\cdot$]')
     ax0.set_xlim([time[0], time[-1]])
@@ -172,6 +188,7 @@ def showResults(time, x, sqrtP, y, Sy, csvTrue):
     ax1.plot(t,d_kW,'g',label='$P_{EL}^{Measured}$',alpha=1.0)
     #ax1.plot(t,d_gpm,'g',label='$\dot{m}_{PUMP}^{Measured}$',alpha=1.0)
     ax1.plot(time,y,'r',label='$P_{EL}^{UKF}$',alpha=1.0)
+    ax1.plot(time,Ys[:,0],'b',label='$P_{EL}^{Smooth}$',alpha=1.0)
     #ax1.plot(time,y,'r',label='$\dot{m}_{PUMP}^{UKF}$',alpha=1.0)
     ax1.set_xlabel('Time [[hours]]')
     ax1.set_ylabel('Electrical power [kW]')

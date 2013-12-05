@@ -5,7 +5,7 @@ partial model ValveStuckBase
   parameter Modelica.SIunits.Time riseTime=3 "Time constant of the filter";
   parameter Modelica.Media.Interfaces.PartialMedium.MassFlowRate m_flow_nominal=
      1.5 "Nominal mass flowrate";
-  parameter Modelica.SIunits.Pressure dp_nominal=2*101325
+  parameter Modelica.SIunits.Pressure dp_nominal=0.5*101325
     "Nominal pressure drop";
   parameter Real bias = 0 "biasing of mass flow rate sensor";
   parameter Real lambda = 0

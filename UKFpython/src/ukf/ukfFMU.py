@@ -1,4 +1,5 @@
 import numpy as np
+import time as TIM
 from FmuUtils.FmuPool import FmuPool
 
 class ukfFMU():
@@ -155,7 +156,8 @@ class ukfFMU():
 	def constrainedState(self, X):
 		"""
 		This method apply the constraints to the state vector (only to the estimated states)
-		"""		
+		"""
+			
 		# Check for every observed state
 		for i in range(self.n_state_obs):
 		
@@ -300,11 +302,13 @@ class ukfFMU():
 		The simulations are run in parallel if the flag parallel is set to True
 		
 		"""
+		row, col = np.shape(Xs)
+		
 		# initialize the vector of the NEW STATES
-		X_proj = np.zeros((self.n_points, self.n_state_obs + self.n_pars))
-		Z_proj = np.zeros((self.n_points, self.n_outputs))
-		Xfull_proj = np.zeros((self.n_points, self.n_state))
-		Zfull_proj = np.zeros((self.n_points, self.n_outputsTot))
+		X_proj = np.zeros((row, self.n_state_obs + self.n_pars))
+		Z_proj = np.zeros((row, self.n_outputs))
+		Xfull_proj = np.zeros((row, self.n_state))
+		Zfull_proj = np.zeros((row, self.n_outputsTot))
 		
 		# from the sigma points, get the value of the states and parameters
 		values = []
@@ -356,7 +360,7 @@ class ukfFMU():
 		this method returns a vector that contains the augmented and observed states:
 		[ observed states, parameters estimated]
 		"""
-		return Xfull
+		#return Xfull
 		if False:
 			row, col = np.shape(Xfull)
 			Xaug = np.zeros((row, self.n_state_obs + self.n_pars + self.n_state_obs + self.n_outputs))
@@ -377,7 +381,7 @@ class ukfFMU():
 			
 			for i in range(row):
 				Xaug[i, 0:self.n_state_obs]  = Xfull[i, 0:self.n_state_obs]
-				Xaug[i, self.n_state_obs:]   = Xfull[i, self.n_state:self.n_state+self.n_pars]
+				Xaug[i, self.n_state_obs:]   = Xfull[i, self.n_state_obs:self.n_state_obs+self.n_pars]
 				
 		return Xaug
 
@@ -462,6 +466,18 @@ class ukfFMU():
 	
 		CovXZ = np.dot(np.dot(Vx.T,W),Vz)
 		return CovXZ
+	
+	def computeCovXX(self, X_p_1, Xa_1, X_p, Xa):
+		"""
+		This function computes the state-state cross covariance matrix (between X and Xnew)
+		"""
+		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
+			
+		Vx1 = self.__AugStateFromFullState__(X_p_1 - Xa_1)
+		Vx  = self.__AugStateFromFullState__(X_p - Xa)
+	
+		CovXX = np.dot(np.dot(Vx.T,W),Vx1)
+		return CovXX
 	
 	def computeS(self, X_proj, Xave, sqrtQ):
 		"""
@@ -592,7 +608,7 @@ class ukfFMU():
 		# the list of sigma points (each sigma point can be an array, containing the state variables)
 		# x, pars, sqrtP, sqrtQ = None, sqrtR = None
 		Xs      = self.computeSigmaPoints(x, pars, sqrtP, sqrtQ, sqrtR)
-	
+		
 		if verbose:
 			print "Sigma point Xs"
 			print Xs
@@ -731,9 +747,11 @@ class ukfFMU():
 		Sy    = [sqrtR]
 		
 		for i in range(1,Ntimes):
-			t_old = measuredOuts[i-1,0]
-			t = measuredOuts[i,0]
+			t_old = time[i-1]
+			t = time[i]
 			z = measuredOuts[i,1:]
+			
+			# execute a filtering step
 			X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1], sqrtP[i-1], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
 			
 			x.append(X_corr)
@@ -747,16 +765,18 @@ class ukfFMU():
 		y_full[0] = y_full[1]
 		
 		if forSmoothing:
-			return time, x, sqrtP, y, Sy, y_full, x_full
+			return time, x, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR
 		else:
 			return time, x, sqrtP, y, Sy, y_full
 	
-	def filterAndSmooth(self, start, stop, verbose=False):
+	def filterAndSmooth(self, start=None, stop=None, verbose=False):
 		"""
 		This method executes the filter and then the smoothing of the data
 		"""
 		# Run the filter
-		time, X, sqrtP, y, Sy, y_full, x_full = self.filter(start, stop, verbose = verbose, forSmoothing = True)
+		time, X, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR = self.filter(start, stop, verbose = False, forSmoothing = True)
+		
+		print "SMOOTHING "*4
 		
 		# get the number of time steps		
 		s = np.reshape(time,(-1,1)).shape
@@ -764,8 +784,9 @@ class ukfFMU():
 		
 		# initialize the smoothed states and covariance matrix
 		# the initial value of the smoothed state estimation are equal to the filtered ones
-		Xsmooth = X.copy()
-		Ssmooth = sqrtP.copy()
+		Xsmooth = list(X)
+		Ssmooth = list(sqrtP)
+		Yfull_smooth = list(y_full)
 		
 		# iterating starting from the end and back
 		# i : nTimeStep-2 -> 0
@@ -777,7 +798,127 @@ class ukfFMU():
 		# NOTE that at time i+1 there is available a corrected estimation of the state Xcorr[i+1]
 		# thus the difference between these two states is back-propagated to the state at time i
 		for i in range(nTimeStep-2,-1,-1):
-			pass
+			
+			# reset the full state of the model
+			self.model.SetState(x_full[i])
+			
+			# actual state estimation and covariance matrix
+			x_i = Xsmooth[i]
+			S_i = Ssmooth[i]
+			
+			# take the value of the state and parameters estimated
+			x = x_i[:self.n_state_obs]
+			pars = x_i[self.n_state_obs:]
+			
+			# define the sigma points
+			Xs_i      = self.computeSigmaPoints(x, pars, S_i, sqrtQ, sqrtR)
+			
+			if verbose:
+					print "Sigma point Xs"
+					print Xs_i
+			
+			# mean of the sigma points
+			Xs_i_ave    = x_i
+			
+			if verbose:
+				print "Mean of the sigma points"
+				print Xs_i_ave
+				print "Simulate from",time[i],"to",time[i+1]
+				
+			# compute the projected (state) points (each sigma points is propagated through the state transition function)
+			X_plus_1, Z_plus_1, Xfull_plus_1, Zfull_plus_1 = self.sigmaPointProj(Xs_i, time[i], time[i+1])
+			
+			if verbose:
+				print "Propagated sigma points"
+				print X_plus_1
+			
+			# average of the sigma points
+			Xave_plus_1 = self.averageProj(X_plus_1)
+			
+			if verbose:
+				print "Averaged propagated sigma points"
+				print Xave_plus_1
+			
+			# compute the new covariance matrix
+			Snew = self.computeS(X_plus_1, Xave_plus_1, sqrtQ)
+			
+			if verbose:
+				print "Former S matrix used to draw the points"
+				print S_i
+				print "New Squared covaraince matrix"
+				print Snew
+			
+			# compute the cross covariance matrix of the two states
+			# (new state already corrected, coming from the "future", and the new just computed through the projection)
+			Cxx  = self.computeCovXX(X_plus_1, Xave_plus_1, Xs_i, Xs_i_ave)
+			
+			if verbose:
+				print "Cross state-state covariance matrix"
+				print Cxx
+			
+			# gain for the back propagation
+			firstDivision = np.linalg.lstsq(Snew.T, Cxx.T)[0]
+			D             = np.linalg.lstsq(Snew, firstDivision)[0]
+			#D             = D.T
+			
+			correction = np.dot(np.matrix(Xsmooth[i+1]) - Xave_plus_1, D)
+			if verbose:
+				print "Old state"
+				print X[i]
+				print "Error:"
+				print Xsmooth[i+1] - Xave_plus_1
+				print "Correction:"
+				print correction
+			
+			# correction (i.e. smoothing, of the state estimation and covariance matrix)
+			Xsmooth[i]  = X[i] + np.squeeze(np.array(correction[0,:]))
+			
+			# How to introduce constrained estimation
+			Xsmooth[i]  = self.constrainedState(Xsmooth[i])
+			
+			X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigmaPointProj([Xsmooth[i]],time[i], time[i]+1e-8)
+			Yfull_smooth[i] = Zfull_proj[0]
+			
+			if verbose:
+				print "New smoothed state"
+				print Xsmooth[i]
+				raw_input("?")
+			
+			V          = np.dot(D.T, Ssmooth[i+1] - Snew)
+			Ssmooth[i] = self.cholUpdate(sqrtP[i], V, -1*np.ones(self.n_state_obs + self.n_pars))
+		
+		# correct the shape of the last element that has not been smoothed
+		Yfull_smooth[-1] = Yfull_smooth[-1][0]
+		
+		# Return the results of the filtering and smoothing
+		return time, X, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth
+	
+	def ParameterEstimation(self, start=None, stop=None, maxIter=100, verbose=False):
+		"""
+		This method provides a parameter estimation using the UKF smoother
+		"""
+		pars = []
+		
+		for i in range(maxIter):
+			print "ITERATION "*3,i
+			time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = self.filterAndSmooth(start=start, stop=stop, verbose=verbose)
+			
+			xs = np.array(Xsmooth)
+			Ss = np.array(Ssmooth)
+			print "pars=",xs[0,:]
+			pars.append(xs[0,:])
+			
+			j = 0
+			for var in self.model.GetParameters():
+				var.SetInitialValue(xs[0,j])
+				var.SetCovariance(Ss[0,j,j])
+		
+		return pars
+			
+			
+			
+			
+		
 			
 	def smooth(self,time,Xhat,S,sqrtQ,U,m,verbose=False):
 		"""

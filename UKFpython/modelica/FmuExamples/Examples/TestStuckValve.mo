@@ -1,10 +1,9 @@
 within FmuExamples.Examples;
 model TestStuckValve
-  ValveStuckInputs valveStuck(bias=0.05, lambda=0.01)
+  ValveStuckInputs valveStuck(           lambda=0.01, bias=0)
     annotation (Placement(transformation(extent={{-10,-10},{10,10}})));
   Modelica.Blocks.Sources.Ramp Press(
-    duration=50,
-    height=101325*3)
+    duration=50, height=101325*0.5)
     annotation (Placement(transformation(extent={{-62,-40},{-42,-20}})));
   Modelica.Blocks.Sources.Step leak(
     height=0.2,
@@ -17,9 +16,9 @@ model TestStuckValve
     offset=1.0)
     annotation (Placement(transformation(extent={{-90,70},{-70,90}})));
   Modelica.Blocks.Sources.TimeTable cmd(
-    table=[0,1; 70,1; 100,0.1; 150,0.2; 180,0.8; 240,1],
     offset=0,
-    startTime=0)
+    startTime=0,
+    table=[0,1; 70,1; 100,0.1; 135,0; 150,0.2; 180,0.8; 240,1; 250,1])
     annotation (Placement(transformation(extent={{-60,50},{-40,70}})));
   Modelica.Blocks.Sources.Ramp Temp(
     duration=100,

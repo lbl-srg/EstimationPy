@@ -195,11 +195,12 @@ class FmuPool():
 
         # Stop Measuring the time
         Tend = time.time()
-    
-        # print the time spent for the simulations
-        print "\n"+"="*52
-        print "Time spent for "+str(N_SIMULATIONS)+" simulations = "+str(Tend - T0)+" [s]"
-        print "="*52
+        
+        if self.debug:
+            # print the time spent for the simulations
+            print "\n"+"="*52
+            print "Time spent for "+str(N_SIMULATIONS)+" simulations = "+str(Tend - T0)+" [s]"
+            print "="*52
 
         if self.debug:
             self.f.close()
