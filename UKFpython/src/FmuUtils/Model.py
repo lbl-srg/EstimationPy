@@ -942,7 +942,7 @@ class Model():
     
     def RemoveParameter(self, obj):
         """
-        This method remove one object to the list of parameters. This list contains only the parameters that 
+        This method removes one object to the list of parameters. This list contains only the parameters that 
         will be modified during the further analysis
         """
         try:
@@ -952,6 +952,12 @@ class Model():
         except ValueError:
             # the object cannot be removed because it is not present
             return False
+        
+    def RemoveParameters(self):
+        """
+        This method removes all the objects from the list of parameters.
+        """
+        self.parameters = []
     
     def RemoveVariable(self, obj):
         """
@@ -965,6 +971,12 @@ class Model():
         except ValueError:
             # the object cannot be removed because it is not present
             return False
+    
+    def RemoveVariables(self):
+        """
+        This method removes all the objects from the list of parameters.
+        """
+        self.variables = []
     
     def __SetFMU(self, fmuFile, result_handler, solver, atol, rtol, verbose):
         """

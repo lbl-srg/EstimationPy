@@ -70,8 +70,6 @@ def main():
     par.SetMaxValue(1.0)
     par.SetConstraintHigh(True)
     
-    
-    
     # Select the parameter to be identified
     m.AddParameter(m.GetVariableObject("pump.power.P[3]"))
     
@@ -103,11 +101,11 @@ def main():
     ukf_FMU = ukfFMU(m, augmented = False)
     ukf_FMU.setUKFparams()
     
-    # start filter
-    time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filterAndSmooth(0.0, 5.0, verbose=False)
+    pars = ukf_FMU.ParameterEstimation()
+    print pars
     
     # Get the measured outputs
-    showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvPath)
+    #showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvPath)
 
 def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvTrue):
     # Convert list to arrays

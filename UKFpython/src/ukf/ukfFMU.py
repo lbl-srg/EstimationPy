@@ -905,12 +905,24 @@ class ukfFMU():
 			
 			xs = np.array(Xsmooth)
 			Ss = np.array(Ssmooth)
-			print "pars=",xs[0,:]
-			pars.append(xs[0,:])
+			
+			x0 = xs[0,:self.n_state_obs]
+			p  = xs[0,self.n_state_obs:]
+			p_mean  = np.mean(xs[:,self.n_state_obs:], 0)
+			print "init_state=",x0
+			print "pars=",p
+			print "pars_m=",p_mean
+			pars.append(p)
 			
 			j = 0
-			for var in self.model.GetParameters():
+			for var in self.model.GetVariables():
 				var.SetInitialValue(xs[0,j])
+				var.SetCovariance(Ss[0,j,j])
+				j += 1
+			
+			for var in self.model.GetParameters():
+				#var.SetInitialValue(p[j])
+				var.SetInitialValue(p_mean[j])
 				var.SetCovariance(Ss[0,j,j])
 		
 		return pars
