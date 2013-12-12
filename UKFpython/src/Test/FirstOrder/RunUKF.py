@@ -14,13 +14,13 @@ from pylab import figure
 def main():
     
     # Assign an existing FMU to the model
-    filePath = "../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
+    filePath = "../../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
     
     # Initialize the FMU model empty
     m = Model.Model(filePath)
     
     # Path of the csv file containing the data series
-    csvPath = "../../modelica/FmuExamples/Resources/data/NoisySimulationData_FirstOrder.csv" 
+    csvPath = "../../../modelica/FmuExamples/Resources/data/NoisySimulationData_FirstOrder.csv" 
     
     # Set the CSV file associated to the input, and its covariance
     input = m.GetInputByName("u")
@@ -68,7 +68,7 @@ def main():
     time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(0.0, 5.0, verbose=False)
     
     # Path of the csv file containing the True data series
-    csvTrue = "../../modelica/FmuExamples/Resources/data/SimulationData_FirstOrder.csv"
+    csvTrue = "../../../modelica/FmuExamples/Resources/data/SimulationData_FirstOrder.csv"
     
     # Get the measured outputs
     showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, csvPath, m)

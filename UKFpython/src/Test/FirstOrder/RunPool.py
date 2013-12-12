@@ -16,11 +16,11 @@ def main():
     m = Model()
 
     # Assign an existing FMU to the model
-    filePath = "../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
+    filePath = "../../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
     m.ReInit(filePath)
 
     # Set the CSV file associated to the input
-    inputPath = "../../modelica/FmuExamples/Resources/data/SimulationData_FirstOrder.csv"
+    inputPath = "../../../modelica/FmuExamples/Resources/data/SimulationData_FirstOrder.csv"
     input = m.GetInputByName("u")
     input.GetCsvReader().OpenCSV(inputPath)
     input.GetCsvReader().SetSelectedColumn("system.u")

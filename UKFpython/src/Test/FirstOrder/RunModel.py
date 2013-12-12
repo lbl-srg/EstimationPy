@@ -12,7 +12,7 @@ def main():
     m = Model.Model()
     
     # Assign an existing FMU to the model
-    filePath = "../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
+    filePath = "../../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
     
     # ReInit the model with the new FMU
     m.ReInit(filePath)
@@ -27,7 +27,7 @@ def main():
     print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
     
     # Set the CSV file associated to the input
-    inputPath = "../../modelica/FmuExamples/Resources/data/SimulationData_FirstOrder.csv"
+    inputPath = "../../../modelica/FmuExamples/Resources/data/SimulationData_FirstOrder.csv"
     input = m.GetInputByName("u")
     input.GetCsvReader().OpenCSV(inputPath)
     input.GetCsvReader().SetSelectedColumn("system.u")
