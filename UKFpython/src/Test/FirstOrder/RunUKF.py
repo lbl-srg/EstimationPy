@@ -4,12 +4,11 @@ Created on Nov 7, 2013
 @author: marco
 '''
 import numpy
+import matplotlib.pyplot as plt
+
 from FmuUtils import Model
 from FmuUtils import CsvReader
 from ukf.ukfFMU import ukfFMU
-
-import matplotlib.pyplot as plt
-from pylab import figure
 
 def main():
     

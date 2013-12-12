@@ -5,11 +5,9 @@ Created on Nov 7, 2013
 '''
 import numpy
 from FmuUtils import Model
-from FmuUtils import CsvReader
 from ukf.ukfFMU import ukfFMU
 
 import matplotlib.pyplot as plt
-from pylab import figure
 
 def main():
     
