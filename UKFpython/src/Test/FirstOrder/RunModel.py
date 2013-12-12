@@ -3,8 +3,6 @@ Created on Nov 7, 2013
 
 @author: marco
 '''
-import numpy
-
 import matplotlib.pyplot as plt
 from FmuUtils import Model
 
