@@ -9,18 +9,18 @@ from FmuUtils import CsvReader
 from ukf.ukfFMU import ukfFMU
 
 import matplotlib.pyplot as plt
-from pylab import figure
 
 def main():
     
     # Assign an existing FMU to the model
-    filePath = "../../modelica/FmuExamples/Resources/FMUs/Pump_MBL3.fmu"
+    filePath = "../../../modelica/FmuExamples/Resources/FMUs/Pump_MBL3.fmu"
     
     # Initialize the FMU model empty
     m = Model.Model(filePath, atol=1e-4, rtol=1e-3)
     
     # Path of the csv file containing the data series
-    csvPath = "../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
+    # csvPath = "../../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
+    csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012.csv"
     
     # Set the CSV file associated to the input, and its covariance
     input = m.GetInputByName("Nrpm")
@@ -50,8 +50,8 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[0]
-    par.SetInitialValue(0.5)
-    par.SetCovariance(0.01)
+    par.SetInitialValue(0.3)
+    par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -64,7 +64,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[1]
     par.SetInitialValue(0.5)
-    par.SetCovariance(0.01)
+    par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -75,8 +75,8 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[2]
-    par.SetInitialValue(0.8)
-    par.SetCovariance(0.01)
+    par.SetInitialValue(0.7)
+    par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -88,7 +88,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[3]
     par.SetInitialValue(0.9)
-    par.SetCovariance(0.01)
+    par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -101,11 +101,11 @@ def main():
     ukf_FMU = ukfFMU(m, augmented = False)
     ukf_FMU.setUKFparams()
     
-    pars = ukf_FMU.ParameterEstimation()
-    print pars
+    # start filter
+    time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filterAndSmooth(0.0, 5.0, verbose=False)
     
     # Get the measured outputs
-    #showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvPath)
+    showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvPath)
 
 def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvTrue):
     # Convert list to arrays
@@ -185,7 +185,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     ax1.plot(time,y,'r',label='$P_{EL}^{UKF}$',alpha=1.0)
     ax1.plot(time,Ys[:,0],'b',label='$P_{EL}^{Smooth}$',alpha=1.0)
     #ax1.plot(time,y,'r',label='$\dot{m}_{PUMP}^{UKF}$',alpha=1.0)
-    ax1.set_xlabel('Time [[hours]]')
+    ax1.set_xlabel('Time [hours]')
     ax1.set_ylabel('Electrical power [kW]')
     #ax1.set_ylabel('Volume flow rate [gpm]')
     ax1.set_xlim([t[0], t[-1]])
