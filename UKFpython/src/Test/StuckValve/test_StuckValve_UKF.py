@@ -14,13 +14,13 @@ from pylab import figure
 def main():
     
     # Assign an existing FMU to the model
-    filePath = "../../modelica/FmuExamples/Resources/FMUs/FmuExamples_ValveStuck_Quad.fmu"
+    filePath = "../../../modelica/FmuExamples/Resources/FMUs/FmuExamples_ValveStuck_Quad.fmu"
     
     # Initialize the FMU model empty
     m = Model.Model(filePath, atol=1e-5, rtol=1e-6)
     
     # Path of the csv file containing the data series
-    csvPath = "../../modelica/FmuExamples/Resources/data/NoisyData_StuckValve_quad_noDyn.csv"
+    csvPath = "../../../modelica/FmuExamples/Resources/data/NoisyData_StuckValve_quad_noDyn.csv"
     
     # Set the CSV file associated to the input, and its covariance
     input = m.GetInputByName("dp")
@@ -65,7 +65,7 @@ def main():
     time, x, sqrtP, y, Sy = ukf_FMU.filter(0.0, 5.0, verbose=False)
     
     # Path of the csv file containing the True data series
-    csvTrue = "../../modelica/FmuExamples/Resources/data/SimulationData_StuckValve_quad_noDyn.csv"
+    csvTrue = "../../../modelica/FmuExamples/Resources/data/SimulationData_StuckValve_quad_noDyn.csv"
     
     # Get the measured outputs
     showResults(time, x, sqrtP, y, Sy, csvTrue, m)

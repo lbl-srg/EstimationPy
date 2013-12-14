@@ -12,7 +12,7 @@ from ukf.ukfFMU import ukfFMU
 def main():
     
     # Assign an existing FMU to the model
-    filePath = "../../modelica/FmuExamples/Resources/FMUs/FmuExamples_ValveStuck.fmu"
+    filePath = "../../../modelica/FmuExamples/Resources/FMUs/FmuExamples_ValveStuck.fmu"
     
     # Initialize the FMU model empty
     m = Model.Model(filePath, atol=1e-5, rtol=1e-6)
@@ -21,7 +21,7 @@ def main():
     print m
     
     # Path of the csv file containing the data series
-    csvPath = "../../modelica/FmuExamples/Resources/data/NoisySimulationData_StuckValve.csv"
+    csvPath = "../../../modelica/FmuExamples/Resources/data/NoisySimulationData_StuckValve.csv"
     
     # Show the inputs
     print "The names of the FMU inputs are: ", m.GetInputNames(), "\n"
