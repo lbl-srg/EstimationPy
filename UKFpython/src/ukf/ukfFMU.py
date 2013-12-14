@@ -921,8 +921,8 @@ class ukfFMU():
 				j += 1
 			
 			for var in self.model.GetParameters():
-				#var.SetInitialValue(p[j])
-				var.SetInitialValue(p_mean[j])
+				var.SetInitialValue(p[j])
+				#var.SetInitialValue(p_mean[j])
 				var.SetCovariance(Ss[0,j,j])
 		
 		return pars

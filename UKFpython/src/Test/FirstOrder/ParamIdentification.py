@@ -103,7 +103,7 @@ def main():
     
     # instantiate the UKF for the FMU
     ukf_FMU = ukfFMU(m, augmented = False)
-    #ukf_FMU.setUKFparams(0.05, 2, 1)
+    ukf_FMU.setUKFparams(0.05, 2, 1)
     
     pars = ukf_FMU.ParameterEstimation(maxIter = 600)
     print pars
