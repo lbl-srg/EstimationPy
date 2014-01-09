@@ -20,7 +20,7 @@ def main():
     m = Model.Model(filePath, atol=1e-4, rtol=1e-3)
     
     # Path of the csv file containing the data series
-    # csvPath = "../../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
+    #csvPath = "../../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
     csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012.csv"
     
     # Set the CSV file associated to the input, and its covariance
@@ -44,14 +44,18 @@ def main():
     output.SetMeasuredOutput()
     output.SetCovariance(50.0)
     """
-    
+    p_start = [0.30000000, 0.50000000, 0.70000000, 1.] # 0
+    p_start = [0.28538255, 0.50017618, 0.71668581, 1.] # 7
+    p_start = [0.21517598, 0.50276898, 0.79260251, 1.] # 25
+    p_start = [0.19080228, 0.50549745, 0.81889495, 1.] # 35
+    p_start = [0.11824324, 0.5869894,  0.8849001,  1.]
     #################################################################
     # Select the parameter to be identified
     m.AddParameter(m.GetVariableObject("pump.power.P[1]"))
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[0]
-    par.SetInitialValue(0.3)
+    par.SetInitialValue(p_start[0])
     par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
@@ -64,7 +68,7 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[1]
-    par.SetInitialValue(0.5)
+    par.SetInitialValue(p_start[1])
     par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
@@ -76,7 +80,7 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[2]
-    par.SetInitialValue(0.7)
+    par.SetInitialValue(p_start[2])
     par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
@@ -88,7 +92,7 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[3]
-    par.SetInitialValue(0.9)
+    par.SetInitialValue(p_start[3])
     par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
@@ -102,7 +106,7 @@ def main():
     ukf_FMU = ukfFMU(m, augmented = False)
     ukf_FMU.setUKFparams()
     
-    pars = ukf_FMU.ParameterEstimation(maxIter = 6)
+    pars = ukf_FMU.ParameterEstimation(maxIter = 55)
     print pars
     
     ShowResults(pars)
@@ -116,8 +120,6 @@ def ShowResults(pars):
     ax0  = fig0.add_subplot(111)
     ax0.plot(pars, label='$pars$',alpha=1.0)
     plt.show()
-    # [-1, 2.5, 3, 0.1]
-    # found after 400 [-0.90717055  2.28096907  3.01419707  0.06112703]
     
 if __name__ == '__main__':
     main()

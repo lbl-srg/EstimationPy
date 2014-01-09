@@ -19,7 +19,7 @@ def main():
     m = Model.Model(filePath, atol=1e-4, rtol=1e-3)
     
     # Path of the csv file containing the data series
-    # csvPath = "../../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
+    #csvPath = "../../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
     csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012.csv"
     
     # Set the CSV file associated to the input, and its covariance
@@ -48,9 +48,22 @@ def main():
     # Select the parameter to be identified
     m.AddParameter(m.GetVariableObject("pump.power.P[1]"))
     
+    ppp = [0.3, 0.5, 0.7, 0.9]
+    ppp = [0.2970953,  0.50003122, 0.70334771, 0.94678875]
+    ppp = [0.294192,   0.50006441, 0.7066786,  0.97122915]
+    ppp = [0.29129089, 0.5000997,  0.70999068, 0.98621258]
+    ppp = [0.28839297, 0.50013721, 0.71328358, 0.99633567]
+    ppp = [0.28549929, 0.50017709, 0.71655701, 1.        ]
+    ppp = [0.28261104, 0.50021948, 0.71981114, 1.        ]
+    ppp = [0.27972849, 0.50026454, 0.72306009, 1.        ]
+    ppp = [0.27683613, 0.50031244, 0.72630686, 1.        ]
+    ppp = [0.27393511, 0.50036335, 0.72955037, 1.        ]
+    ppp = [0.106,  0.50041746, 0.9, 1.        ]
+    ppp = [0.28538255, 0.50017618, 0.71668581, 1.]
+    
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[0]
-    par.SetInitialValue(0.3)
+    par.SetInitialValue(ppp[0])
     par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
@@ -63,7 +76,7 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[1]
-    par.SetInitialValue(0.5)
+    par.SetInitialValue(ppp[1])
     par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
@@ -75,7 +88,7 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[2]
-    par.SetInitialValue(0.7)
+    par.SetInitialValue(ppp[2])
     par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
@@ -87,7 +100,7 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[3]
-    par.SetInitialValue(0.9)
+    par.SetInitialValue(ppp[3])
     par.SetCovariance(0.1)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
@@ -119,6 +132,14 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     Ss = numpy.array(Ssmooth)
     Ys = numpy.array(Yfull_smooth)
     
+    print "smoothed end",xs[-1,:]
+    print "smoothed start",xs[0,:]
+    print "smoothed average", numpy.average(xs, 0)
+    
+    print "filtered end",x[-1,:]
+    print "filtered start",x[0,:]
+    print "filtered average", numpy.average(x, 0)
+    
     ####################################################################
     # Display results
     simResults = CsvReader.CsvReader()
@@ -145,24 +166,24 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     #ax0.fill_between(time, x - sqrtP, x + sqrtP, facecolor='red', interpolate=True, alpha=0.3)
     idx = 0
     ax0.plot(time,x[:,idx],'r',label='$a_1$',alpha=1.0)
-    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='red', interpolate=True, alpha=0.3)
+    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='red', interpolate=True, alpha=0.05)
     ax0.plot(time,xs[:,idx],'r--',label='$a_1$',alpha=1.0)
-    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='red', interpolate=True, alpha=0.3)
+    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='red', interpolate=True, alpha=0.05)
     idx = 1
     ax0.plot(time,x[:,idx],'b',label='$a_3$',alpha=1.0)
-    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='blue', interpolate=True, alpha=0.3)
+    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='blue', interpolate=True, alpha=0.05)
     ax0.plot(time,xs[:,idx],'b--',label='$a_3$',alpha=1.0)
-    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='blue', interpolate=True, alpha=0.3)
+    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='blue', interpolate=True, alpha=0.05)
     idx = 2
     ax0.plot(time,x[:,idx],'k',label='$a_5$',alpha=1.0)
-    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='black', interpolate=True, alpha=0.3)
+    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='black', interpolate=True, alpha=0.05)
     ax0.plot(time,xs[:,idx],'k--',label='$a_5$',alpha=1.0)
-    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='black', interpolate=True, alpha=0.3)
+    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='black', interpolate=True, alpha=0.05)
     idx = 3
     ax0.plot(time,x[:,idx],'c',label='$a_7$',alpha=1.0)
-    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='cyan', interpolate=True, alpha=0.3)
+    ax0.fill_between(time, x[:,idx] - sqrtP[:,idx,idx], x[:,idx] + sqrtP[:,idx,idx], facecolor='cyan', interpolate=True, alpha=0.05)
     ax0.plot(time,xs[:,idx],'c--',label='$a_7$',alpha=1.0)
-    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='cyan', interpolate=True, alpha=0.3)
+    ax0.fill_between(time, xs[:,idx] - Ss[:,idx,idx], xs[:,idx] + Ss[:,idx,idx], facecolor='cyan', interpolate=True, alpha=0.05)
     
     ax0.set_xlabel('Time [hours]')
     ax0.set_ylabel('Coefficients [$\cdot$]')
