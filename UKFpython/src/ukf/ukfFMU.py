@@ -318,8 +318,13 @@ class ukfFMU():
 			temp = {"state":x, "parameters":pars}
 			values.append(temp)
 
-		# Run simulations in parallel
+		# Run simulations in parallel, if the results are not provided run again untile the
+		# maximum number of run is reached
+		MAX_RUN = 3
+		runs = 0
 		poolResults = self.pool.Run(values, start = t_old, stop = t)
+		while poolResults == {} and runs < MAX_RUN:
+			poolResults = self.pool.Run(values, start = t_old, stop = t)
 		
 		i = 0
 		for r in poolResults:
@@ -903,15 +908,17 @@ class ukfFMU():
 			print "ITERATION "*3,i
 			time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = self.filterAndSmooth(start=start, stop=stop, verbose=verbose)
 			
+			x  = np.array(x)
 			xs = np.array(Xsmooth)
 			Ss = np.array(Ssmooth)
 			
 			x0 = xs[0,:self.n_state_obs]
+			p0 = x[0,self.n_state_obs:]
 			p  = xs[0,self.n_state_obs:]
 			p_mean  = np.mean(xs[:,self.n_state_obs:], 0)
-			print "init_state=",x0
+			print "init_pars=",p0
 			print "pars=",p
-			print "pars_m=",p_mean
+			#print "pars_m=",p_mean
 			pars.append(p)
 			
 			j = 0
@@ -920,10 +927,13 @@ class ukfFMU():
 				var.SetCovariance(Ss[0,j,j])
 				j += 1
 			
+			self.model.SetParametersSelected(p)
+			j = 0
 			for var in self.model.GetParameters():
-				var.SetInitialValue(p[j])
+				#var.SetInitialValue(p[j])
 				#var.SetInitialValue(p_mean[j])
 				var.SetCovariance(Ss[0,j,j])
+				j += 1
 		
 		return pars
 			
