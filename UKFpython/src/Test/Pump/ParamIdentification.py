@@ -49,6 +49,7 @@ def main():
     p_start = [0.21517598, 0.50276898, 0.79260251, 1.] # 25
     p_start = [0.19080228, 0.50549745, 0.81889495, 1.] # 35
     p_start = [0.11824324, 0.5869894,  0.8849001,  1.]
+    p_start = [0.11574544, 0.67699191, 0.8862938, 1.]
     #################################################################
     # Select the parameter to be identified
     m.AddParameter(m.GetVariableObject("pump.power.P[1]"))
@@ -106,7 +107,7 @@ def main():
     ukf_FMU = ukfFMU(m, augmented = False)
     ukf_FMU.setUKFparams()
     
-    pars = ukf_FMU.ParameterEstimation(maxIter = 55)
+    pars = ukf_FMU.ParameterEstimation(maxIter = 100)
     print pars
     
     ShowResults(pars)
