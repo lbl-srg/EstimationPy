@@ -20,7 +20,8 @@ def main():
     
     # Path of the csv file containing the data series
     #csvPath = "../../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
-    csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012.csv"
+    #csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012.csv"
+    csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012_variableStep.csv"
     
     # Set the CSV file associated to the input, and its covariance
     input = m.GetInputByName("Nrpm")
@@ -61,10 +62,11 @@ def main():
     ppp = [0.106,  0.50041746, 0.9, 1.        ]
     ppp = [0.28538255, 0.50017618, 0.71668581, 1.]
     
+    cov = 0.005
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[0]
     par.SetInitialValue(ppp[0])
-    par.SetCovariance(0.1)
+    par.SetCovariance(cov)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -77,7 +79,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[1]
     par.SetInitialValue(ppp[1])
-    par.SetCovariance(0.1)
+    par.SetCovariance(cov)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -89,7 +91,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[2]
     par.SetInitialValue(ppp[2])
-    par.SetCovariance(0.1)
+    par.SetCovariance(cov)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -101,7 +103,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[3]
     par.SetInitialValue(ppp[3])
-    par.SetCovariance(0.1)
+    par.SetCovariance(cov)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)

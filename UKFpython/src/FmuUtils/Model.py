@@ -930,7 +930,7 @@ class Model():
         
         return LoadedOutputs
     
-    def ReInit(self, fmuFile, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, setTrees = False):
+    def ReInit(self, fmuFile, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, setTrees = False, verbose=None):
         """
         This function reinitializes the FMU associated to the model
         """
@@ -938,7 +938,7 @@ class Model():
         print "Reinitialized model with: ",fmuFile
         if self.fmu != None:
             self.fmu = None
-        self.__init__(fmuFile, result_handler, solver, atol, rtol, setTrees)
+        self.__init__(fmuFile, result_handler, solver, atol, rtol, setTrees, verbose)
     
     def RemoveParameter(self, obj):
         """
@@ -978,15 +978,23 @@ class Model():
         """
         self.variables = []
     
+    def unloadFMU(self):
+        """
+        This method unload the FMU model and it deallocate the resources associated to it.
+        This is necessary is an other FMU model needs to be loaded.
+        """
+        del(self.fmu)
+    
     def __SetFMU(self, fmuFile, result_handler, solver, atol, rtol, verbose):
         """
         This method associate an FMU to a model, if not yet assigned
         """
         if self.fmu == None:
+            
             #TODO:
             # See what can be done in catching the exception/propagating it
             self.fmu = pyfmi.load_fmu(fmuFile)
-            
+                
             # Get the options for the simulation
             self.opts = self.fmu.simulate_options()
             

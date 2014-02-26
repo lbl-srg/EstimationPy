@@ -4,7 +4,7 @@ Created on Nov 7, 2013
 @author: marco
 '''
 import matplotlib.pyplot as plt
-from FmuUtils import Model
+from FmuUtils import Model, Strings
 
 def main():
     

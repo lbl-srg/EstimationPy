@@ -21,7 +21,8 @@ def main():
     
     # Path of the csv file containing the data series
     #csvPath = "../../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
-    csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012.csv"
+    #csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012.csv"
+    csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012_variableStep.csv"
     
     # Set the CSV file associated to the input, and its covariance
     input = m.GetInputByName("Nrpm")
@@ -44,12 +45,16 @@ def main():
     output.SetMeasuredOutput()
     output.SetCovariance(50.0)
     """
-    p_start = [0.30000000, 0.50000000, 0.70000000, 1.] # 0
-    p_start = [0.28538255, 0.50017618, 0.71668581, 1.] # 7
-    p_start = [0.21517598, 0.50276898, 0.79260251, 1.] # 25
-    p_start = [0.19080228, 0.50549745, 0.81889495, 1.] # 35
-    p_start = [0.11824324, 0.5869894,  0.8849001,  1.]
-    p_start = [0.11574544, 0.67699191, 0.8862938, 1.]
+    p_start = [0.30000000, 0.40000000, 0.60000000, 0.8] # 0
+    #p_start = [0.20000000, 0.40000000, 0.60000000, 0.8] # 0
+    #p_start = [0.28538255, 0.50017618, 0.71668581, 1.] # 7
+    #p_start = [0.21517598, 0.50276898, 0.79260251, 1.] # 25
+    #p_start = [0.19080228, 0.50549745, 0.81889495, 1.] # 35
+    #p_start = [0.11824324, 0.5869894,  0.8849001,  1.]
+    #p_start = [0.11574544, 0.67699191, 0.8862938, 1.]
+    
+    cov = 0.1
+    
     #################################################################
     # Select the parameter to be identified
     m.AddParameter(m.GetVariableObject("pump.power.P[1]"))
@@ -57,7 +62,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[0]
     par.SetInitialValue(p_start[0])
-    par.SetCovariance(0.1)
+    par.SetCovariance(cov)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -70,7 +75,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[1]
     par.SetInitialValue(p_start[1])
-    par.SetCovariance(0.1)
+    par.SetCovariance(cov)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -82,7 +87,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[2]
     par.SetInitialValue(p_start[2])
-    par.SetCovariance(0.1)
+    par.SetCovariance(cov)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -94,7 +99,7 @@ def main():
     # Set initial value of parameter, and its covariance and the limits (if any)
     par = m.GetParameters()[3]
     par.SetInitialValue(p_start[3])
-    par.SetCovariance(0.1)
+    par.SetCovariance(cov)
     par.SetMinValue(0.0)
     par.SetConstraintLow(True)
     par.SetMaxValue(1.0)
@@ -107,7 +112,7 @@ def main():
     ukf_FMU = ukfFMU(m, augmented = False)
     ukf_FMU.setUKFparams()
     
-    pars = ukf_FMU.ParameterEstimation(maxIter = 100)
+    pars = ukf_FMU.ParameterEstimation(maxIter = 500)
     print pars
     
     ShowResults(pars)

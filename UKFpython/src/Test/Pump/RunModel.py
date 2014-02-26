@@ -32,6 +32,7 @@ def main():
     # Path of the csv file containing the data series
     #csvPath = "../../../modelica/FmuExamples/Resources/data/DataPumpVeryShort.csv"
     csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012.csv"
+    #csvPath = "../../../modelica/FmuExamples/Resources/data/DataPump_16to19_Oct2012_variableStep.csv"
     
     # Set the CSV file associated to the input, and its covariance
     input = m.GetInputByName("Nrpm")
@@ -42,7 +43,9 @@ def main():
     m.InitializeSimulator()
     
     #pars = [0.106,  0.50041746, 0.9, 1.]
-    pars = [0.11574544, 0.67699191, 0.8862938, 1.]
+    #pars = [0.11574544, 0.67699191, 0.8862938, 1.]
+    pars = [ 0.11992406,  0.11864333,  0.88393507,  1.]
+    #pars = [0.1222095,  0.1210177,  0.12177384, 1.]
     
     # Set the parameters of the model
     par_1 = m.GetVariableObject("pump.power.P[1]")
@@ -100,6 +103,21 @@ def showResults(time, results, csvPath, pars):
     ax1.grid(False)
     
     plt.savefig('PumpElectrical.pdf',dpi=300, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    corr_coeff = numpy.corrcoef(d_kW, P_el)
+    
+    fig2 = plt.figure()
+    ax2  = fig2.add_subplot(111)
+    ax2.plot(d_kW/numpy.max(d_kW), P_el/numpy.max(P_el), 'ro', alpha=0.5)
+    ax2.plot(d_kW/numpy.max(d_kW), d_kW/numpy.max(d_kW), 'b', alpha=1.0)
+    ax2.set_xlabel('Normalized measured power')
+    ax2.set_ylabel('Normalized simulated power')
+    ax2.set_title('$r=%.6f$' %(corr_coeff[0,1]))
+    ax2.set_ylim([0, 1.1])
+    ax2.set_ylim([0, 1.1])
+    ax2.grid(False)
+    
+    plt.savefig('PumpElectrical_2.pdf',dpi=300, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    
     plt.show()
    
 if __name__ == '__main__':

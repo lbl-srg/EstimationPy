@@ -494,15 +494,17 @@ class ukfFMU():
 		Xave_obs  = self.__AugStateFromFullState__(Xave)
 		
 		# Matrix of weights and signs of the weights
-		weights = np.sqrt( np.abs(self.W_c[:,0]) )
+		weights = np.sqrt( np.abs(self.W_c[:,0]) ) #np.sqrt( self.W_c[:,0] ) #
 		signs   = np.sign( self.W_c[:,0] )
 		
 		# create matrix A that contains the error between the sigma points and the average
 		A     = np.array([[]])
 		i     = 0
 		for x in X_proj_obs:
+			
 			error = signs[i]*weights[i]*(x - Xave_obs)
 			
+			# ignore when i==0, this will be done in the update
 			if i==1:
 				A = error.T
 			elif i>1:
@@ -884,13 +886,16 @@ class ukfFMU():
 			X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigmaPointProj([Xsmooth[i]],time[i], time[i]+1e-8)
 			Yfull_smooth[i] = Zfull_proj[0]
 			
+			V          = np.dot(D.T, Ssmooth[i+1] - Snew)
+			Ssmooth[i] = self.cholUpdate(sqrtP[i], V, -1*np.ones(self.n_state_obs + self.n_pars))
+			
 			if verbose:
 				print "New smoothed state"
 				print Xsmooth[i]
+				print "Ssmooth"
+				print "difference",sqrtP[i]-Ssmooth[i]
+				
 				raw_input("?")
-			
-			V          = np.dot(D.T, Ssmooth[i+1] - Snew)
-			Ssmooth[i] = self.cholUpdate(sqrtP[i], V, -1*np.ones(self.n_state_obs + self.n_pars))
 		
 		# correct the shape of the last element that has not been smoothed
 		Yfull_smooth[-1] = Yfull_smooth[-1][0]

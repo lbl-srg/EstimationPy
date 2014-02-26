@@ -112,9 +112,11 @@ class CsvReader():
         """
         if columnName in self.GetColumnNames():
             self.columnSelected = columnName
+            return True
         else:
             print "ERROR:: The column selected "+str(columnName)+"is not part of the columns names list"
             print self.GetColumnNames()
+            return False
             
     def GetSelectedColumn(self):
         """
