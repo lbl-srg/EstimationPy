@@ -1133,6 +1133,7 @@ class Model():
         else:
             self.opts[Strings.SIMULATION_OPTION_RESHANDLING_STRING] = Strings.RESULTS_ON_MEMORY_STRING
         
+        
         # Set solver verbose level
         if verbose != None and  verbose in Strings.SOLVER_VERBOSITY_LEVELS:
             for s in Strings.SOLVER_NAMES_OPTIONS:   
@@ -1140,7 +1141,8 @@ class Model():
         else:
             for s in Strings.SOLVER_NAMES_OPTIONS:   
                 self.opts[s][Strings.SOLVER_OPTION_VERBOSITY_STRING] = Strings.SOLVER_VERBOSITY_QUIET
-                
+        
+              
         # Set the absolute and relative tolerance of each solver, otherwise the default value
         # is left
         if atol != None and atol > 0 and numpy.isreal(atol):
@@ -1149,7 +1151,7 @@ class Model():
         if rtol != None and rtol > 0 and numpy.isreal(rtol):
             for s in Strings.SOLVER_NAMES_OPTIONS:   
                 self.opts[s][Strings.SOLVER_OPTION_RTOL_STRING] = rtol
-    
+        
     def SetState(self, stateVector):
         """
         This method sets the entire state variables vector of the model
@@ -1158,7 +1160,7 @@ class Model():
     
     def SetReal(self, var, value):
         """
-        Set a real variablein the FMU model, given the PyFmi variable description
+        Set a real variable in the FMU model, given the PyFmi variable description
         """
         self.fmu.set_real(var.value_reference, value)
         return
@@ -1213,7 +1215,7 @@ class Model():
             print "Problems while creating the variables tree"
             self.treeVariables = Tree(Strings.VARIABLE_STRING)
     
-    def Simulate(self, start_time = None, final_time = None, time = None, Input = None):
+    def Simulate(self, start_time = None, final_time = None, time = None, Input = None, complete_res = False):
         """
         This method simulates the model from the start_time to the final_time, using a given set of simulation
         options. Since it may happen that a simulation fails without apparent reason (!!), it is better to 
@@ -1291,27 +1293,34 @@ class Model():
         # Obtain the results
         # TIME
         t     = res[Strings.TIME_STRING]
-        # OUTPUTS
-        output_names = self.GetOutputNames()
-        results = {}
-        for name in output_names:
-            results[name] = res[name]
-        # STATES OBSERVED
-        var_names = self.GetVariableNames()
-        for name in var_names:
-            results[name] = res[name]
-        # PARAMETERS
-        par_names = self.GetParameterNames()
-        for name in par_names:
-            results[name] = res[name]
         
-        # THE OVERALL STATE
-        results["__ALL_STATE__"]=self.GetState()
-        results["__OBS_STATE__"]=self.GetStateObservedValues()
-        results["__PARAMS__"]=self.GetParametersValues()
-        results["__OUTPUTS__"]=self.GetMeasuredOutputsValues()
-        results["__ALL_OUTPUTS__"]=self.GetOutputsValues()
-        
+        # Get the results, either all or just the selected ones
+        if complete_res == False:
+            # OUTPUTS
+            output_names = self.GetOutputNames()
+            results = {}
+            for name in output_names:
+                results[name] = res[name]
+            # STATES OBSERVED
+            var_names = self.GetVariableNames()
+            for name in var_names:
+                results[name] = res[name]
+            # PARAMETERS
+            par_names = self.GetParameterNames()
+            for name in par_names:
+                results[name] = res[name]
+            
+            # THE OVERALL STATE
+            results["__ALL_STATE__"]=self.GetState()
+            results["__OBS_STATE__"]=self.GetStateObservedValues()
+            results["__PARAMS__"]=self.GetParametersValues()
+            results["__OUTPUTS__"]=self.GetMeasuredOutputsValues()
+            results["__ALL_OUTPUTS__"]=self.GetOutputsValues()
+            
+        else:
+            # All the results are given back
+            results = res
+            
         # Return the results
         return (t, results)
     

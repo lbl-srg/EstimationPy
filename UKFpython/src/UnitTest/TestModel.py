@@ -99,6 +99,8 @@ class Test(unittest.TestCase):
     def test_InstantiateModelReinit(self):
         self.__InstantiateModel(reinit = False)
         
+    
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

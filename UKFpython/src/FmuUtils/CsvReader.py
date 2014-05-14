@@ -70,7 +70,11 @@ class CsvReader():
         self.__init__(filename)
         
         # Open the file passed as parameter
-        f = open(self.filename, 'rb')
+        try:
+            f = open(self.filename, 'rb')
+        except IOError:
+            print "The file %s does not exist, impossible to open " % self.filename
+            return False
         
         # TODO:
         # Read N lines and detect the dialect used

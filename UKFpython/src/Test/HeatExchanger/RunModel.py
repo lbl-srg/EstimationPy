@@ -44,6 +44,8 @@ def main():
     input.GetCsvReader().OpenCSV(inputPath)
     input.GetCsvReader().SetSelectedColumn("heatExchanger.Tcold_IN")
     
+    m.GetState()
+    
     # Initialize the model for the simulation
     m.InitializeSimulator()
                         

@@ -28,14 +28,18 @@ class EstimationVariable():
         # Take the start, min and max value of this variable
         type, value, start, min, max = fmu.GetVariableInfo_Numeric(object)
         
-        # TODO: it can be either value[0] or start. Not yet sube about the difference...
-        if value[0]!= start:
-            print "Start value is different from value read"
-            print "Value read  =",value[0]
-            print "Start value =",start
-            self.initValue = start
-        else:
-            self.initValue = start
+        # TODO: it can be either value[0] or start. Not yet sure about the difference...
+        try:
+            if value[0]!= start:
+                print "Start value is different from value read"
+                print "Value read  =",value[0]
+                print "Start value =",start
+                self.initValue = start
+            else:
+                self.initValue = start
+        except TypeError:
+            print "Missing start value (equal to None)"
+            self.initValue = start       
         self.minValue = min
         self.maxValue = max
         self.cov = 1.0
