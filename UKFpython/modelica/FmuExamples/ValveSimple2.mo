@@ -1,27 +1,25 @@
 within FmuExamples;
-partial model ValveStuckBase
+model ValveSimple2
   parameter Real Kv=m_flow_nominal*3600/1000
     "Kv (metric) flow coefficient [m3/h]" annotation(fixed=false);
-  parameter Modelica.SIunits.Time riseTime=3 "Time constant of the filter" annotation(fixed=false);
+  parameter Modelica.SIunits.Time riseTime=3 "Time constant of the filter";
   parameter Modelica.Media.Interfaces.PartialMedium.MassFlowRate m_flow_nominal=
-     1.5 "Nominal mass flowrate" annotation(fixed=false);
+     1.5 "Nominal mass flowrate";
   parameter Modelica.SIunits.Pressure dp_nominal=0.5*101325
-    "Nominal pressure drop" annotation(fixed=false);
-  parameter Real bias = 0 "biasing of mass flow rate sensor" annotation(fixed=false);
+    "Nominal pressure drop";
+  parameter Real bias = 0 "biasing of mass flow rate sensor";
   parameter Real lambda = 0
-    "scale factor of mass flow rate sensor [Delta Mass flow rate/ Delta T]" annotation(fixed=false);
-  parameter Real Tref = 273.15 + 20 "Reference temperature for thermal drift" annotation(fixed=false);
+    "scale factor of mass flow rate sensor [Delta Mass flow rate/ Delta T]";
+  parameter Real Tref = 273.15 + 20 "Reference temperature for thermal drift";
 
-  Modelica.Fluid.Valves.ValveIncompressible valve(
+  Buildings.Fluid.Actuators.Valves.TwoWayQuickOpening
+                                            valve(
     CvData=Modelica.Fluid.Types.CvTypes.Kv,
     redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater,
     Kv=Kv,
-    dp_nominal=dp_nominal,
     m_flow_nominal=m_flow_nominal,
     riseTime=riseTime,
-    filteredOpening=false,
-    redeclare function valveCharacteristic =
-        Modelica.Fluid.Valves.BaseClasses.ValveCharacteristics.quadratic)
+    filteredOpening=true)
     annotation (Placement(transformation(extent={{10,0},{30,20}})));
 
   Modelica.Fluid.Sources.Boundary_pT Source(
@@ -107,6 +105,10 @@ equation
       points={{-22,14},{-26,14},{-26,30},{-100,30}},
       color={0,0,127},
       smooth=Smooth.None));
+  connect(cmd, valve.y) annotation (Line(
+      points={{-80,60},{20,60},{20,22}},
+      color={0,0,127},
+      smooth=Smooth.None));
   annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,
             -100},{100,100}}), graphics), Icon(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={
@@ -150,4 +152,4 @@ equation
           extent={{-160,80},{-100,40}},
           lineColor={0,0,127},
           textString="T")}));
-end ValveStuckBase;
+end ValveSimple2;
