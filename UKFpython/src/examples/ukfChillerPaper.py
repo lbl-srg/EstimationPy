@@ -14,12 +14,12 @@ from models.chillerExamplePaper import plotting
 os.system("clear")
 
 # time frame of the experiment
-dt          = 0.5
+dt          = 2.0
 DT          = 2.0*60.0
 SmoothDT    = DT*30.0
 
 startTime   = 6.0*3600
-stopTime    = 22.0*3600
+stopTime    = 8.0*3600
 
 print "\nSimulating the Chiller model between: "+str(startTime/3600.0)+" - "+str(stopTime/3600.0)+" [hour]"
 print "Step for simulation dt = "+str(dt)+" [s]"
@@ -86,7 +86,7 @@ for i in range(numPoints):
 ##################################################################
 
 # output measurement covariance noise
-R     = np.diag([1.0**2, 1.0**2, 3**2, 10000**2, 0.2**2])
+R     = np.diag([1.0**2, 1.0**2, 2.0**2, 10000**2, 0.2**2])
 sqrtR = np.linalg.cholesky(R)
 
 # input measurements covariance noise
@@ -143,14 +143,14 @@ Sy   = np.zeros((numSamples,3,3))
 # initial of the subset of the state
 X0_hat = np.array([12.0, 18.0, 0.8, 0.05, 0.05, 200000, 200000 ])
 
-#Q0     = np.diag([0.5**2, 0.5**2, 0.05**2, 0.005**2, 0.005**2])
+Q0     = np.diag([0.5**2, 0.5**2, 0.05**2, 0.005**2, 0.005**2])
 #Q0     = np.diag([1.0**2, 1.0**2, 0.08**2, 0.02**2, 0.02**2])
-Q0     = np.diag([2.0**2, 2.0**2, 0.1**2, 0.02**2, 0.03**2])
+#Q0     = np.diag([2.0**2, 2.0**2, 0.1**2, 0.02**2, 0.03**2])
 S0     = np.linalg.cholesky(Q0)
 
-#R0     = np.diag([1**2, 1**2, 5**2])
+R0     = np.diag([1**2, 1**2, 5**2])
 #R0     = np.diag([2.5**2, 2.5**2, 5.0**2])
-R0     = np.diag([4**2, 4**2, 5.0**2])
+#R0     = np.diag([4**2, 4**2, 5.0**2])
 sqrtR0 = np.linalg.cholesky(R0)
 
 # Set the constraints on the state variables

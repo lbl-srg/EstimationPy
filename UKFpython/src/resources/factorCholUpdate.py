@@ -1,9 +1,6 @@
 import numpy as np
-from os import system
-
 np.set_printoptions(precision=4)
 
-system('clear')
 Xtrue = np.array([[2.0, 3.0, 15.4]])
 
 Xpoints = np.array([[1.8, 3.3, 16.4],[1.9, 3.5, 14.4],[2.23, 4, 15.7],[1.5, 2.6, 12.4],[1.5, 2.6, 18.4],[1.5, 2.6, 13.4]])
