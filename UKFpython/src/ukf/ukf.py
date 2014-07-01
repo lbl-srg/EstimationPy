@@ -18,50 +18,23 @@ def Function(val):
 	
 	"""
 	# Get the values from the tuple 
-	(m,x,u_old,u,t_old,t,Flags,) = val
+	(m, x, u_old, u, t_old, t, Flags,) = val
 	
 	# execute the state transition function associated to the model
-	return m.functionF((x,u_old,u,t_old,t,False,))
+	return m.functionF((x, u_old, u, t_old, t, Flags,))
 
 class ukf():
 	"""
 	This class represents an Unscented Kalman Filter (UKF) that can be used for the state and parameter estimation of nonlinear dynamic systems
 	"""
-	# number of state variables, outputs and sigma points
-	n_state     = 0
-	n_state_obs = 0
-	n_outputs   = 0
-	n_points    = 0
-
-	# parameters of the Unscented Kalman Filter
-	alpha     = 0
-	k         = 0
-	beta      = 0
-	lambd     = 0
-
-	# weights of the UKF
-	W_m       = np.zeros((2*n_state_obs + 1, 1))
-	W_c       = np.zeros((2*n_state_obs + 1, 1))
-	CstCov    = 0
 	
-	# constraints of the observed state
-	ConstrHigh = np.empty(n_state_obs)
-	ConstrHigh.fill(False)
-	ConstrLow = np.empty(n_state_obs)
-	ConstrLow.fill(False)
-	
-	# Max Value of the constraints
-	ConstrValueHigh = np.zeros(n_state_obs)
-	# Min Value of the constraints
-	ConstrValueLow = np.zeros(n_state_obs)
-	
-	
-	def __init__(self, n_state, n_state_obs, n_outputs):
+	def __init__(self, n_state, n_state_obs, n_pars, n_outputs, augmented = False):
 		"""
 		Initialization of the UKF and its parameters. The dynamic system is characterized by
 		
 		** n_state     -- state variables,
-		** n_state_obs -- state variables that are observed (estimated)
+		** n_state_obs -- state variables that are observed (estimated),
+		** n_pars      -- parameters that are estimated,
 		** n_outputs   -- output variables
 		
 		The initialization assign these parameters then,
@@ -72,90 +45,140 @@ class ukf():
 		4- initialize the constraints on the observed state variables
 		 
 		"""
-		# set the number of states variables and outputs
+		
+		# set the number of states variables (total and observed), parameters estimated and outputs
 		self.n_state     = n_state
 		self.n_state_obs = n_state_obs
+		self.n_pars      = n_pars
 		self.n_outputs   = n_outputs
+		self.augmented   = augmented
+		if not augmented:
+			self.N       = n_state_obs + n_pars
+		else:
+			self.N       = n_state_obs + n_pars + n_state_obs + n_outputs
+		
+		# some check
+		if n_state_obs > n_state:
+			raise Exception('The number of observed states ('+str(n_state_obs)+') cannot be higher that the number of states ('+str(n_state)+')!')
+		if n_pars < 0:
+			raise Exception('The number of estimated parameters cannot be < 0')
+		if n_outputs < 0:
+			raise Exception('The number of outputs cannot be < 0')
+		
+		
+		# compute the number of sigma points
+		self.n_points    = 1 + 2*self.N
 
-		# compute the sigma points
-		self.n_points    = 1 + 2*self.n_state_obs
-
-		# define UKF parameters
+		# define UKF parameters with default values
 		self.setUKFparams()
-
-		# compute the weights
-		self.computeWeights()
 		
-		# set the default constraints, not active
-		self.ConstrHigh = np.empty(self.n_state_obs)
-		self.ConstrHigh.fill(False)
-		self.ConstrLow = np.empty(self.n_state_obs)
-		self.ConstrLow.fill(False)
+		# set the default constraints for the observed state variables (not active by default)
+		self.ConstrStateHigh = np.empty(self.n_state_obs)
+		self.ConstrStateHigh.fill(False)
+		self.ConstrStateLow = np.empty(self.n_state_obs)
+		self.ConstrStateLow.fill(False)
+		# Max and Min Value of the states constraints
+		self.ConstrStateValueHigh = np.zeros(self.n_state_obs)
+		self.ConstrStateValueLow  = np.zeros(self.n_state_obs)
 		
-		# Max Value of the constraints
-		self.ConstrValueHigh = np.zeros(self.n_state_obs)
-		# Min Value of the constraints
-		self.ConstrValueLow  = np.zeros(self.n_state_obs)
-
+		# set the default constraints for the estimated parameters (not active by default)
+		self.ConstrParsHigh = np.empty(self.n_pars)
+		self.ConstrParsHigh.fill(False)
+		self.ConstrParsLow = np.empty(self.n_pars)
+		self.ConstrParsLow.fill(False)
+		# Max and Min Value of the parameters constraints
+		self.ConstrParsValueHigh = np.zeros(self.n_pars)
+		self.ConstrParsValueLow  = np.zeros(self.n_pars)
 	
 	def setDefaultUKFparams(self):
 		"""
 		This method set the default parameters of the UKF
 		"""
 		self.alpha    = 0.01
-		self.k        = 0
+		self.k        = 1
 		self.beta     = 2
-		self.lambd    = (self.alpha**2)*(self.n_state_obs + self.k) - self.n_state_obs
-		self.sqrtC    = self.alpha*np.sqrt(self.n_state_obs + self.k)
+		
+		n = self.N
+		
+		self.lambd    = (self.alpha**2)*(n + self.k) - n
+		self.sqrtC    = self.alpha*np.sqrt(n + self.k)
+		
+		# compute the weights
+		self.computeWeights()
 
-	
 	def setUKFparams(self, alpha = 1.0/np.sqrt(3.0), beta = 2, k = None):
 		"""
 		This method set the non default parameters of the UKF
 		"""
 		self.alpha     = alpha
 		self.beta      = beta
-
+		
+		n = self.N
+		
 		if k == None:
-			self.k = 3 - self.n_state_obs
+			self.k = 3 - n
 		else:
 			self.k = k
 		
-		self.lambd    = (self.alpha**2)*(self.n_state_obs + self.k) - self.n_state_obs
-		self.sqrtC    = self.alpha*np.sqrt(self.k + self.n_state_obs)		
+		self.lambd    = (self.alpha**2)*(n + self.k) - n
+		self.sqrtC    = self.alpha*np.sqrt(self.k + n)
+		
+		# compute the weights
+		self.computeWeights()	
 
-	
-	def setHighConstraints(self,flag,values):
+	def setStateHighConstraints(self, flag, values):
 		"""
 		This method imposes the upper constraints of the observed state variables.
 		"""
-		self.ConstrHigh      = flag
-		self.ConstrValueHigh = values
+		self.ConstrStateHigh = flag
+		self.ConstrStateValueHigh = values
 
-	def setLowConstraints(self,flag,values):
+	def setStateLowConstraints(self, flag, values):
 		"""
 		This method imposes the lower constraints of the observed state variables.
 		"""
-		self.ConstrLow      = flag
-		self.ConstrValueLow = values
+		self.ConstrStateLow      = flag
+		self.ConstrStateValueLow = values
+	
+	def setParsHighConstraints(self, flag, values):
+		"""
+		This method imposes the upper constraints of the estimated parameters.
+		"""
+		self.ConstrParsHigh = flag
+		self.ConstrParsValueHigh = values
 
+	def setParsLowConstraints(self, flag, values):
+		"""
+		This method imposes the lower constraints of the estimated parameters.
+		"""
+		self.ConstrParsLow      = flag
+		self.ConstrParsValueLow = values
 	
 	def computeWeights(self):
 		"""
 		This method computes the weights of the UKF filter. These weights are associated to each sigma point and are used to
 		compute the mean value (W_m) and the covariance (W_c) of the estimation
 		"""
-		self.W_m       = np.zeros((1+self.n_state_obs*2,1))
-		self.W_c       = np.zeros((1+self.n_state_obs*2,1))
 		
-		self.W_m[0,0]  = self.lambd/(self.n_state_obs + self.lambd)
-		self.W_c[0,0]  = self.lambd/(self.n_state_obs + self.lambd) + (1 - self.alpha**2 + self.beta)
+		n = self.N
+		
+		self.W_m       = np.zeros((1+2*n, 1))
+		self.W_c       = np.zeros((1+2*n, 1))
+		
+		self.W_m[0,0]  = self.lambd/(n + self.lambd)
+		self.W_c[0,0]  = self.lambd/(n + self.lambd) + (1 - self.alpha**2 + self.beta)
 
-		for i in range(2*self.n_state_obs):
-			self.W_m[i+1,0] = 1.0/(2.0*(self.n_state_obs + self.lambd))
-			self.W_c[i+1,0] = 1.0/(2.0*(self.n_state_obs + self.lambd))
+		for i in range(2*n):
+			self.W_m[i+1,0] = 1.0/(2.0*(n + self.lambd))
+			self.W_c[i+1,0] = 1.0/(2.0*(n + self.lambd))
+	
+	def getWeights(self):
+		"""
+		This method returns the vectors containing the weights for the UKF
+		"""
+		return (self.W_m, self.W_c)
 
-	def squareRoot(self,A):
+	def squareRoot(self, A):
 		"""
 		This method computes the square root of a square matrix A, using the Cholesky factorization
 		"""
@@ -164,12 +187,10 @@ class ukf():
 			return sqrtA
 
 		except np.linalg.linalg.LinAlgError:
-			print "Matrix is not positive semi-definite"
-			print A
-			raw_input("press...")
+			print "Matrix "+str(A)+" is not positive semi-definite"
 			return A	
 	
-	def constrainedState(self,X):
+	def constrainedState(self, X):
 		"""
 		This method apply the constraints to the state vector (only to the estimated states)
 		"""		
@@ -177,27 +198,56 @@ class ukf():
 		for i in range(self.n_state_obs):
 		
 			# if the constraint is active and the threshold is violated
-			if self.ConstrHigh[i] and X[i] > self.ConstrValueHigh[i]:
-				X[i] = self.ConstrValueHigh[i]
+			if self.ConstrStateHigh[i] and X[i] > self.ConstrStateValueHigh[i]:
+				X[i] = self.ConstrStateValueHigh[i]
 				
 			# if the constraint is active and the threshold is violated	
-			if self.ConstrLow[i] and X[i] < self.ConstrValueLow[i]:
-				X[i] = self.ConstrValueLow[i]
+			if self.ConstrStateLow[i] and X[i] < self.ConstrStateValueLow[i]:
+				X[i] = self.ConstrStateValueLow[i]
+				
+		# Check for every observed state
+		for i in range(self.n_pars):
+		
+			# if the constraint is active and the threshold is violated
+			if self.ConstrParsHigh[i] and X[self.n_state+i] > self.ConstrParsValueHigh[i]:
+				X[self.n_state+i] = self.ConstrParsValueHigh[i]
+				
+			# if the constraint is active and the threshold is violated	
+			if self.ConstrParsLow[i] and X[self.n_state+i] < self.ConstrParsValueLow[i]:
+				X[self.n_state+i] = self.ConstrParsValueLow[i]
 		
 		return X
 				
-	def computeSigmaPoints(self,x,sqrtP):
+	def computeSigmaPoints(self, x, pars, sqrtP, sqrtQ = None, sqrtR = None):
 		"""
 		This method computes the sigma points, Its inputs are
 		
 		* x     -- the state vector around the points will be propagated,
-		* sqrtP -- the square root matrix of the covariance P, that is used to spread the points
+		* pars  -- the parameters that are eventually estimated
+		* sqrtP -- the square root matrix of the covariance P (both observed states and estimated parameters),
+				   that is used to spread the sigma points
 		
 		"""
-	
-		# reshape the state vector
-		x = x.reshape(1,self.n_state)
-
+		try:
+			# reshape the state vector
+			x = np.squeeze(x)
+			x = x.reshape(1, self.n_state)
+		except ValueError:
+			print "The vector of state variables has a wrong size"
+			print x
+			print "It should be long: "+str(self.n_state)
+			return np.array([])
+		
+		try:
+			# reshape the parameter vector
+			pars = np.squeeze(pars)
+			pars = pars.reshape(1, self.n_pars)
+		except ValueError:
+			print "The vector of parameters has a wrong size"
+			print pars
+			print "It should be long: "+str(self.n_pars)
+			return np.array([])
+			
 		# initialize the matrix of sigma points
 		# the result is
 		# [[0.0, 0.0, 0.0],
@@ -206,123 +256,231 @@ class ukf():
 		#  [0.0, 0.0, 0.0],
 		#      ....
 		#  [0.0, 0.0, 0.0]]
-		Xs      = np.zeros((self.n_points,self.n_state))
+		
+		if self.augmented:
+			Xs = np.zeros((self.n_points, self.n_state + self.n_pars + self.n_state_obs + self.n_outputs))
+		else:
+			Xs = np.zeros((self.n_points, self.n_state + self.n_pars))
 
-		# Now using the sqrtP matrix that is lower triangular, I create the sigma points
-		# by adding and subtracting the rows of the matrix sqrtP, to the lines of Xs
+		# Now using the sqrtP matrix that is lower triangular:
+		# create the sigma points by adding and subtracting the rows of the matrix sqrtP, to the lines of Xs
 		# [[s11, 0  , 0  ],
 		#  [s12, s22, 0  ],
 		#  [s13, s23, s33]]
-		i = 1
-		Xs[0,:] = x
 		
-		for row in sqrtP:
-			Xs[i,:]									  = x
-			Xs[i+self.n_state_obs,:]				  = x
+		if self.augmented:
+			zerosQ = np.zeros((1, self.n_state_obs))
+			zerosR = np.zeros((1, self.n_outputs))
+			xs0    = np.hstack((x, pars, zerosQ, zerosR))
 			
-			Xs[i,0:self.n_state_obs]                  = x[0,0:self.n_state_obs] + self.sqrtC*row
-			Xs[i+self.n_state_obs,0:self.n_state_obs] = x[0,0:self.n_state_obs] - self.sqrtC*row
+			zero1 = np.zeros((self.n_state_obs+self.n_pars, self.n_state_obs))
+			zero2 = np.zeros((self.n_state_obs+self.n_pars, self.n_outputs))
+			zero3 = np.zeros((self.n_state_obs, self.n_outputs))
+			
+			row1 = np.hstack((sqrtP,   zero1,   zero2)) 
+			row2 = np.hstack((zero1.T, sqrtQ,   zero3))
+			row3 = np.hstack((zero2.T, zero3.T, sqrtR))
+			sqrtP = np.vstack((row1, row2, row3))
+		else:
+			xs0 = np.hstack((x, pars))
+			
+		Xs[0,:] = xs0
+		
+		i = 1
+		N = self.N
+		for row in sqrtP:
+			Xs[i,:]   = xs0
+			Xs[i+N,:] = xs0
+			
+			nso = self.n_state_obs
+			ns  = self.n_state 
+			npa = self.n_pars
+			
+			try:
+				
+				if self.augmented:
+					Xs[i,  0:nso]           += self.sqrtC*row[0:nso]
+					Xs[i,  ns:ns+npa]        += self.sqrtC*row[ns:ns+npa]
+					Xs[i,  ns+npa:ns+npa+nso] += self.sqrtC*row[ns+npa:ns+npa+nso]
+					Xs[i,  ns+npa+nso:]      += self.sqrtC*row[ns+npa+nso:]
+					
+					Xs[i+N,  0:nso]           -= self.sqrtC*row[0:nso]
+					Xs[i+N,  ns:ns+npa]        -= self.sqrtC*row[ns:ns+npa]
+					Xs[i+N,  ns+npa:ns+npa+nso] -= self.sqrtC*row[ns+npa:ns+npa+nso]
+					Xs[i+N,  ns+npa+nso:]      -= self.sqrtC*row[ns+npa+nso:]
+				else:
+					Xs[i,  0:nso]    += self.sqrtC*row[0:nso]
+					Xs[i,  ns:ns+npa] += self.sqrtC*row[ns:]
+					
+					Xs[i+N,  0:nso]  -= self.sqrtC*row[0:nso]
+					Xs[i+N,  ns:]    -= self.sqrtC*row[ns:]
+					
+			except ValueError:
+				print "Is not possible to generate the sigma points..."
+				print "the dimensions of the sqrtP matrix and the state and parameter vectors are not compatible"
+				return Xs
 			
 			# TODO:
 			# How to introduce constrained points
 			# Xs[i,0:self.n_state_obs]                  = self.constrainedState(Xs[i,0:self.n_state_obs])
 			# Xs[i+self.n_state_obs,0:self.n_state_obs] = self.constrainedState(Xs[i+self.n_state_obs,0:self.n_state_obs])
+			Xs[i,:] = self.constrainedState(Xs[i,:])
+			Xs[i+N,:] = self.constrainedState(Xs[i+N,:])
 			
 			i += 1
 		
 		return Xs
 
-	def sigmaPointProj(self,m,Xs,u_old,u,t_old,t):
+	def sigmaPointProj(self, m, Xs, u_old, u, t_old, t):
 		"""
+		
 		This function, given a set of sigma points Xs, propagate them using the state transition function.
-		The simulations are run in parallel
+		The simulations are run in parallel if the flag parallel is set to True
+		
 		"""
 		# initialize the vector of the NEW STATES
-		X_proj = np.zeros((self.n_points,self.n_state))
+		X_proj = np.zeros((self.n_points, self.n_state + self.n_pars))
+		Z_proj = np.zeros((self.n_points, self.n_outputs))
+		
 		# this flag enables to run the simulation in parallel
 		parallel = False
 		
 		if parallel: 
 			# execute each state projection in parallel
 			pool = Pool()
-			res = pool.map_async(Function, ((m,x,u_old,u,t_old,t,False,) for x in Xs))
+			res = pool.map_async(Function, ((m, x, u_old, u, t_old, t, False,) for x in Xs))
 			pool.close()
 			pool.join()
 			
 			# collect the results of the simulations
 			j = 0
 			for X in res.get():
-				X_proj[j,:] = X
+				X_proj[j,:], Z_proj[j,:] = X
 				j += 1
 		else:
 			j = 0
 			for x in Xs:
-				values = (x, u_old, u, t_old, t, False)
-				X_proj[j,:] = m.functionF(values)
+				values = (m, x, u_old, u, t_old, t, False)
+				X_proj[j,:], Z_proj[j,:] = Function(values)
 				j += 1
 				
-		return X_proj
+		return X_proj, Z_proj
 
-	
 	def sigmaPointOutProj(self,m,Xs,u,t):
 		"""
 		This function computes the outputs of the model, given a set of sigma points Xs as well as inputs u and time step t
 		"""
 		# initialize the vector of the outputs
-		Z_proj = np.zeros((self.n_points,self.n_outputs))
+		Z_proj = np.zeros((self.n_points, self.n_outputs))
+		
+		#TODO: implement parallel 
 		j = 0
 		for x in Xs:
-			Z_proj[j,:] = m.functionG(x,u,t,False)
+			Z_proj[j,:] = m.functionG(x, u, t, False)
 			j += 1
 		return Z_proj
 
 	def averageProj(self,X_proj):
 		"""
-		This function averages the projection of the sigma points using the weights vector W_m
+		This function averages the projection of the sigma points (both states and outputs)
+		using a weighting vector W_m
 		"""
-		# make sure that the shape is [1+2*n, n]
-		X_proj.reshape(self.n_points, self.n_state)
+		# make sure that the shape is [1+2*n, ...]
+		X_proj.reshape(self.n_points, -1)
 		
 		# dot product of the two matrices
 		avg = np.dot(self.W_m.T, X_proj)
 		
 		return avg
-	
-	def averageOutProj(self,Z_proj):
-		"""
-		This function averages the outputs of the sigma points using the weights vector W_m
-		"""
-		# make sure that the shape is [1+2*n, n]
-		Z_proj.reshape(self.n_points, self.n_outputs)
-		
-		# dot product of the two matrices
-		avg = np.dot(self.W_m.T, Z_proj)
-		return avg
 
-	def computeP(self,X_p,Xa,Q):
+	def __AugStateFromFullState__(self, Xfull):
+		"""
+		Given a vector that contains all the state variables of the models and the parameters to be identified,
+		this method returns a vector that contains the augmented and observed states:
+		[ observed states, parameters estimated]
+		"""
+		if False:
+			row, col = np.shape(Xfull)
+			Xaug = np.zeros((row, self.n_state_obs + self.n_pars + self.n_state_obs + self.n_outputs))
+			
+			nso = self.n_state_obs
+			ns  = self.n_state 
+			npa  = self.n_pars
+			
+			for i in range(row):
+				Xaug[i, 0:nso]           = Xfull[i, 0:nso] 
+				Xaug[i, ns:ns+npa]        = Xfull[i, ns:ns+npa]
+				Xaug[i, ns+npa:ns+npa+nso] = Xfull[i, ns+npa:ns+npa+nso]
+				Xaug[i, ns+npa+nso:]      = Xfull[i, ns+npa+nso:]
+				
+		else:
+			row, col = np.shape(Xfull)
+			Xaug = np.zeros((row, self.n_state_obs + self.n_pars))
+			
+			for i in range(row):
+				Xaug[i, 0:self.n_state_obs]  = Xfull[i, 0:self.n_state_obs]
+				Xaug[i, self.n_state_obs:]   = Xfull[i, self.n_state:self.n_state+self.n_pars]
+				
+		return Xaug
+
+	def __newQ__(self, Q):
+		"""
+		This method, given the covariance matrix of the process noise (n_state_obs x n_state_obs)
+		returns a new covariance matrix that has size (n_state_obs+n_pars x n_state_obs+n_pars)
+		"""
+		nso = self.n_state_obs
+		no  = self.n_outputs 
+		npa  = self.n_pars
+		if False:
+			# create the new Q matrix to add
+			A = np.zeros((nso, npa+nso+no))
+			B = np.zeros((npa+nso+no, nso))
+			C = np.zeros((npa+nso+no, npa+nso+no))
+			top = np.hstack((Q, A))
+			bot = np.hstack((B,C))
+			newQ = np.vstack((top, bot))
+		else:
+			# create the new Q matrix to add
+			A = np.zeros((nso, npa))
+			B = np.zeros((npa, nso))
+			C = np.zeros((npa, npa))
+			top = np.hstack((Q, A))
+			bot = np.hstack((B,C))
+			newQ = np.vstack((top, bot))
+		return newQ
+		
+	def computeP(self, X_p, Xa, Q):
 		"""
 		This function computes the state covariance matrix P as
 		
 		P[i,j] = W_c[i]*(Xs[i] - Xavg)^2 + Q[i,j]
 		
-		"""
-		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
-
-		V = np.zeros(X_p.shape)
-		for j in range(self.n_points):
-			V[j,:]   = X_p[j,:] - Xa[0]
+		The vectors X_ contain the all the states (observed and not) and the estimated parameters.
+		The non observed states should be removed, and then computing P which has size of (n_state_obs + n_pars).
+		Note that Q has size n_state_obs, thus it has to be expanded with zero elements when added.
 		
-		Pnew = np.dot(np.dot(V.T,W),V) + Q
+		"""
+		# create a diagonal matrix containing the weights
+		W = np.diag(self.W_c[:,0]).reshape(self.n_points, self.n_points)
+		
+		# subtract each sigma point with the average Xa, and tale just the augmented state
+		V = self.__AugStateFromFullState__(X_p - Xa)
+		
+		# create the new Q matrix to add
+		newQ = self.__newQ__(Q)
+		
+		# compute the new covariance matrix
+		Pnew = np.dot(np.dot(V.T, W), V) + newQ
 		return Pnew
-
-	def computeCovZ(self,Z_p,Za,R):
+		
+	def computeCovZ(self, Z_p, Za, R):
 		"""
 		This function computes the output covariance matrix CovZ as
 		
 		CovZ[i,j] = W_c[i]*(Zs[i] - Zavg)^2 + R[i,j]
 		
 		"""
-		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
+		W = np.diag(self.W_c[:,0]).reshape(self.n_points, self.n_points)
 
 		V =  np.zeros(Z_p.shape)
 		for j in range(self.n_points):
@@ -330,19 +488,14 @@ class ukf():
 		
 		CovZ = np.dot(np.dot(V.T,W),V) + R
 		return CovZ
-
 	
 	def computeCovXZ(self,X_p, Xa, Z_p, Za):
 		"""
 		This function computes the state-output cross covariance matrix (between X and Z)
 		"""
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
-		
-		# Old version
-		# Vx = np.zeros(X_p.shape)
-		Vx = np.zeros((self.n_points,self.n_state_obs))
-		for j in range(self.n_points):
-			Vx[j,:]   = X_p[j,0:self.n_state_obs] - Xa[:,0:self.n_state_obs]	
+			
+		Vx = self.__AugStateFromFullState__(X_p - Xa)
 		
 		Vz = np.zeros(Z_p.shape)
 		for j in range(self.n_points):
@@ -351,19 +504,20 @@ class ukf():
 		CovXZ = np.dot(np.dot(Vx.T,W),Vz)
 		return CovXZ
 	
-	def computeS(self,X_proj,Xave,sqrtQ):
+	def computeS(self, X_proj, Xave, sqrtQ):
 		"""
 		This function computes the squared covariance matrix using QR decomposition + a Cholesky update
 		"""
-		# take the first part of the state vector
-		# The observed states
-		X_proj_obs = X_proj[:,0:self.n_state_obs]
+		# take the augmented states of the sigma points vectors
+		# that are the observed states + estimated parameters
+		X_proj_obs = self.__AugStateFromFullState__(X_proj)
+		Xave_obs  = self.__AugStateFromFullState__(Xave)
 		
-		Xave_obs  = Xave[:,0:self.n_state_obs]
-		
+		# Matrix of weights and signs of the weights
 		weights = np.sqrt( np.abs(self.W_c[:,0]) )
 		signs   = np.sign( self.W_c[:,0] )
 		
+		# create matrix A that contains the error between the sigma points and the average
 		A     = np.array([[]])
 		i     = 0
 		for x in X_proj_obs:
@@ -374,27 +528,30 @@ class ukf():
 			elif i>1:
 				A = np.hstack((A,error.T))
 			i    += 1
-			
 		
-		A = np.hstack((A,sqrtQ))
+		# put on the side the matrix sqrtQ, that have to be modified to fit the dimension of the augmenets state	
+		new_sqrtQ = self.__newQ__(sqrtQ)
+		A = np.hstack((A,new_sqrtQ))
 		
+		# QR factorization
 		q,L = np.linalg.qr(A.T,mode='full')
 		
-		# NOW START THE CHOLESKY UPDATE
+		# execute Cholesky update
 		x = signs[0]*weights[0]*(X_proj_obs[0,] - Xave_obs)
 		
-		L = self.cholUpdate(L,x.T,self.W_c[:,0])
+		L = self.cholUpdate(L, x.T, self.W_c[:,0])
 		
 		return L
 		
-	
-	def computeSy(self,Z_proj,Zave,sqrtR):
+	def computeSy(self, Z_proj, Zave, sqrtR):
 		"""
 		This function computes the squared covariance matrix using QR decomposition + a Cholesky update
 		"""
+		# Matrix of weights and signs of the weights
 		weights = np.sqrt( np.abs(self.W_c[:,0]) )
 		signs   = np.sign( self.W_c[:,0] )
 		
+		# create matrix A that contains the error between the sigma points outputs and the average
 		A     = np.array([[]])
 		i     = 0
 		for z in Z_proj:
@@ -404,19 +561,21 @@ class ukf():
 			elif i>1:
 				A = np.hstack((A,error.T))
 			i    += 1
+			
+		# put the square root R matrix on the side
 		A = np.hstack((A,sqrtR))
 		
-		q,L = np.linalg.qr(A.T,mode='full')
+		# QR factorization
+		q,L = np.linalg.qr(A.T, mode='full')
 
 		# NOW START THE CHOLESKY UPDATE
 		z = signs[0]*weights[0]*(Z_proj[0,] - Zave)
 		
-		L = self.cholUpdate(L,z.T,self.W_c[:,0])
+		L = self.cholUpdate(L, z.T, self.W_c[:,0])
 		
 		return L
 	
-	
-	def cholUpdate(self,L,X,W):
+	def cholUpdate(self, L, X, W):
 		"""
 		This function computes the Cholesky update
 		"""
@@ -443,26 +602,21 @@ class ukf():
 				
 		return L
 	
-	
-	def computeCxx(self,X_next,Xave_next,X_now,Xave_now):
+	def computeCxx(self, X_next, X_now):
 		"""
 		This function computes the state-state cross covariance matrix (between the old Xold and the new Xnew state vectors).
 		This is used by the smoothing process
 		"""
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
+		Xave_next = self.averageProj(X_next)
+		Xave_now  = self.averageProj(X_now)
 		
-		Vnext = np.zeros((self.n_points,self.n_state_obs))
-		for j in range(self.n_points):
-			Vnext[j,:]   = X_next[j,0:self.n_state_obs] - Xave_next[:,0:self.n_state_obs]	
-		
-		Vnow = np.zeros((self.n_points,self.n_state_obs))
-		for j in range(self.n_points):
-			Vnow[j,:]   = X_now[j,0:self.n_state_obs] - Xave_now[:,0:self.n_state_obs]
+		Vnext = self.__AugStateFromFullState__(X_next - Xave_next)
+		Vnow  = self.__AugStateFromFullState__(X_now - Xave_now)
 	
-		Cxx = np.dot(np.dot(Vnext.T,W),Vnow)
+		Cxx = np.dot(np.dot(Vnext.T, W), Vnow)
 		return Cxx
 
-	
 	def ukf_step(self,z,x,S,sqrtQ,sqrtR,u_old,u,t_old,t,m,verbose=False):		
 		"""
 		This methods contains all the steps that have to be performed by the UKF:

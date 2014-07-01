@@ -23,7 +23,7 @@ model testHeatExchanger
     height=-10,
     offset=273.15 + 20)
     annotation (Placement(transformation(extent={{-100,-40},{-80,-20}})));
-  StateEstimationIdentificationFMU.HeatExchanger heatExchanger
+  FmuExamples.HeatExchanger heatExchanger
     annotation (Placement(transformation(extent={{-20,-20},{20,20}})));
 equation
   for i in 1:10 loop
