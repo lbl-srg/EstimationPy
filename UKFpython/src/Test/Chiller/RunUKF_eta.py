@@ -3,6 +3,8 @@ Created on Nov 7, 2013
 
 @author: marco
 '''
+import os
+import platform
 import numpy
 import matplotlib.pyplot as plt
 
@@ -11,9 +13,14 @@ from FmuUtils import CsvReader
 from ukf.ukfFMU import ukfFMU
 
 def main():
-    
-    # Assign an existing FMU to the model
-    filePath = "../../../modelica/FmuExamples/Resources/FMUs/ChillerFDD.fmu"
+    # Assign an existing FMU to the model, depending on the platform identified
+    dir = os.path.dirname(__file__)
+    if platform.architecture()[0]=="32bit":
+        print "32-bit architecture"
+        filePath = os.path.join(dir, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "ChillerFDD.fmu")
+    else:
+        print "64-bit architecture"
+        filePath = os.path.join(dir, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "ChillerFDD_64bit.fmu")
     
     # Initialize the FMU model empty
     m = Model.Model(filePath)
@@ -28,7 +35,12 @@ def main():
     print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
     
     # Path of the csv file containing the data series
-    csvPath = "./ChillerResults7.csv"
+    #csvPath = "./ChillerResults7.csv"
+    #csvPath = "./ChillerResults1_noisyLow.csv"
+    #csvPath = "./ChillerResults1_noisyHigh.csv"
+    #csvPath = "./ChillerResults7_noisyLow.csv"
+    #csvPath = "./ChillerResults7_noisyHigh.csv"
+    csvPath = os.path.join(dir, "ChillerResults7_noisyHigh.csv")
     
     input = m.GetInputByName("m_flow_CW")
     input.GetCsvReader().OpenCSV(csvPath)
@@ -87,7 +99,7 @@ def main():
     # Set initial value of state, and its covariance and the limits (if any)
     par = m.GetParameters()[0]
     par.SetInitialValue(0.5)
-    par.SetCovariance(0.05)
+    par.SetCovariance(0.02)
     par.SetMinValue(0.0)
     par.SetMaxValue(1.2)
     par.SetConstraintLow(True)
@@ -97,8 +109,8 @@ def main():
     m.InitializeSimulator()
     
     # Allow to identify eta PL externally
-    m.SetReal(m.GetVariableObject("chi.external_etaPL"), True)
-    m.SetReal(m.GetVariableObject("chi.external_COP"), False)
+    #m.SetReal(m.GetVariableObject("chi.external_etaPL"), True)
+    #m.SetReal(m.GetVariableObject("chi.external_COP"), False)
     
     # Change the nominal power of the compressor
     m.SetReal(m.GetVariableObject("P_nominal"), 1500e3)
@@ -107,7 +119,7 @@ def main():
     ukf_FMU = ukfFMU(m, augmented = False)
     
     # start filter
-    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = 0, stop=3600*12, verbose=False)
+    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = 0, stop=3600*1, verbose=False)
     
     # Get the measured outputs
     showResults(time, x, sqrtP, y, Sy, y_full, csvPath, m)
