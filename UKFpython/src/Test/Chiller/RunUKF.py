@@ -28,8 +28,12 @@ def main():
     print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
     
     # Path of the csv file containing the data series
-    csvPath = "./ChillerResults7.csv"
-    
+    #csvPath = "./ChillerResults7.csv"
+    #csvPath = "./ChillerResults1_noisyLow.csv"
+    #csvPath = "./ChillerResults1_noisyHigh.csv"
+    #csvPath = "./ChillerResults7_noisyLow.csv"
+    csvPath = "./ChillerResults7_noisyHigh.csv"
+       
     input = m.GetInputByName("m_flow_CW")
     input.GetCsvReader().OpenCSV(csvPath)
     input.GetCsvReader().SetSelectedColumn("m_flow_CW")

@@ -3,6 +3,7 @@ Created on Nov 7, 2013
 
 @author: marco
 '''
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from FmuUtils import Model
@@ -36,7 +37,8 @@ def main(days = 1):
     m = Model.Model()
     
     # Assign an existing FMU to the model
-    filePath = "../../../modelica/FmuExamples/Resources/FMUs/Chiller_dymola2015_etaPL.fmu"
+    dir = os.path.dirname(__file__)
+    filePath = os.path.join(dir, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "Chiller_dymola2015_etaPL.fmu")
     
     # ReInit the model with the new FMU
     m.ReInit(filePath)
@@ -51,7 +53,7 @@ def main(days = 1):
     print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
     
     # Set the CSV file associated to the input
-    inputPath = "../../../modelica/FmuExamples/Resources/data/Jun11.csv"
+    inputPath = os.path.join(dir, "..", "..","..", "modelica", "FmuExamples", "Resources", "data", "Jun11.csv")
     input = m.GetInputByName("On")
     input.GetCsvReader().OpenCSV(inputPath)
     input.GetCsvReader().SetSelectedColumn("ON")
@@ -193,10 +195,12 @@ def showResults(time, results):
     
     plt.show()
 
-def saveResults(time, results, fileName, samplingTime = 60*5):
+def saveResults(time, results, fileName, samplingTime = 60*5, addNoise = False, noises = {}):
     """
     This function saves the results of the simulation in a csv file specified by the parameter fileName.
     The results will then be used by the state estimation/FDD.
+    It can be used also to generate data with noise. The noise levels are specified by a dictionary that has
+    the variable name as key and the the noise amplitude as value.
     """
     
     # results to save
@@ -221,6 +225,16 @@ def saveResults(time, results, fileName, samplingTime = 60*5):
     M = sampled_time
     for name in to_save:
         sampled_values = np.interp(sampled_time, time, results[name])
+        
+        # Check if noise should be added
+        if addNoise:
+            if noises.has_key(name):
+                # compute uniform noise and translate it from [0,1] -> [-0.5, 0.5]
+                noise = noises[name]*(np.random.rand(len(sampled_time)) - 0.5)
+                sampled_values += noise
+            else:
+                print "Not possible to add noise, the variable:",name,"is not present."
+        
         M = np.vstack((M, sampled_values))
         
     # Values are stacked in rows, transpose them
@@ -242,12 +256,14 @@ if __name__ == '__main__':
     
     ####################################################################################
     # Get results from the simulation
-    time, results = main(days = 30)
+    time, results = main(days = 7)
     
     ####################################################################################
     # Show the results
-    #showResults(time, results)
+    showResults(time, results)
     
     ####################################################################################
     # Save them in a CSV file for being used during the FDD process
-    saveResults(time, results, "ChillerResults30.csv")
+    noises_low = {"T_CH_Lea": 1.0, "T_CW_lea": 1.0, "T_CH_in": 1.0, "T_CW_in":1.0, "m_flow_CW": 5, "m_flow_CH": 5, "P":10000}
+    noises_high = {"T_CH_Lea": 2.0, "T_CW_lea": 2.0, "T_CH_in": 2.0, "T_CW_in":2.0, "m_flow_CW": 15, "m_flow_CH": 15, "P":50000}
+    saveResults(time, results, "ChillerResults7_noisyHigh.csv", addNoise = True, noises = noises_high)
