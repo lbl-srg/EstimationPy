@@ -97,7 +97,7 @@ class Test(unittest.TestCase):
         self.__InstantiateModel(reinit = False)
     
     def test_InstantiateModelReinit(self):
-        self.__InstantiateModel(reinit = False)
+        self.__InstantiateModel(reinit = True)
         
     
         

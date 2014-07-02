@@ -1284,7 +1284,7 @@ class Model():
                 simulated = True
             except ValueError:
                 print "Simulation of the model failed, try again"
-                i += 1
+                i += 1 
         
         # Check if the simulation has been done, if not through an exception
         if not simulated:
