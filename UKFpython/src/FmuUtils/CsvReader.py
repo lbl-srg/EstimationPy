@@ -6,6 +6,7 @@ Created on Sep 6, 2013
 
 import csv
 import numpy
+import pandas as pd
 
 import Strings
 
@@ -69,34 +70,23 @@ class CsvReader():
         # Reinitialize all
         self.__init__(filename)
         
-        # Open the file passed as parameter
+        # Open the file passed as parameter.
+        # Read the csv file and instantiate the data frame
         try:
-            f = open(self.filename, 'rb')
+            df = pd.io.parsers.read_csv(self.filename, dialect = self.dialect)
         except IOError:
             print "The file %s does not exist, impossible to open " % self.filename
             return False
         
-        # TODO:
-        # Read N lines and detect the dialect used
-        # N = 1024
-        # self.dialect = csv.Sniffer().sniff(self.f.read(N))
-        self.dialect.skipinitialspace = True
-        
-        # Move the file pointer to the beginning
-        f.seek(0)
-        
-        # Real the csv file and instantiate the reader
+        # Get the column names and then delete the data frame
         try:
-            reader = csv.DictReader(f, dialect = self.dialect)
-            self.columnNames = reader.fieldnames
-            f.close()
+            self.columnNames = df.columns.tolist()
+            del(df)
             return True
         except csv.Error:
             print "ERROR:: The csv file "+filename+" is not correct, please check it..."
-            f.close()
+            del(df)
             return False
-        
-        #TODO: check if the file descriptor has to be closed
     
     def GetFileName(self):
         """
