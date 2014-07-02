@@ -5,6 +5,7 @@ Created on Feb 25, 2014
 '''
 import unittest
 import numpy
+import os
 
 from FmuUtils import CsvReader
 
@@ -15,10 +16,13 @@ class Test(unittest.TestCase):
         # Create an empty instance of the class CsvReader
         self.r = CsvReader.CsvReader()
         
-        self.csvOK = "./Resources/SimpleCSV.csv"
-        self.csvNotExisting = "thisFileDoesNotExist.csv"
-        self.csvRepeated = "./Resources/SimpleCsvRepeatedValues.csv"
-        self.csvUnsorted = "./Resources/SimpleCsvUnsortedValues.csv"
+        # Base path of this module, needed as reference path
+        dirPath = os.path.dirname(__file__)
+        # Paths of the files to be opened
+        self.csvOK = os.path.join(dirPath, "Resources", "SimpleCSV.csv")
+        self.csvNotExisting = os.path.join(dirPath, "Resources", "thisFileDoesNotExist.csv")
+        self.csvRepeated = os.path.join(dirPath, "Resources", "SimpleCsvRepeatedValues.csv")
+        self.csvUnsorted = os.path.join(dirPath, "Resources", "SimpleCsvUnsortedValues.csv")
         
         # These are the values contained into the CSV file correct
         self.colNames = ["Time", "system.u", "system.x", "system.y"]
