@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
         self.csvUnsorted = os.path.join(dirPath, "Resources", "SimpleCsvUnsortedValues.csv")
         
         # These are the values contained into the CSV file correct
-        self.colNames = ["Time", "system.u", "system.x", "system.y"]
+        self.colNames = ["system.u", "system.x", "system.y"]
         self.t = numpy.linspace(0.0, 3.5, 8)
         self.u = numpy.matrix(1.0*numpy.ones(8))
         self.x = numpy.matrix(1.1*numpy.ones(8))
@@ -43,10 +43,9 @@ class Test(unittest.TestCase):
         self.assertEqual("", self.r.GetSelectedColumn(), "The selected column has to be an empty string")
     
     def test_loadCsvFile(self):
-        
         # Try to open an existing Csv file
         self.assertTrue(self.r.OpenCSV(self.csvOK), "The file %s should be opened" % self.csvOK)
-        self.assertListEqual(self.colNames, self.r.GetColumnNames(), "The column names are not the expected ones")
+        self.assertListEqual(self.colNames, self.r.GetColumnNames(), "The column names %s are not the expected ones %s" % (str(self.r.GetColumnNames()), str(self.colNames)))
         
         for n in self.colNames:
             self.assertTrue(self.r.SetSelectedColumn(n),"The column named %s should be selected" % n)
@@ -67,25 +66,25 @@ class Test(unittest.TestCase):
         self.assertEqual({}, self.r.GetDataSeries(), "The reader has a file associated but is missing the selected column, the method should return {}")
         
         # Retrieve data and compare to known values
-        data = {"data": self.t, "time": self.t}
-        self.r.SetSelectedColumn(self.colNames[0])
-        self.assertTrue(numpy.allclose(data["data"], self.r.GetDataSeries()["data"]), "The data series get is not equal to %s" % str(data))
-        self.assertTrue(numpy.allclose(data["time"], self.r.GetDataSeries()["time"]), "The data series get is not equal to %s" % str(data))
+        #data = {"data": self.t, "time": self.t}
+        #self.r.SetSelectedColumn(self.colNames[0])
+        #self.assertTrue(numpy.allclose(data["data"], self.r.GetDataSeries()["data"]), "The data series get is not equal to %s" % str(data))
+        #self.assertTrue(numpy.allclose(data["time"], self.r.GetDataSeries()["time"]), "The data series get is not equal to %s" % str(data))
         
         data = {"data": self.u, "time": self.t}
-        self.r.SetSelectedColumn(self.colNames[1])
+        self.r.SetSelectedColumn(self.colNames[0])
         self.assertTrue(numpy.allclose(data["data"], self.r.GetDataSeries()["data"]), "The data series get is not equal to %s" % str(data))
         self.assertTrue(numpy.allclose(data["time"], self.r.GetDataSeries()["time"]), "The data series get is not equal to %s" % str(data))
         self.assertFalse(numpy.allclose(data["data"], self.r.GetDataSeries()["time"]), "The data series have to be identified as different %s" % str(data))
 
         data = {"data": self.x, "time": self.t}
-        self.r.SetSelectedColumn(self.colNames[2])
+        self.r.SetSelectedColumn(self.colNames[1])
         self.assertTrue(numpy.allclose(data["data"], self.r.GetDataSeries()["data"]), "The data series get is not equal to %s" % str(data))
         self.assertTrue(numpy.allclose(data["time"], self.r.GetDataSeries()["time"]), "The data series get is not equal to %s" % str(data))
         self.assertFalse(numpy.allclose(data["data"], self.r.GetDataSeries()["time"]), "The data series have to be identified as different %s" % str(data))
         
         data = {"data": self.y, "time": self.t}
-        self.r.SetSelectedColumn(self.colNames[3])
+        self.r.SetSelectedColumn(self.colNames[2])
         self.assertTrue(numpy.allclose(data["data"], self.r.GetDataSeries()["data"]), "The data series get is not equal to %s" % str(data))
         self.assertTrue(numpy.allclose(data["time"], self.r.GetDataSeries()["time"]), "The data series get is not equal to %s" % str(data))
         self.assertFalse(numpy.allclose(data["data"], self.r.GetDataSeries()["time"]), "The data series have to be identified as different %s" % str(data))
