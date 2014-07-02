@@ -199,11 +199,9 @@ class CsvReader():
                     time = df.index.tolist()
                     data = df[self.columnSelected].values.tolist()
                     
-                    # If the check of the CSV file is successful, return the data series, otherwise
-                    # return an empty dictionary 
-                    if self.CheckTimeSeries(time, self.filename):
-                        dataSeries[Strings.TIME_STRING] = numpy.array(time).astype(numpy.float)
-                        dataSeries[Strings.DATA_STRING] = numpy.matrix(data).astype(numpy.float)
+                    # create the dictionary to be returned
+                    dataSeries[Strings.TIME_STRING] = numpy.array(time).astype(numpy.float)
+                    dataSeries[Strings.DATA_STRING] = numpy.matrix(data).astype(numpy.float)
                         
                     return dataSeries  
                     
@@ -218,89 +216,3 @@ class CsvReader():
         else:
             print "Select a file for the CSV before trying to read it!"
             return dataSeries
-    
-    @staticmethod
-    def CheckTimeSeries(time, fileName):
-        """
-        This method check if all the time instants of the time series are increasing,
-        If there are two or more equal values a report about this error is returned
-        """
-        N = len(time)
-        wrong = False
-        message = "\nWRONG CSV FILE: "+str(fileName)
-        for i in range(N-1):
-            if time[i] >= time[i+1]:
-                message += "\n-Row("+str(i+1)+") time step="+str(time[i])
-                message += " >= than next row, equal to "+str(time[i+1])
-                wrong = True
-                
-        if wrong:
-            print message
-            return False
-        else:
-            return True
-    
-    def GetDataSeries_OLD(self):
-        """
-        Once the csv file and its column have been selected, it is possible to read the data from the csv
-        file and return them. Please remember that the first column of the csv file HAS to be the time.
-        This method returns a dictionary:
-        
-        dataSeries = {"time": [0, 1, 2, 3, 4, ...], "data": [12, 34, 33, 12.5, 66, ...]}
-         
-        """
-        dataSeries = {}
-        # Check if the file name has been selected
-        if self.filename != None and self.filename != "":
-            
-            # Open the file
-            try:
-                f = open(self.filename, 'rb')
-            except IOError:
-                print "Error: The csv file ", self.filename, " cannot be open"
-                return dataSeries
-            
-            # Move the file pointer to the beginning
-            f.seek(0)
-            
-            # Read the csv file and instantiate the reader
-            try:
-                reader = csv.DictReader(f, dialect = self.dialect)
-            except csv.Error:
-                print "ERROR:: The csv file ", self.filename, " is not correct, please check it..."
-                f.close()
-                return dataSeries
-            
-            # Check if the column name is set
-            if self.columnSelected != None:
-                
-                # Check if the column name is part of the available dictionary
-                if self.columnSelected in self.columnNames:
-                    
-                    # Read the time and data column from the csv file
-                    time = []
-                    data = []
-                    time_key = self.columnNames[0]
-                    for line in reader:
-                        time.append(float(line[time_key]))
-                        data.append(float(line[self.columnSelected]))
-                    
-                    # If the check of the cSV file is successful, return the data series, otherwise
-                    # return an empty dictionary 
-                    if self.CheckTimeSeries(time, self.filename):
-                        dataSeries[Strings.TIME_STRING] = numpy.array(time).astype(numpy.float)
-                        dataSeries[Strings.DATA_STRING] = numpy.matrix(data).astype(numpy.float)
-                        
-                    return dataSeries  
-                    
-                else:
-                    print "The column selected must be present in the csv file!"
-                    print "Column selected: ", self.columnSelected
-                    print "Columns available: ", self.columnNames
-                    return dataSeries
-            else:
-                print "Select a column for the csv file!"
-                return dataSeries
-        else:
-            print "Select a file for the CSV before trying to read it!"
-            return dataSeries 

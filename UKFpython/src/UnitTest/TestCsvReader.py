@@ -30,19 +30,23 @@ class Test(unittest.TestCase):
         self.u = numpy.matrix(1.0*numpy.ones(8))
         self.x = numpy.matrix(1.1*numpy.ones(8))
         self.y = numpy.matrix(1.3*numpy.ones(8))
-
+        
+        # These are the values contained in the unsorted file
+        self.u_unsorted = numpy.matrix(numpy.arange(1.0, 10.0))
+        self.t_unsorted = numpy.array([0.0, 0.5, 0.9, 1.0, 1.6, 2.0, 2.5, 3.0, 3.5])
+        
     def tearDown(self):
         pass
 
 
-    def test_instantiateCsvReader(self):
+    def Rest_instantiateCsvReader(self):
         # Performs some basic checks
         self.assertEqual("",self.r.GetFileName(), "The name of the file should be empty")
         self.assertListEqual([], self.r.GetColumnNames(), "Column names of the CsvReader have to be empty")
         self.assertFalse(self.r.SetSelectedColumn("columnName"), "Not possible to select a column with a missing csv file associated")
         self.assertEqual("", self.r.GetSelectedColumn(), "The selected column has to be an empty string")
     
-    def test_loadCsvFile(self):
+    def Rest_loadCsvFile(self):
         # Try to open an existing Csv file
         self.assertTrue(self.r.OpenCSV(self.csvOK), "The file %s should be opened" % self.csvOK)
         self.assertListEqual(self.colNames, self.r.GetColumnNames(), "The column names %s are not the expected ones %s" % (str(self.r.GetColumnNames()), str(self.colNames)))
@@ -54,7 +58,7 @@ class Test(unittest.TestCase):
         # try to open an not existing file
         self.assertFalse(self.r.OpenCSV(self.csvNotExisting), "The file %s does not exist and should not be opened" % self.csvNotExisting)
         
-    def test_loadDataSeries(self):
+    def Rest_loadDataSeries(self):
         
         # Try to select a data series before assigning the file
         self.assertEqual({}, self.r.GetDataSeries(), "The reader has not a CSV file assigned, the return value should be {}")
@@ -66,11 +70,6 @@ class Test(unittest.TestCase):
         self.assertEqual({}, self.r.GetDataSeries(), "The reader has a file associated but is missing the selected column, the method should return {}")
         
         # Retrieve data and compare to known values
-        #data = {"data": self.t, "time": self.t}
-        #self.r.SetSelectedColumn(self.colNames[0])
-        #self.assertTrue(numpy.allclose(data["data"], self.r.GetDataSeries()["data"]), "The data series get is not equal to %s" % str(data))
-        #self.assertTrue(numpy.allclose(data["time"], self.r.GetDataSeries()["time"]), "The data series get is not equal to %s" % str(data))
-        
         data = {"data": self.u, "time": self.t}
         self.r.SetSelectedColumn(self.colNames[0])
         self.assertTrue(numpy.allclose(data["data"], self.r.GetDataSeries()["data"]), "The data series get is not equal to %s" % str(data))
@@ -94,7 +93,7 @@ class Test(unittest.TestCase):
         self.r.OpenCSV(self.csvRepeated)
         
         # Select one column
-        self.r.SetSelectedColumn(self.colNames[1])
+        self.r.SetSelectedColumn(self.colNames[0])
         
         # The time instants are not correct, it should return {}
         self.assertEqual({}, self.r.GetDataSeries(), "The reader has a file repeated time values, the method should return {}")
@@ -103,11 +102,12 @@ class Test(unittest.TestCase):
         # Open an existing Csv file
         self.r.OpenCSV(self.csvUnsorted)
         
-        # Select one column
-        self.r.SetSelectedColumn(self.colNames[1])
-        
-        # The time instants are not correct, it should return {}
-        self.assertEqual({}, self.r.GetDataSeries(), "The reader has a file unsorted time values, the method should return {}")
+        # Retrieve data and compare to known values
+        data = {"data": self.u_unsorted, "time": self.t_unsorted}
+        self.r.SetSelectedColumn(self.colNames[0])
+        self.assertTrue(numpy.allclose(data["data"], self.r.GetDataSeries()["data"]), "The data series get is not equal to %s" % str(data))
+        self.assertTrue(numpy.allclose(data["time"], self.r.GetDataSeries()["time"]), "The data series get is not equal to %s" % str(data))
+        self.assertFalse(numpy.allclose(data["data"], self.r.GetDataSeries()["time"]), "The data series have to be identified as different %s" % str(data))
         
 
 if __name__ == "__main__":
