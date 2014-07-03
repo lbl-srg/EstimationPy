@@ -82,6 +82,10 @@ class CsvReader():
             # Use the first column as index of the data frame
             df.set_index(df.columns[0], inplace = True, verify_integrity = True)
             
+            # convert the index to a datetime object, assuming the values have been specified
+            # using the SI unit for time [s]
+            df.index = pd.to_datetime(df.index, unit="s")
+            
             # Sort values with respect to the index
             df.sort(inplace = True)
             
@@ -109,6 +113,7 @@ class CsvReader():
         # Open the csv and get the Data frame
         df = self.__open_csv__(filename)
         
+        # If the data frame is empty there were problems while loading the file
         if len(df.index) == 0:
             print "ERROR:: The csv file "+filename+" is not correct, please check it..."
             return False
@@ -173,18 +178,19 @@ class CsvReader():
         """
         Once the csv file and its column have been selected, it is possible to read the data from the csv
         file and return them. Please remember that the first column of the csv file HAS to be the time.
-        This method returns a dictionary:
-        
-        dataSeries = {"time": [0, 1, 2, 3, 4, ...], "data": [12, 34, 33, 12.5, 66, ...]}
+        This method returns a pandas data series associated to the selected column.
          
         """
-        dataSeries = {}
+        # initialize with empty pandas data series
+        dataSeries = pd.Series()
+        
         # Check if the file name has been selected
         if self.filename != None and self.filename != "":
             
             # Open the csv and get the Data frame
             df = self.__open_csv__(self.filename)
             
+            # If the data frame is empty there were problems while loading the file
             if len(df.index) == 0:
                 print "ERROR:: The csv file "+self.filename+" is not correct, please check it..."
                 return dataSeries
@@ -196,12 +202,7 @@ class CsvReader():
                 if self.columnSelected in self.columnNames:
                     
                     # Read the time and data column from the csv file
-                    time = df.index.tolist()
-                    data = df[self.columnSelected].values.tolist()
-                    
-                    # create the dictionary to be returned
-                    dataSeries[Strings.TIME_STRING] = numpy.array(time).astype(numpy.float)
-                    dataSeries[Strings.DATA_STRING] = numpy.matrix(data).astype(numpy.float)
+                    dataSeries = df[self.columnSelected]
                         
                     return dataSeries  
                     
