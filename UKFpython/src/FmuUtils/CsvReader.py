@@ -60,7 +60,7 @@ class CsvReader():
         This method returns a string that describe the CSV reader object
         
         """
-        string = "CsvReader Object:"
+        string = "CsvReader Object"
         string += "\n-File: "+str(self.filename)
         string += "\n-Columns Available:"
         for c in self.columnNames:
