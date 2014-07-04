@@ -1288,9 +1288,9 @@ class Model():
             
         # Transforms to seconds with respect to the first element
         Npoints = len(time)
-        time_sec = numpy.array((Npoints,1))
+        time_sec = numpy.zeros((Npoints,1))
         for i in range(Npoints):
-            time_sec[i] = (time[i] - time[0]).total_seconds()
+            time_sec[i,0] = (time[i] - time[0]).total_seconds()
         
         # Convert to numpy matrix in case it will be stacked in a matrix
         time_sec = numpy.matrix(time_sec)

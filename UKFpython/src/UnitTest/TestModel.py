@@ -6,6 +6,8 @@ Created on Feb 25, 2014
 import unittest
 import platform
 import os
+import pandas as pd
+import numpy as np
 
 from FmuUtils import Model
 
@@ -29,7 +31,7 @@ class Test(unittest.TestCase):
         # Path of the CSV data
         self.csv_inputPath = os.path.join(dir_path, "..","..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
 
-    def test_InstantiateModelEmpty(self):
+    def test_instantiate_model_empty(self):
         """
         This function tests the initialization of a model that has not an FMU associated to it
         """
@@ -67,7 +69,7 @@ class Test(unittest.TestCase):
         # test access to FMI methods
         self.assertIsNone(m.GetVariableObject("a"), "trying to access a variable object should return None") 
     
-    def __InstantiateModel(self, reinit = False):
+    def __instantiate_model(self, reinit = False):
         """
         This function tests the initialization of a model given an FMU.
         The initialization can be don ewhen creating the instance or calling the ReInit method.
@@ -108,19 +110,19 @@ class Test(unittest.TestCase):
         self.assertIsNone(m.GetOutputByName("u"), "The object corresponding to output 'u' should not be accessible (its an input)")
 
     
-    def test_InstantiateModel(self):
+    def test_instantiate_model(self):
         """
         Model that tests the initialization of a model given an FMU during instantiation
         """
-        self.__InstantiateModel(reinit = False)
+        self.__instantiate_model(reinit = False)
     
-    def test_InstantiateModelReinit(self):
+    def test_instantiate_model_reinit(self):
         """
         Model that tests the initialization of a model given an FMU after the instantiation
         """
-        self.__InstantiateModel(reinit = True)
+        self.__instantiate_model(reinit = True)
     
-    def test_InitializeModel(self):
+    def test_initialize_model(self):
         """
         This test is check the initialization of a model
         """
@@ -146,6 +148,55 @@ class Test(unittest.TestCase):
     
         # Initialize the model for the simulation
         m.InitializeSimulator()
+        
+    def test_run_model_CSV(self):
+        """
+        This function tests if the model can be run when loading data from a csv file
+        """
+        # Initialize the FMU model empty
+        m = Model.Model()
+    
+        # ReInit the model with the new FMU
+        m.ReInit(self.filePath)
+    
+        # Set the CSV file associated to the input
+        inp = m.GetInputByName("u")
+        inp.GetCsvReader().OpenCSV(self.csv_inputPath)
+        inp.GetCsvReader().SetSelectedColumn("system.u")
+    
+        # Initialize the model for the simulation
+        m.InitializeSimulator()
+        
+        # Simulate
+        time, results = m.Simulate()
+        
+    def test_run_model_data_series(self):
+        """
+        This function tests if the model can be run when loading data form a pandas
+        data series
+        """
+        
+        # Initialize the FMU model empty
+        m = Model.Model()
+    
+        # ReInit the model with the new FMU
+        m.ReInit(self.filePath)
+        
+        # Create a pandas.Series for the input u
+        ind = pd.date_range('2000-1-1', periods = 30, freq='s')
+        ds = pd.Series(np.ones(30), index = ind)
+        
+        # Set the CSV file associated to the input
+        inp = m.GetInputByName("u")
+        inp.SetDataSeries(ds)
+    
+        # Initialize the model for the simulation
+        m.InitializeSimulator()
+        
+        # Simulate
+        time, results = m.Simulate()
+        
+        
     
         
 if __name__ == "__main__":

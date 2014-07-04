@@ -124,11 +124,22 @@ class InOutVar():
         """
         This method reads the data series contained in the CSV file
         """
-        self.dataSeries = self.CsvReader.GetDataSeries()
-        if len(self.dataSeries) > 0:
-            return True
+        # If the CsvReader has been specified the try to load the data from there
+        if self.CsvReader.filename == "" or self.CsvReader.filename == None:
+            
+            # Check because the dataSeries may have bee specified using a pandas.Series
+            if len(self.dataSeries) > 0:
+                return True
+            else:
+                return False
         else:
-            return False
+            
+            # Read the data from the CSV
+            self.dataSeries = self.CsvReader.GetDataSeries()
+            if len(self.dataSeries) > 0:
+                return True
+            else:
+                return False
         
     def GetDataSeries(self):
         """
