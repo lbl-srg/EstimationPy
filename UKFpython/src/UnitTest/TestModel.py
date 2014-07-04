@@ -9,6 +9,7 @@ import os
 import pandas as pd
 import numpy as np
 
+from datetime import datetime
 from FmuUtils import Model
 
 class Test(unittest.TestCase):
@@ -183,8 +184,8 @@ class Test(unittest.TestCase):
         m.ReInit(self.filePath)
         
         # Create a pandas.Series for the input u
-        ind = pd.date_range('2000-1-1', periods = 30, freq='s')
-        ds = pd.Series(np.ones(30), index = ind)
+        ind = pd.date_range('2000-1-1', periods = 31, freq='s')
+        ds = pd.Series(np.ones(31), index = ind)
         
         # Set the CSV file associated to the input
         inp = m.GetInputByName("u")
@@ -194,8 +195,7 @@ class Test(unittest.TestCase):
         m.InitializeSimulator()
         
         # Simulate
-        time, results = m.Simulate()
-        
+        time, results = m.Simulate(start_time = datetime(2000, 1, 1, 0, 0, 10))
         
     
         
