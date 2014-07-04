@@ -4,20 +4,35 @@ Created on Feb 25, 2014
 @author: marco
 '''
 import unittest
+import platform
+import os
+
 from FmuUtils import Model
 
 class Test(unittest.TestCase):
 
-
     def setUp(self):
-        pass
-
-
-    def tearDown(self):
-        pass
-
+        """
+        Initialize the class for testing the Model
+        """
+        # Assign an existing FMU to the model, depending on the platform identified
+        dir_path = os.path.dirname(__file__)
+        
+        # Define the path of the FMU file
+        if platform.architecture()[0]=="32bit":
+            print "32-bit architecture"
+            self.filePath = os.path.join(dir_path, "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder.fmu")
+        else:
+            print "64-bit architecture"
+            self.filePath = os.path.join(dir_path, "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_64bit.fmu")
+            
+        # Path of the CSV data
+        self.csv_inputPath = os.path.join(dir_path, "..","..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
 
     def test_InstantiateModelEmpty(self):
+        """
+        This function tests the initialization of a model that has not an FMU associated to it
+        """
         # Instantiate an empty model
         m = Model.Model()
         
@@ -53,15 +68,17 @@ class Test(unittest.TestCase):
         self.assertIsNone(m.GetVariableObject("a"), "trying to access a variable object should return None") 
     
     def __InstantiateModel(self, reinit = False):
-        # Assign an existing FMU to the model
-        filePath = "../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
+        """
+        This function tests the initialization of a model given an FMU.
+        The initialization can be don ewhen creating the instance or calling the ReInit method.
+        """
         
         # Initialize the FMU model
         if reinit:
             m = Model.Model()
-            m.ReInit(filePath)
+            m.ReInit(self.filePath)
         else:
-            m = Model.Model(filePath)
+            m = Model.Model(self.filePath)
             
         # test default values
         name = "FmuExamples.FirstOrder"
@@ -69,7 +86,7 @@ class Test(unittest.TestCase):
         
         # Check FMU details
         self.assertIsNotNone(m.GetFMU(), "The FMU object has not to be None")
-        self.assertEqual(filePath, m.GetFmuFilePath(), "The FMU file path is not the one specified")
+        self.assertEqual(self.filePath, m.GetFmuFilePath(), "The FMU file path is not the one specified")
         
         # Check list initialized correctly
         self.assertListEqual(['u'], m.GetInputNames(), "The list of input names is not correct ")
@@ -89,16 +106,46 @@ class Test(unittest.TestCase):
         self.assertIsNotNone(m.GetOutputByName("y"), "The object corresponding to output 'y' should be accessible")
         self.assertIsNotNone(m.GetOutputByName("x"), "The object corresponding to output 'x' should be accessible")
         self.assertIsNone(m.GetOutputByName("u"), "The object corresponding to output 'u' should not be accessible (its an input)")
-        
-        # Delete the FMU that may cause problems when reloading it for other tests
-        m.unloadFMU()
+
     
     def test_InstantiateModel(self):
+        """
+        Model that tests the initialization of a model given an FMU during instantiation
+        """
         self.__InstantiateModel(reinit = False)
     
     def test_InstantiateModelReinit(self):
+        """
+        Model that tests the initialization of a model given an FMU after the instantiation
+        """
         self.__InstantiateModel(reinit = True)
+    
+    def test_InitializeModel(self):
+        """
+        This test is check the initialization of a model
+        """
+        # Initialize the FMU model empty
+        m = Model.Model()
+    
+        # ReInit the model with the new FMU
+        m.ReInit(self.filePath)
+    
+        # Show details
+        print m
         
+        # Show the inputs
+        print "The names of the FMU inputs are: ", m.GetInputNames(), "\n"
+        
+        # Show the outputs
+        print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
+    
+        # Set the CSV file associated to the input
+        inp = m.GetInputByName("u")
+        inp.GetCsvReader().OpenCSV(self.csv_inputPath)
+        inp.GetCsvReader().SetSelectedColumn("system.u")
+    
+        # Initialize the model for the simulation
+        m.InitializeSimulator()
     
         
 if __name__ == "__main__":
