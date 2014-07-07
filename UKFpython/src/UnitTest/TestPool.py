@@ -102,7 +102,7 @@ class Test(unittest.TestCase):
         i = 0
         for res in poolResults:
             
-            # get the results of a worker of the pool
+            # Get the results of a worker of the pool
             time, results = res[0]
             
             # Read the simulation time vector
