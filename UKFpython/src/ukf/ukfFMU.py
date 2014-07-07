@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import time as TIM
 from FmuUtils.FmuPool import FmuPool
 
@@ -660,7 +661,7 @@ class ukfFMU():
 
 		# compute the projected (outputs) points (each sigma points is propagated through the output function, this should not require a simulation,
 		# just the evaluation of a function since the output can be directly computed if the state vector and inputs are known )
-		X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigmaPointProj(Xs,t,t+1e-8)
+		X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigmaPointProj(Xs,t,t)
 		
 		if verbose:
 			print "Output projection of new sigma points"
@@ -738,7 +739,7 @@ class ukfFMU():
 		measuredOuts = self.model.GetMeasuredOutputDataSeries()
 		
 		# time
-		time = measuredOuts[:,0]
+		time = pd.to_datetime(measuredOuts[:,0])
 		
 		# Get the number of time steps
 		Ntimes = len(measuredOuts)

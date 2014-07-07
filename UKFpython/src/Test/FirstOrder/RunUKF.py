@@ -3,7 +3,10 @@ Created on Nov 7, 2013
 
 @author: marco
 '''
+import os
+import platform
 import numpy
+import pandas as pd
 import matplotlib.pyplot as plt
 
 from FmuUtils import Model
@@ -12,20 +15,28 @@ from ukf.ukfFMU import ukfFMU
 
 def main():
     
-    # Assign an existing FMU to the model
-    filePath = "../../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
+    # Assign an existing FMU to the model, depending on the platform identified
+    dir_path = os.path.dirname(__file__)
     
+    # Define the path of the FMU file
+    if platform.architecture()[0]=="32bit":
+        print "32-bit architecture"
+        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder.fmu")
+    else:
+        print "64-bit architecture"
+        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_64bit.fmu")
+        
     # Initialize the FMU model empty
     m = Model.Model(filePath)
     
     # Path of the csv file containing the data series
-    csvPath = "../../../modelica/FmuExamples/Resources/data/NoisySimulationData_FirstOrder.csv" 
+    csvPath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "data", "NoisySimulationData_FirstOrder.csv")
     
     # Set the CSV file associated to the input, and its covariance
-    input = m.GetInputByName("u")
-    input.GetCsvReader().OpenCSV(csvPath)
-    input.GetCsvReader().SetSelectedColumn("system.u")
-    input.SetCovariance(2.0)
+    input_u = m.GetInputByName("u")
+    input_u.GetCsvReader().OpenCSV(csvPath)
+    input_u.GetCsvReader().SetSelectedColumn("system.u")
+    input_u.SetCovariance(2.0)
     
     # Set the CSV file associated to the output, and its covariance
     output = m.GetOutputByName("y")
@@ -63,11 +74,13 @@ def main():
     # instantiate the UKF for the FMU
     ukf_FMU = ukfFMU(m, augmented = False)
     
-    # start filter
-    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(0.0, 5.0, verbose=False)
+    # Start the filter
+    t0 = pd.to_datetime(0.0, unit = "s")
+    t1 = pd.to_datetime(5.0, unit = "s")
+    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose=False)
     
     # Path of the csv file containing the True data series
-    csvTrue = "../../../modelica/FmuExamples/Resources/data/SimulationData_FirstOrder.csv"
+    csvTrue = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
     
     # Get the measured outputs
     showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, csvPath, m)
@@ -86,35 +99,34 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, csvNoisy, m):
     
     simResults.SetSelectedColumn("system.x")
     res = simResults.GetDataSeries()
-    t_n = res["time"]
-    d_x_n = numpy.squeeze(numpy.asarray(res["data"]))
+    t_n = res.index
+    d_x_n = res.values
     
     simResults = CsvReader.CsvReader()
     simResults.OpenCSV(csvTrue)
     
     simResults.SetSelectedColumn("system.x")
     res = simResults.GetDataSeries()
-    t = res["time"]
-    d_x = numpy.squeeze(numpy.asarray(res["data"]))
+    t = res.index
+    d_x = res.values
     
     simResults.SetSelectedColumn("system.y")
     res = simResults.GetDataSeries()
-    d_y = numpy.squeeze(numpy.asarray(res["data"]))
+    d_y = res.values
     
     simResults.SetSelectedColumn("system.u")
     res = simResults.GetDataSeries()
-    d_u = numpy.squeeze(numpy.asarray(res["data"]))
+    d_u = res.values
     
     output = m.GetOutputByName("y")
     output.GetCsvReader().SetSelectedColumn("system.y")
     res = output.GetCsvReader().GetDataSeries()
-    t_n = res["time"]
-    d_y_n = numpy.squeeze(numpy.asarray(res["data"]))
+    d_y_n = res.values
     
-    input = m.GetInputByName("u")
-    input.GetCsvReader().SetSelectedColumn("system.u")
-    res = input.GetCsvReader().GetDataSeries()
-    d_u_n = numpy.squeeze(numpy.asarray(res["data"]))
+    input_u = m.GetInputByName("u")
+    input_u.GetCsvReader().SetSelectedColumn("system.u")
+    res = input_u.GetCsvReader().GetDataSeries()
+    d_u_n = res.values
     
     fig0 = plt.figure()
     fig0.set_size_inches(12,8)
@@ -133,7 +145,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, csvNoisy, m):
     
     fig1 = plt.figure()
     ax1  = fig1.add_subplot(212)
-    ax1.plot(t_n,d_y_n,'go',label='$y(t)$',alpha=1.0)
+    ax1.plot(t_n,d_y_n,'go',label='$y_m(t)$',alpha=1.0)
     ax1.plot(t,d_y,'g',label='$y(t)$',alpha=1.0)
     ax1.plot(time, y,'r',label='$\hat{y}(t)$')
     ax1.fill_between(time, y[:,0] - Sy[:,0,0], y[:,0] + Sy[:,0,0], facecolor='red', interpolate=True, alpha=0.3)
@@ -145,8 +157,8 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, csvNoisy, m):
     ax1.grid(False)
     
     ax2  = fig1.add_subplot(211)
-    ax2.plot(t_n,d_u_n,'bo',label='$y(t)$',alpha=1.0)
-    ax2.plot(t,d_u,'b',label='$y(t)$',alpha=1.0)
+    ax2.plot(t_n,d_u_n,'bo',label='$u_m(t)$',alpha=1.0)
+    ax2.plot(t,d_u,'b',label='$u(t)$',alpha=1.0)
     ax2.set_xlabel('Time [s]')
     ax2.set_ylabel('Input Variable')
     ax2.set_xlim([t[0], t[-1]])
