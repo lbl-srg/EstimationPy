@@ -169,9 +169,22 @@ class Test(unittest.TestCase):
         
         # Simulate
         time, results = m.Simulate()
-        
         # Compare the results with the expected ones. Given the default 
-        # values of the parameters a, b, c, d,
+        # values of the parameters a = -1, b = 2.5, c = 3.0, d = 0.1,
+        
+        # Read the simulation time vector
+        self.assertEqual(pd.to_datetime(0.0, unit = "s"), time[0], "The initial time does not correspond")
+        self.assertEqual(pd.to_datetime(30.0, unit = "s"), time[-1], "The final time does not correspond")
+        
+        # Read the results of the simulation
+        # x' = -1*x + 2.5*u
+        # y  = +3*x + 0.1*u
+        # Given the input u = 1 with t in [0, 15) then u = 2 with t in [15,30], at steady state
+        # x ~ 5 and y ~ 15.2
+        self.assertAlmostEqual(5.0, results["x"][-1], 2, "The steady state value of the \
+        state variable x is not 5.0 but %.8f" % (results["x"][-1]))
+        self.assertAlmostEqual(15.2, results["y"][-1], 2, "The steady state value of \
+        the output variable y is not 15.2 but %.8f" % (results["y"][-1]))
         
     def test_run_model_data_series(self):
         """
@@ -219,7 +232,7 @@ class Test(unittest.TestCase):
         
         # Read the simulation time vector
         self.assertEqual(t0, time[0], "The initial time does not correspond")
-        self.assertEqual(t1, time[-1], "The initial time does not correspond")
+        self.assertEqual(t1, time[-1], "The final time does not correspond")
         
         # Read the results of the simulation
         # x' = -1*x + 4*u
