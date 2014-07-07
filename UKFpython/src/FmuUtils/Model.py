@@ -820,11 +820,11 @@ class Model():
         # Load the inputs and check if any problem. If any exits.
         # Align inputs while loading.
         if not self.LoadInput(align = True):
-            return
+            return False
         
         # Load the outputs and check if any problems. If any exits.
         if not self.LoadOutputs():
-            return
+            return False
         
         # Take the time series: the first because now they are all the same (thanks to alignment)
         time = self.inputs[0].GetDataSeries().index
@@ -834,6 +834,11 @@ class Model():
             # Start time not specified, start from the beginning
             index = 0
         else:
+            
+            # Check that the type of start time is of type datetime
+            if not isinstance(startTime, datetime.datetime):
+                raise TypeError("The parameter startTime has to be of datetime.datetime type")
+                
             # Start time specified, start from the closest point
             if startTime >= time[0] and startTime <= time[-1]:
                 index = 0
@@ -844,7 +849,7 @@ class Model():
                         break
             else:
                 index = 0
-                print "The value selected as initialization start time is outside the time frame"
+                raise IndexError("The value selected as initialization start time is outside the time frame")
                 
         # Once the index is know it can be used to define the start_time
         start_time = time[index]
@@ -1276,14 +1281,38 @@ class Model():
             for inp in self.inputs:
                 time = inp.GetDataSeries().index
                 break
-        
-        # Define initial and start time in seconds
+        else:
+            # Check that the type of the time vector is of type pd.DatetimeIndex
+            if not isinstance(time, pd.DatetimeIndex):
+                raise TypeError("The parameter time has to be a vector of type pd.DatetimeIndex")
+            
+        # Define initial start time in seconds
         if start_time == None:
             start_time = time[0]
-        start_time_sec = (start_time - time[0]).total_seconds()
+        else:
+            # Check that the type of start time is of type datetime
+            if not isinstance(start_time, datetime.datetime):
+                raise TypeError("The parameter start_time is of type %s, it has to be of datetime.datetime type." % (str(start_time)))
+            # Check if the start time is within the range
+            if not (start_time >= time[0] and start_time <= time[-1]):
+                raise IndexError("The value selected as initialization start time is outside the time frame")
             
+        start_time_sec = (start_time - time[0]).total_seconds()
+        
+        # Define the final time in seconds
         if final_time == None:
             final_time = time[-1]
+        else:
+            # Check that the type of start time is of type datetime
+            if not isinstance(final_time, datetime.datetime):
+                raise TypeError("The parameter final_time is of type %s, it has to be of datetime.datetime type." % (str(start_time)))
+            # Check if the final time is within the range
+            if not (final_time >= time[0] and final_time <= time[-1]):
+                raise IndexError("The value selected as initialization start time is outside the time frame")
+            # Check that the final time is after the start time
+            if not (final_time >= start_time):
+                raise IndexError("The final_time %s has to be after the start time %s." % \
+                                 (str(final_time), str(start_time)))
         final_time_sec = (final_time - time[0]).total_seconds()
             
         # Transforms to seconds with respect to the first element
