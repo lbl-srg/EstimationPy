@@ -6,6 +6,7 @@ Created on Nov 7, 2013
 import os
 import platform
 import numpy
+import pandas as pd
 import matplotlib.pyplot as plt
 
 from FmuUtils import Model
@@ -119,7 +120,9 @@ def main():
     ukf_FMU = ukfFMU(m, augmented = False)
     
     # start filter
-    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = 0, stop=3600*1, verbose=False)
+    t0 = pd.to_datetime(0.0, unit = "s")
+    t1 = pd.to_datetime(3600.0, unit = "s")
+    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose=False)
     
     # Get the measured outputs
     showResults(time, x, sqrtP, y, Sy, y_full, csvPath, m)
@@ -139,28 +142,24 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, m):
     simResults = CsvReader.CsvReader()
     simResults.OpenCSV(csvTrue)
     
+    # Get time series values
     simResults.SetSelectedColumn("chi.etaPL")
-    res = simResults.GetDataSeries()
-    t = res["time"]
-    eta_PL = numpy.squeeze(numpy.asarray(res["data"]))
+    t = simResults.GetDataSeries().index
+    eta_PL = simResults.GetDataSeries().values
     
     simResults.SetSelectedColumn("P")
-    res = simResults.GetDataSeries()
-    P = numpy.squeeze(numpy.asarray(res["data"]))
+    P = simResults.GetDataSeries().values
     
     simResults.SetSelectedColumn("T_CH_Lea")
-    res = simResults.GetDataSeries()
-    T_ch = numpy.squeeze(numpy.asarray(res["data"]))
+    T_ch = simResults.GetDataSeries().values
     
     simResults.SetSelectedColumn("T_CW_lea")
-    res = simResults.GetDataSeries()
-    T_cw = numpy.squeeze(numpy.asarray(res["data"]))
+    T_cw = simResults.GetDataSeries().values
     
     simResults.SetSelectedColumn("chi.COP")
-    res = simResults.GetDataSeries()
-    COP = numpy.squeeze(numpy.asarray(res["data"]))
+    COP = simResults.GetDataSeries().values
     
-    
+    # plot and save images
     fig0 = plt.figure()
     fig0.set_size_inches(12,8)
     ix = 2

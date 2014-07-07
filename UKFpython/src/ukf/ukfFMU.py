@@ -731,6 +731,32 @@ class ukfFMU():
 		
 		return (X_corr[0], S_corr, Zave, Sy, Zfull_ave, Xfull_ave[0])
 	
+	@staticmethod
+	def find_closest_matches(start, stop, time):
+		"""
+		Given the vector time and the start and stop values, the function returns the elements
+		in the vector time that are as close as possible to the start and stop.
+		It is assumed that the vector time is sorted.
+		"""
+		import bisect
+		
+		# Check that start and stop times are within the acceptable time range
+		if not (start >= time[0] and start <= time[-1]):
+			raise IndexError("The start time has to be between the time range")
+		
+		if not (stop >= time[0] and stop <= time[-1]):
+			raise IndexError("The stop time has to be between the time range")
+		
+		if not (stop >= start):
+			raise ValueError("The stop time has to be after the start time")
+		
+		# Find the closest value 
+		ix_start = bisect.bisect_left(time, start)
+		ix_stop = bisect.bisect_right(time, stop)
+		
+		return (ix_start, ix_stop)
+			
+	
 	def filter(self, start, stop, verbose=False, forSmoothing = False):
 		"""
 		This method starts the filtering process and performs a loop of ukf-steps
@@ -738,11 +764,11 @@ class ukfFMU():
 		# Read the output measured data
 		measuredOuts = self.model.GetMeasuredOutputDataSeries()
 		
-		# time
+		# Get the time vector 
 		time = pd.to_datetime(measuredOuts[:,0])
 		
-		# Get the number of time steps
-		Ntimes = len(measuredOuts)
+		# find the index of the closest matches for start and stop time
+		ix_start, ix_stop = self.find_closest_matches(start, stop, time)
 		
 		# Initial conditions and other values
 		x     = [np.hstack((self.model.GetStateObservedValues(), self.model.GetParametersValues()))]
@@ -754,7 +780,7 @@ class ukfFMU():
 		y_full= [measuredOuts[0,1:]]
 		Sy    = [sqrtR]
 		
-		for i in range(1,Ntimes):
+		for i in range(ix_start+1, ix_stop):
 			t_old = time[i-1]
 			t = time[i]
 			z = measuredOuts[i,1:]
@@ -773,9 +799,9 @@ class ukfFMU():
 		y_full[0] = y_full[1]
 		
 		if forSmoothing:
-			return time, x, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR
+			return time[ix_start:ix_stop], x, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR
 		else:
-			return time, x, sqrtP, y, Sy, y_full
+			return time[ix_start:ix_stop], x, sqrtP, y, Sy, y_full
 	
 	def filterAndSmooth(self, start=None, stop=None, verbose=False):
 		"""
