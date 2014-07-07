@@ -8,6 +8,7 @@ import pyfmi
 import numpy
 import pandas as pd
 import Strings
+import datetime
 
 from FmuUtils.InOutVar import InOutVar
 from FmuUtils.Tree import Tree
@@ -546,7 +547,7 @@ class Model():
     
     def GetReal(self, var):
         """
-        Set a real variablein the FMU model, given the PyFmi variable description
+        Get a real variable in the FMU model, given the PyFmi variable description
         """
         return self.fmu.get_real(var.value_reference)[0]
     
@@ -1269,6 +1270,7 @@ class Model():
         # Number of input variables needed by the model
         Ninputs = len(self.inputs)
         
+        # Check if the parameter time has been provided
         if len(time) == 0:
             # Take the time series: the first because now they are all the same
             for inp in self.inputs:
@@ -1277,14 +1279,12 @@ class Model():
         
         # Define initial and start time in seconds
         if start_time == None:
-            start_time_sec = (time[0] - time[0]).total_seconds()
-        else:
-            start_time_sec = (start_time - time[0]).total_seconds()
+            start_time = time[0]
+        start_time_sec = (start_time - time[0]).total_seconds()
             
         if final_time == None:
-            final_time_sec = (time[-1] - time[0]).total_seconds()
-        else:
-            final_time_sec = (final_time - time[0]).total_seconds()
+            final_time = time[-1]
+        final_time_sec = (final_time - time[0]).total_seconds()
             
         # Transforms to seconds with respect to the first element
         Npoints = len(time)
@@ -1343,8 +1343,10 @@ class Model():
             raise Exception
         
         # Obtain the results
-        # TIME in seconds
-        t     = pd.to_datetime(res[Strings.TIME_STRING], unit="s")
+        # TIME in seconds has to be converted to datetime
+        # and it has to maintain the same offset specified by the input time series in t[0]
+        offset = time[0] - pd.to_datetime(res[Strings.TIME_STRING][0])
+        t     = pd.to_datetime(res[Strings.TIME_STRING], unit="s") + offset
         
         # Get the results, either all or just the selected ones
         if complete_res == False:

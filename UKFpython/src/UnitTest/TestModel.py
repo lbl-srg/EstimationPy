@@ -73,7 +73,7 @@ class Test(unittest.TestCase):
     def __instantiate_model(self, reinit = False):
         """
         This function tests the initialization of a model given an FMU.
-        The initialization can be don ewhen creating the instance or calling the ReInit method.
+        The initialization can be done when creating the instance or after by calling the ReInit method.
         """
         
         # Initialize the FMU model
@@ -171,6 +171,9 @@ class Test(unittest.TestCase):
         # Simulate
         time, results = m.Simulate()
         
+        # Compare the results with the expected ones. Given the default 
+        # values of the parameters a, b, c, d,
+        
     def test_run_model_data_series(self):
         """
         This function tests if the model can be run when loading data form a pandas
@@ -191,13 +194,44 @@ class Test(unittest.TestCase):
         inp = m.GetInputByName("u")
         inp.SetDataSeries(ds)
     
+        # Set parameters a, b, c, d of the model
+        par_a = m.GetVariableObject("a")
+        m.SetReal(par_a, -1.0)
+        par_b = m.GetVariableObject("b")
+        m.SetReal(par_b, 4.0)
+        par_c = m.GetVariableObject("c")
+        m.SetReal(par_c, 6.0)
+        par_d = m.GetVariableObject("d")
+        m.SetReal(par_d, 0.0)
+        
         # Initialize the model for the simulation
         m.InitializeSimulator()
         
-        # Simulate
-        time, results = m.Simulate(start_time = datetime(2000, 1, 1, 0, 0, 10))
+        # Read the values that have just been set
+        self.assertEqual(-1.0, m.GetReal(par_a), "Parameter a of the FMU has to be equal to -1.0")
+        self.assertEqual(4.0, m.GetReal(par_b), "Parameter b of the FMU has to be equal to 4.0")
+        self.assertEqual(6.0, m.GetReal(par_c), "Parameter c of the FMU has to be equal to 6.0")
+        self.assertEqual(0.0, m.GetReal(par_d), "Parameter d of the FMU has to be equal to 0.0")
         
-    
+        # Simulate using start and final time of type datetime.datetime
+        t0 = datetime(2000, 1, 1, 0, 0, 10)
+        t1 = datetime(2000, 1, 1, 0, 0, 25)
+        time, results = m.Simulate(start_time = t0, final_time = t1)
+        
+        # Read the simulation time vector
+        self.assertEqual(t0, time[0], "The initial time does not correspond")
+        self.assertEqual(t1, time[-1], "The initial time does not correspond")
+        
+        # Read the results of the simulation
+        # x' = -1*x + 4*u
+        # y  = +6*x + 0*u
+        # Given the input u = 1, at steady state
+        # x ~ 4 and y ~ 24
+        self.assertAlmostEqual(4.0, results["x"][-1], 4, "The steady state value of the \
+        state variable x is not 4.0 but %.8f" % (results["x"][-1]))
+        self.assertAlmostEqual(24.0, results["y"][-1], 4, "The steady state value of \
+        the output variable y is not 24.0 but %.8f" % (results["y"][-1]))
+        
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
