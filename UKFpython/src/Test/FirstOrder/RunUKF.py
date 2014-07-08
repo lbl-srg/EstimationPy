@@ -76,7 +76,7 @@ def main():
     
     # Start the filter
     t0 = pd.to_datetime(0.0, unit = "s")
-    t1 = pd.to_datetime(5.0, unit = "s")
+    t1 = pd.to_datetime(10.0, unit = "s")
     time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose=False)
     
     # Path of the csv file containing the True data series

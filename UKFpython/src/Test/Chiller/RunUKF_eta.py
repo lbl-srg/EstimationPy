@@ -15,13 +15,13 @@ from ukf.ukfFMU import ukfFMU
 
 def main():
     # Assign an existing FMU to the model, depending on the platform identified
-    dir = os.path.dirname(__file__)
+    dir_path = os.path.dirname(__file__)
     if platform.architecture()[0]=="32bit":
         print "32-bit architecture"
-        filePath = os.path.join(dir, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "ChillerFDD.fmu")
+        filePath = os.path.join(dir_path, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "ChillerFDD.fmu")
     else:
         print "64-bit architecture"
-        filePath = os.path.join(dir, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "ChillerFDD_64bit.fmu")
+        filePath = os.path.join(dir_path, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "ChillerFDD_64bit.fmu")
     
     # Initialize the FMU model empty
     m = Model.Model(filePath)
@@ -36,12 +36,12 @@ def main():
     print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
     
     # Path of the csv file containing the data series
-    #csvPath = "./ChillerResults7.csv"
-    #csvPath = "./ChillerResults1_noisyLow.csv"
-    #csvPath = "./ChillerResults1_noisyHigh.csv"
-    #csvPath = "./ChillerResults7_noisyLow.csv"
-    #csvPath = "./ChillerResults7_noisyHigh.csv"
-    csvPath = os.path.join(dir, "ChillerResults7_noisyHigh.csv")
+    #csvPath = os.path.join(dir_path, "ChillerResults7.csv")
+    #csvPath = os.path.join(dir_path, "ChillerResults1_noisyLow.csv")
+    #csvPath = os.path.join(dir_path, "ChillerResults1_noisyHigh.csv")
+    #csvPath = os.path.join(dir_path, "ChillerResults7_noisyLow.csv")
+    #csvPath = os.path.join(dir_path, "ChillerResults7_noisyHigh.csv")
+    csvPath = os.path.join(dir_path, "ChillerResults7_noisyHigh.csv")
     
     input = m.GetInputByName("m_flow_CW")
     input.GetCsvReader().OpenCSV(csvPath)
@@ -116,12 +116,12 @@ def main():
     # Change the nominal power of the compressor
     m.SetReal(m.GetVariableObject("P_nominal"), 1500e3)
     
-    # instantiate the UKF for the FMU
+    # Instantiate the UKF for the FMU
     ukf_FMU = ukfFMU(m, augmented = False)
     
-    # start filter
+    # Start filter
     t0 = pd.to_datetime(0.0, unit = "s")
-    t1 = pd.to_datetime(3600.0, unit = "s")
+    t1 = pd.to_datetime(3600.0*12, unit = "s")
     time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose=False)
     
     # Get the measured outputs
@@ -135,8 +135,6 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, m):
     sqrtP = numpy.array(sqrtP)
     Sy = numpy.array(Sy)
     y_full = numpy.squeeze(numpy.array(y_full))
-    
-    print y_full
     
     # Read from file
     simResults = CsvReader.CsvReader()
