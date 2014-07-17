@@ -4,6 +4,7 @@ Created on Nov 7, 2013
 @author: marco
 '''
 import numpy
+import pandas as pd
 from FmuUtils import Model
 from FmuUtils import CsvReader
 from ukf.ukfFMU import ukfFMU
@@ -78,7 +79,9 @@ def main():
     ukf_FMU.setUKFparams(k=0)
     
     # start filter
-    time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filterAndSmooth(0.0, 5.0, verbose=False)
+    t0 = pd.to_datetime(0.0, unit = "s")
+    t1 = pd.to_datetime(250.0, unit = "s")
+    time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filterAndSmooth(start = t0, stop = t1, verbose=False)
     
     # Path of the csv file containing the True data series
     csvTrue = "../../../modelica/FmuExamples/Resources/data/SimulationData_CalibrationValve_Drift.csv"
@@ -104,28 +107,25 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     simResults.OpenCSV(csvTrue)
     simResults.SetSelectedColumn("valveStuck.m_flow_real")
     res = simResults.GetDataSeries()
-    
-    t = res["time"]
-    d_real = numpy.squeeze(numpy.asarray(res["data"]))
+    t = res.index
+    d_real = res.values
     
     simResults.OpenCSV(csvTrue)
     simResults.SetSelectedColumn("valveStuck.Kv")
     res = simResults.GetDataSeries()
-    
-    d_Kv = numpy.squeeze(numpy.asarray(res["data"]))
+    d_Kv = res.values
     
     simResults.OpenCSV(csvTrue)
     simResults.SetSelectedColumn("valveStuck.lambda")
     res = simResults.GetDataSeries()
-    
-    d_lambda = numpy.squeeze(numpy.asarray(res["data"]))
+    d_lambda = res.values
     
     outputRes = m.GetOutputByName("m_flow").GetCsvReader()
     outputRes.SetSelectedColumn("valveStuck.m_flow")
     res = outputRes.GetDataSeries()
     
-    to = res["time"]
-    do = numpy.squeeze(numpy.asarray(res["data"]))
+    to = res.index
+    do = res.values
     
     fig0 = plt.figure()
     fig0.set_size_inches(12,8)
@@ -151,8 +151,8 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     outputRes.SetSelectedColumn("valveStuck.cmd")
     res = outputRes.GetDataSeries()
     
-    to = res["time"]
-    do = numpy.squeeze(numpy.asarray(res["data"]))
+    to = res.index
+    do = res.values
     
     fig3 = plt.figure()
     idx = 0
@@ -193,7 +193,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     plt.show()
 
 def toDegC(x):
-    return x-273.15
+    return x - 273.15
 
 if __name__ == '__main__':
     main()

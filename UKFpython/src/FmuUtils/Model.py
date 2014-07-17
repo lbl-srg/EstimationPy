@@ -6,7 +6,10 @@ Created on Sep 6, 2013
 
 import pyfmi
 import numpy
+import pandas as pd
 import Strings
+import datetime
+
 from FmuUtils.InOutVar import InOutVar
 from FmuUtils.Tree import Tree
 from FmuUtils.EstimationVariable import EstimationVariable
@@ -63,7 +66,7 @@ class Model():
         self.tool = ""
         self.numStates = ""
         
-        # Trees that describe the parameter, state variables, input and output hierarchy
+        # Trees that describe parameters, state variables, inputs and outputs hierarchy
         self.treeParameters = Tree(Strings.PARAMETER_STRING)
         self.treeVariables = Tree(Strings.VARIABLE_STRING)
         self.treeInputs = Tree(Strings.INPUT_STRING)
@@ -71,11 +74,13 @@ class Model():
         
         # Number of maximum tries for a simulation to be successfully run
         self.SIMULATION_TRIES = 4
+        
         # Empty dictionary that will contain the simulation options
         self.opts = {}
         
         # Set the number of states
         self.N_STATES = 0
+        
         # An array that contains the value references for every state variable
         self.StateValueReferences = []
         
@@ -129,6 +134,9 @@ class Model():
         This method check if all the data series provided by the dataList are ready to be used or not.
         If not because they are not aligned, this method tries to correct them providing an interpolation
         """
+        # TODO: Done
+        
+        # Create a list of data series, one for each input
         dataSeries = []
         for inp in dataList:
             dataSeries.append(inp.GetDataSeries())
@@ -138,34 +146,45 @@ class Model():
         Tmax = 0.0
         Npoints = 0
         match = True
+        
+        # Scan all the data series
         for i in range(Ninputs):
-            if i == 0:
-                Tmin = dataSeries[i][Strings.TIME_STRING][0]
-                Tmax = dataSeries[i][Strings.TIME_STRING][-1]
-                Npoints = len(dataSeries[i][Strings.TIME_STRING])
-            else:
-                if not numpy.array_equiv(dataSeries[i][Strings.TIME_STRING], dataSeries[i-1][Strings.TIME_STRING]):
-                    match = False
-                    Tmin = min(Tmin, dataSeries[i][Strings.TIME_STRING][0])
-                    Tmax = max(Tmax, dataSeries[i][Strings.TIME_STRING][-1])
-                    Npoints = max(Npoints, len(dataSeries[i][Strings.TIME_STRING]))
-                    
-        if match == False and align:
-            print "\tMismatch between data, fixing the problem..."
-            # New time vector to be shared between the data series
-            new_time = numpy.linspace(Tmin, Tmax, Npoints)
             
+            if i == 0:
+                Tmin = dataSeries[i].index[0]
+                Tmax = dataSeries[i].index[-1]
+            else:
+                if not dataSeries[i].index.tolist() == dataSeries[i-1].index.tolist():
+                    match = False
+                    Tmin = max(Tmin, dataSeries[i].index[0])
+                    Tmax = min(Tmax, dataSeries[i].index[-1])
+        
+        # Check if they match or not           
+        if match == False and align:
+            
+            # At the end of this loop we know
+            # which data series has the bigger number of points and will
+            # be used as base for the other ones
+            MaxPoints = 0
+            ind = 0
+            for i in range(Ninputs):
+                NumP = len(dataSeries[i].ix[0])
+                if NumP > MaxPoints:
+                    MaxPoints = NumP
+                    ind = i
+            
+            # Select the best index
+            new_index = dataSeries[ind].index
+            
+            # Interpolate using the same datetimeIndex
             for inp in dataList:
-                old_time = inp.GetDataSeries()[Strings.TIME_STRING]
-                old_data = numpy.squeeze(numpy.asarray(inp.GetDataSeries()[Strings.DATA_STRING]))
-                new_data  = numpy.interp(new_time, old_time, old_data)
-                inp.SetDataSeries(new_time, new_data)
+                inp.GetDataSeries().reindex(new_index).interpolate(method='linear')
                 
             return False
         else:
             print "\tMatch between data series - OK"
             return True
-    
+
     def GetConstrObsStatesHigh(self):
         """
         This method returns an array of boolean flags that indicate if an observed state variable is either
@@ -309,6 +328,7 @@ class Model():
         """
         This method returns a list of functions that read the input for a given time
         """
+        # TODO
         outputs = []
         for inVar in self.inputs:
             # inVar is of type InOutVar and the object that it contains is a PyFMI variable
@@ -337,8 +357,9 @@ class Model():
     def GetMeasuredDataOuputs(self, t):
         """
         This method returns the measured data value of the observed outputs at a given time
-        instant t
+        instant t, that is a datetime object/string part of the datetimeIndex of the pandas.Series
         """
+        # TODO: Done
         obsOut = numpy.zeros(shape=(1, self.GetNumMeasuredOutputs()))
         i = 0
         for o in self.outputs:
@@ -351,6 +372,7 @@ class Model():
         """
         This method returns the data series associated to each measured output
         """
+        # TODO: Done
         # Get all the data series from the CSV files (for every input of the model)
         outDataSeries = []
         for o in self.outputs:
@@ -361,15 +383,20 @@ class Model():
         self.CheckDataList(outDataSeries, align = True)
         
         # Now transform it into a matrix with time as first column and the measured outputs
-        time = outDataSeries[0].GetDataSeries()[Strings.TIME_STRING]
+        time = outDataSeries[0].GetDataSeries().index
+        
+        # Create the empty matrix
         Npoints = len(time)
         Nouts = self.GetNumMeasuredOutputs()
         dataMatrix = numpy.zeros(shape=(Npoints, Nouts+1))
         
+        # Define the first column as the time
         dataMatrix[:,0] = time
+        
+        # Put the other values in the following columns
         i = 1
         for o in outDataSeries:
-            dataMatrix[:,i] = o.GetDataSeries()[Strings.DATA_STRING]
+            dataMatrix[:,i] = o.GetDataSeries().values
             i += 1
         
         return dataMatrix 
@@ -520,7 +547,7 @@ class Model():
     
     def GetReal(self, var):
         """
-        Set a real variablein the FMU model, given the PyFmi variable description
+        Get a real variable in the FMU model, given the PyFmi variable description
         """
         return self.fmu.get_real(var.value_reference)[0]
     
@@ -789,24 +816,30 @@ class Model():
         By default the simulation is performed at the initial time of the input data series, but the
         user can specify an other point.
         """
-        
+        # TODO: Done
         # Load the inputs and check if any problem. If any exits.
         # Align inputs while loading.
         if not self.LoadInput(align = True):
-            return
+            return False
         
         # Load the outputs and check if any problems. If any exits.
         if not self.LoadOutputs():
-            return
+            return False
         
         # Take the time series: the first because now they are all the same (thanks to alignment)
-        time = self.inputs[0].GetDataSeries()[Strings.TIME_STRING]
+        time = self.inputs[0].GetDataSeries().index
         
         # Define the initial time for the initialization
         if startTime == None:
+            # Start time not specified, start from the beginning
             index = 0
-            start_time = time[index]
         else:
+            
+            # Check that the type of start time is of type datetime
+            if not isinstance(startTime, datetime.datetime):
+                raise TypeError("The parameter startTime has to be of datetime.datetime type")
+                
+            # Start time specified, start from the closest point
             if startTime >= time[0] and startTime <= time[-1]:
                 index = 0
                 for t in time:
@@ -814,11 +847,12 @@ class Model():
                         index += 1
                     else:
                         break
-                start_time = startTime
             else:
                 index = 0
-                start_time = time[index]
-                print "The value selected as initialization start time is outside the time frame"
+                raise IndexError("The value selected as initialization start time is outside the time frame")
+                
+        # Once the index is know it can be used to define the start_time
+        start_time = time[index]
         
         # Take all the data series
         Ninputs = len(self.inputs)
@@ -828,31 +862,40 @@ class Model():
         i = 0
         if index == 0:
             for inp in self.inputs:
-                dataInput = inp.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
+                dataInput = numpy.matrix(inp.GetDataSeries().values).reshape(-1,1)
                 start_input[0, i] = dataInput[index,0]
                 i += 1
         else:
             for inp in self.inputs:
-                dataInput = inp.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
+                dataInput = numpy.matrix(inp.GetDataSeries().values).reshape(-1,1)
                 start_input_1[0, i] = dataInput[index-1,0]
                 start_input_2[0, i] = dataInput[index,0]
                 
                 # Linear interpolation between the two values
-                start_input[0, i] = ((time[index] - startTime)*start_input_1[0, i] + (startTime - time[index-1])*start_input_2[0, i])/(time[index] - time[index-1])
+                dt0 = (time[index] - start_time).total_seconds()
+                dT1 = (start_time  - time[index-1]).total_seconds()
+                DT  = (time[index] - time[index-1]).total_seconds()
+                
+                # Perform the interpolation
+                start_input[0, i] = (dt0*start_input_1[0, i] + dT1*start_input_2[0, i])/DT
                 
                 i += 1
                
         # Initialize the model for the simulation
         self.opts["initialize"] = True
+        
         try:
             # Simulate from the initial time to initial time + epsilon
             # thus we have 2 points
+            
+            # Create the input objects for the simulation that initializes
             Input = numpy.hstack((start_input, start_input))
             Input = Input.reshape(2,-1)
-            time = numpy.array([start_time, start_time+1e-10])
-            time = time.reshape(2,-1)
             
-            # Run the simulation
+            time = pd.DatetimeIndex([start_time, start_time])
+            
+            # Run the simulation, remember that
+            # time has to be a dateteTimeIndex and Input has to be a numpy.matrix
             self.Simulate(time = time, Input = Input)
             self.opts["initialize"] = False
             
@@ -896,8 +939,9 @@ class Model():
     
     def LoadInput(self, align = True):
         """
-        This method loads all the input data series from the csv files. It returns a boolean if the import was successful
+        This method loads all the input data series. It returns a boolean if the import was successful.
         """
+        # TODO: Done
         # Get all the data series from the CSV files (for every input of the model)
         LoadedInputs = True
         for inp in self.inputs:
@@ -917,8 +961,9 @@ class Model():
     
     def LoadOutputs(self):
         """
-        This method loads all the output data series from the csv files. It returns a boolean if the import was successful
+        This method loads all the output data series. It returns a boolean if the import was successful
         """
+        # TODO: Done
         # Get all the data series from the CSV files (for every input of the model)
         LoadedOutputs = True
         for o in self.outputs:
@@ -1215,7 +1260,7 @@ class Model():
             print "Problems while creating the variables tree"
             self.treeVariables = Tree(Strings.VARIABLE_STRING)
     
-    def Simulate(self, start_time = None, final_time = None, time = None, Input = None, complete_res = False):
+    def Simulate(self, start_time = None, final_time = None, time = pd.DatetimeIndex([]), Input = None, complete_res = False):
         """
         This method simulates the model from the start_time to the final_time, using a given set of simulation
         options. Since it may happen that a simulation fails without apparent reason (!!), it is better to 
@@ -1225,47 +1270,83 @@ class Model():
                  ...
                  [u1(Tend), u2(Tend), ...,uM(Tend)]]
         """
+        # TODO
+        
         # Number of input variables needed by the model
         Ninputs = len(self.inputs)
         
-        if time == None:
+        # Check if the parameter time has been provided
+        if len(time) == 0:
             # Take the time series: the first because now they are all the same
             for inp in self.inputs:
-                time = inp.GetDataSeries()[Strings.TIME_STRING]
+                time = inp.GetDataSeries().index
                 break
+        else:
+            # Check that the type of the time vector is of type pd.DatetimeIndex
+            if not isinstance(time, pd.DatetimeIndex):
+                raise TypeError("The parameter time has to be a vector of type pd.DatetimeIndex")
+            
+        # Define initial start time in seconds
+        if start_time == None:
+            start_time = time[0]
+        else:
+            # Check that the type of start time is of type datetime
+            if not isinstance(start_time, datetime.datetime):
+                raise TypeError("The parameter start_time is of type %s, it has to be of datetime.datetime type." % (str(start_time)))
+            # Check if the start time is within the range
+            if not (start_time >= time[0] and start_time <= time[-1]):
+                raise IndexError("The value selected as initialization start time is outside the time frame")
+            
+        start_time_sec = (start_time - time[0]).total_seconds()
+        
+        # Define the final time in seconds
+        if final_time == None:
+            final_time = time[-1]
+        else:
+            # Check that the type of start time is of type datetime
+            if not isinstance(final_time, datetime.datetime):
+                raise TypeError("The parameter final_time is of type %s, it has to be of datetime.datetime type." % (str(start_time)))
+            # Check if the final time is within the range
+            if not (final_time >= time[0] and final_time <= time[-1]):
+                raise IndexError("The value selected as initialization start time is outside the time frame")
+            # Check that the final time is after the start time
+            if not (final_time >= start_time):
+                raise IndexError("The final_time %s has to be after the start time %s." % \
+                                 (str(final_time), str(start_time)))
+        final_time_sec = (final_time - time[0]).total_seconds()
+            
+        # Transforms to seconds with respect to the first element
+        Npoints = len(time)
+        time_sec = numpy.zeros((Npoints,1))
+        for i in range(Npoints):
+            time_sec[i,0] = (time[i] - time[0]).total_seconds()
+        
+        # Convert to numpy matrix in case it will be stacked in a matrix
+        time_sec = numpy.matrix(time_sec)
+        
         # Reshape to be consistent
-        time  = time.reshape(-1, 1)
+        time_sec  = time_sec.reshape(-1, 1)
         
         if Input == None:
             # Take all the data series
-            Npoints = len(time)
             inputMatrix = numpy.matrix(numpy.zeros((Npoints, Ninputs)))
+            
             i = 0
             for inp in self.inputs:
-                dataInput = inp.GetDataSeries()[Strings.DATA_STRING].reshape(-1,1)
+                dataInput = numpy.matrix(inp.GetDataSeries().values).reshape(-1,1)
                 inputMatrix[:, i] = dataInput[:,:]
                 i += 1
             # Define the input trajectory
-            V = numpy.hstack((time, inputMatrix))
+            V = numpy.hstack((time_sec, inputMatrix))
             
         else:
             # Reshape to be consistent
             Input = Input.reshape(-1, Ninputs)
             # Define the input trajectory
-            V = numpy.hstack((time, Input))
+            V = numpy.hstack((time_sec, Input))
         
         # The input trajectory must be an array, otherwise pyfmi does not work
         u_traj  = numpy.array(V)
-        
-        # Squeeze for access directly start and final time
-        time = time.squeeze()
-        
-        # Define initial and start time
-        if start_time == None:
-            start_time = time[0]
-            
-        if final_time == None:
-            final_time = time[-1]
         
         # Create input object
         names = self.GetInputNames()
@@ -1275,12 +1356,12 @@ class Model():
         # Associate functions rather than a matrix that contains all the values
         # input_object = (names, self.GetInputReaders)
         
-        # start the simulation
+        # Start the simulation
         simulated = False
         i = 0
         while not simulated and i < self.SIMULATION_TRIES:
             try:
-                res = self.fmu.simulate(start_time = start_time, input = input_object, final_time = final_time, options = self.opts)
+                res = self.fmu.simulate(start_time = start_time_sec, input = input_object, final_time = final_time_sec, options = self.opts)
                 simulated = True
             except ValueError:
                 print "Simulation of the model failed, try again"
@@ -1291,8 +1372,10 @@ class Model():
             raise Exception
         
         # Obtain the results
-        # TIME
-        t     = res[Strings.TIME_STRING]
+        # TIME in seconds has to be converted to datetime
+        # and it has to maintain the same offset specified by the input time series in t[0]
+        offset = time[0] - pd.to_datetime(res[Strings.TIME_STRING][0])
+        t     = pd.to_datetime(res[Strings.TIME_STRING], unit="s") + offset
         
         # Get the results, either all or just the selected ones
         if complete_res == False:

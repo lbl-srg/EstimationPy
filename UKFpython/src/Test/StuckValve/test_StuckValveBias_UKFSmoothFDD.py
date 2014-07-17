@@ -6,6 +6,7 @@ Created on Nov 7, 2013
 
 from   scipy.stats import norm
 import numpy
+import pandas as pd
 import matplotlib.gridspec as gridspec
 
 from FmuUtils import Model
@@ -93,7 +94,9 @@ def main():
     ukf_FMU.setUKFparams()
     
     # start filter
-    time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filterAndSmooth(0.0, 5.0, verbose=False)
+    t0 = pd.to_datetime(0.0, unit = "s")
+    t1 = pd.to_datetime(360.0, unit = "s")                                            
+    time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filterAndSmooth(start = t0, stop = t1, verbose=False)
     
     # Path of the csv file containing the True data series
     csvTrue = "../../../modelica/FmuExamples/Resources/data/SimulationData_ValveBias4.csv"
@@ -119,53 +122,48 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     simResults.OpenCSV(csvTrue)
     simResults.SetSelectedColumn("valveStuck.T_in")
     res = simResults.GetDataSeries()
-    
-    t = res["time"]
-    d_temp = numpy.squeeze(numpy.asarray(res["data"]))
+    t = res.index
+    d_temp = res.values
     
     simResults.SetSelectedColumn("valveStuck.dp")
     res = simResults.GetDataSeries()
-    
-    d_dp = numpy.squeeze(numpy.asarray(res["data"]))
+    d_dp = res.values
     
     input = m.GetInputByName("T_in")
     input.GetCsvReader().SetSelectedColumn("valveStuck.T_in")
     res = input.GetCsvReader().GetDataSeries()
     
-    t_t = res["time"]
-    d_temp_noisy = numpy.squeeze(numpy.asarray(res["data"]))
+    t_t = res.index
+    d_temp_noisy = res.values
     
     input = m.GetInputByName("dp")
     input.GetCsvReader().SetSelectedColumn("valveStuck.dp")
     res = input.GetCsvReader().GetDataSeries()
-    
-    d_dp_noisy = numpy.squeeze(numpy.asarray(res["data"]))
+    d_dp_noisy = res.values
     
     simResults.SetSelectedColumn("valveStuck.m_flow_real")
     res = simResults.GetDataSeries()
-    
-    d_real = numpy.squeeze(numpy.asarray(res["data"]))
+    d_real = res.values
     
     simResults.OpenCSV(csvTrue)
     simResults.SetSelectedColumn("valveStuck.lambda")
     res = simResults.GetDataSeries()
-    
-    d_lambda = numpy.squeeze(numpy.asarray(res["data"]))
+    d_lambda = res.values
     
     outputRes = m.GetOutputByName("m_flow").GetCsvReader()
     outputRes.SetSelectedColumn("valveStuck.m_flow")
     res = outputRes.GetDataSeries()
     
-    to = res["time"]
-    do = numpy.squeeze(numpy.asarray(res["data"]))
+    to = res.index
+    do = res.values
     
     simResults.SetSelectedColumn("valveStuck.valve.opening")
     res = simResults.GetDataSeries()
-    opening = numpy.squeeze(numpy.asarray(res["data"]))
+    opening = res.values
     
     simResults.SetSelectedColumn("valveStuck.cmd")
     res = simResults.GetDataSeries()
-    command = numpy.squeeze(numpy.asarray(res["data"]))
+    command = res.values
     
     ####################################################################
     # Compute and plot probability of fault
@@ -273,6 +271,7 @@ def toDegC(x):
 def computeProbabilities(t, command, opening, time, x, sqrtP, Xsmooth, Ssmooth):
     # COMPUTE FAULT PROBABILITIES
     # Define the thresholds
+    import time as T
     Thresh  = 0.075
     
     numSamples = len(time)
@@ -288,12 +287,14 @@ def computeProbabilities(t, command, opening, time, x, sqrtP, Xsmooth, Ssmooth):
         Psmooth[n,:,:] = numpy.dot(Ssmooth[n,:,:], Ssmooth[n,:,:].T)
     
     # interpolate the command to have the same dimension of the estimations
-    command = numpy.interp(time,  t, command)
-    opening = numpy.interp(time,  t, opening)
+    new_t = numpy.array([T.mktime(x.timetuple()) for x in t.tolist() ])
+    new_time = numpy.array( [T.mktime(x.timetuple()) for x in time.tolist() ])
+    command = numpy.interp(new_time,  new_t, command)
+    opening = numpy.interp(new_time,  new_t, opening)
     
     for i in range(numSamples):
         
-        # ComputingFault probabilities with smoothed esitation
+        # ComputingFault probabilities with smoothed estimation
         StdDev = numpy.diag([Ssmooth[i,0,0]])
         
         errorLEAK = numpy.array([Xsmooth[i,0] - (command[i]-Thresh)])
