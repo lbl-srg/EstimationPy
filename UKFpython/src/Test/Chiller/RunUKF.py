@@ -3,7 +3,10 @@ Created on Nov 7, 2013
 
 @author: marco
 '''
+import os
+import platform
 import numpy
+import pandas as pd
 import matplotlib.pyplot as plt
 
 from FmuUtils import Model
@@ -12,8 +15,14 @@ from ukf.ukfFMU import ukfFMU
 
 def main():
     
-    # Assign an existing FMU to the model
-    filePath = "../../../modelica/FmuExamples/Resources/FMUs/ChillerFDD.fmu"
+    # Assign an existing FMU to the model, depending on the platform identified
+    dir_path = os.path.dirname(__file__)
+    if platform.architecture()[0]=="32bit":
+        print "32-bit architecture"
+        filePath = os.path.join(dir_path, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "ChillerFDD.fmu")
+    else:
+        print "64-bit architecture"
+        filePath = os.path.join(dir_path, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "ChillerFDD_cop_64bit.fmu")
     
     # Initialize the FMU model empty
     m = Model.Model(filePath)
@@ -28,11 +37,12 @@ def main():
     print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
     
     # Path of the csv file containing the data series
-    #csvPath = "./ChillerResults7.csv"
-    #csvPath = "./ChillerResults1_noisyLow.csv"
-    #csvPath = "./ChillerResults1_noisyHigh.csv"
-    #csvPath = "./ChillerResults7_noisyLow.csv"
-    csvPath = "./ChillerResults7_noisyHigh.csv"
+    #csvPath = os.path.join(dir_path, "ChillerResults7.csv")
+    #csvPath = os.path.join(dir_path, "ChillerResults1_noisyLow.csv")
+    #csvPath = os.path.join(dir_path, "ChillerResults1_noisyHigh.csv")
+    #csvPath = os.path.join(dir_path, "ChillerResults7_noisyLow.csv")
+    #csvPath = os.path.join(dir_path, "ChillerResults7_noisyHigh.csv")
+    csvPath = os.path.join(dir_path, "ChillerResults7_noisyHigh.csv")
        
     input = m.GetInputByName("m_flow_CW")
     input.GetCsvReader().OpenCSV(csvPath)
@@ -97,12 +107,12 @@ def main():
     par.SetConstraintLow(True)
     par.SetConstraintHigh(True)
     
+    # Allow to identify eta PL externally
+    m.SetReal(m.GetVariableObject("chi.external_etaPL"), False)
+    m.SetReal(m.GetVariableObject("chi.external_COP"), True)
+    
     # Initialize the model for the simulation
     m.InitializeSimulator()
-    
-    # Allow to identify eta PL externally
-    m.SetReal(m.GetVariableObject("chi.external_etaPL"), True)
-    m.SetReal(m.GetVariableObject("chi.external_COP"), True)
     
     # Change the nominal power of the compressor
     m.SetReal(m.GetVariableObject("P_nominal"), 1500e3)
@@ -110,8 +120,10 @@ def main():
     # instantiate the UKF for the FMU
     ukf_FMU = ukfFMU(m, augmented = False)
     
-    # start filter
-    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = 0, stop=3600*12, verbose=False)
+    # Start filter
+    t0 = pd.to_datetime(0.0, unit = "s")
+    t1 = pd.to_datetime(3600.0*12, unit = "s")
+    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose=False)
     
     # Get the measured outputs
     showResults(time, x, sqrtP, y, Sy, y_full, csvPath, m)
@@ -125,34 +137,28 @@ def showResults(time, x, sqrtP, y, Sy, y_full, csvTrue, m):
     Sy = numpy.array(Sy)
     y_full = numpy.squeeze(numpy.array(y_full))
     
-    print y_full
-    
     # Read from file
     simResults = CsvReader.CsvReader()
     simResults.OpenCSV(csvTrue)
     
+    # Get time series values
     simResults.SetSelectedColumn("chi.etaPL")
-    res = simResults.GetDataSeries()
-    t = res["time"]
-    eta_PL = numpy.squeeze(numpy.asarray(res["data"]))
+    t = simResults.GetDataSeries().index
+    eta_PL = simResults.GetDataSeries().values
     
     simResults.SetSelectedColumn("P")
-    res = simResults.GetDataSeries()
-    P = numpy.squeeze(numpy.asarray(res["data"]))
+    P = simResults.GetDataSeries().values
     
     simResults.SetSelectedColumn("T_CH_Lea")
-    res = simResults.GetDataSeries()
-    T_ch = numpy.squeeze(numpy.asarray(res["data"]))
+    T_ch = simResults.GetDataSeries().values
     
     simResults.SetSelectedColumn("T_CW_lea")
-    res = simResults.GetDataSeries()
-    T_cw = numpy.squeeze(numpy.asarray(res["data"]))
+    T_cw = simResults.GetDataSeries().values
     
     simResults.SetSelectedColumn("chi.COP")
-    res = simResults.GetDataSeries()
-    COP = numpy.squeeze(numpy.asarray(res["data"]))
+    COP = simResults.GetDataSeries().values
     
-    
+    # plot and save images
     fig0 = plt.figure()
     fig0.set_size_inches(12,8)
     ix = 2

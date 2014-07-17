@@ -6,6 +6,7 @@ Created on Sep 6, 2013
 
 import csv
 import numpy
+import pandas as pd
 
 import Strings
 
@@ -31,6 +32,8 @@ class CsvReader():
     The other rows contain the data separated by commas.
     
     The first column HAS to be the time associated to the data series.
+    This column will be used as index for the associated pandas data series. Since the first column is used
+    as index its name will not appear between the column names.
     
     """
     
@@ -52,15 +55,53 @@ class CsvReader():
         self.columnSelected = None
     
     def __str__(self):
-        string = "CsvReader Object:"
+        """
+        
+        This method returns a string that describe the CSV reader object
+        
+        """
+        string = "CsvReader Object"
         string += "\n-File: "+str(self.filename)
         string += "\n-Columns Available:"
         for c in self.columnNames:
             string += "\n\t-"+str(c)
         string += "\n-Selected: "+str(self.columnSelected)
         return string
-      
-    def OpenCSV(self, filename=""):
+    
+    def __open_csv__(self, csv_file):
+        """
+        This method is used to open a csv file and create a corresponding pandas
+        data frame
+        """
+        # Open the file passed as parameter.
+        # Read the csv file and instantiate the data frame
+        try:
+            # Load the data frame
+            df = pd.io.parsers.read_csv(self.filename, dialect = self.dialect)
+                
+            # Use the first column as index of the data frame
+            df.set_index(df.columns[0], inplace = True, verify_integrity = True)
+            
+            # convert the index to a datetime object, assuming the values have been specified
+            # using the SI unit for time [s]
+            df.index = pd.to_datetime(df.index, unit="s")
+            
+            # Sort values with respect to the index
+            df.sort(inplace = True)
+            
+            return df
+        
+        except IOError, e:
+            print "The file %s does not exist, impossible to open " % self.filename
+            print e
+            return pd.DataFrame()
+        
+        except ValueError, e:
+            print "The file %s has problem with the time index " % self.filename
+            print e
+            return pd.DataFrame()
+     
+    def OpenCSV(self, filename = ""):
         """
         
         Open a CSV file
@@ -69,34 +110,23 @@ class CsvReader():
         # Reinitialize all
         self.__init__(filename)
         
-        # Open the file passed as parameter
-        try:
-            f = open(self.filename, 'rb')
-        except IOError:
-            print "The file %s does not exist, impossible to open " % self.filename
+        # Open the csv and get the Data frame
+        df = self.__open_csv__(filename)
+        
+        # If the data frame is empty there were problems while loading the file
+        if len(df.index) == 0:
+            print "ERROR:: The csv file "+filename+" is not correct, please check it..."
             return False
         
-        # TODO:
-        # Read N lines and detect the dialect used
-        # N = 1024
-        # self.dialect = csv.Sniffer().sniff(self.f.read(N))
-        self.dialect.skipinitialspace = True
-        
-        # Move the file pointer to the beginning
-        f.seek(0)
-        
-        # Real the csv file and instantiate the reader
+        # Get the column names and then delete the data frame
         try:
-            reader = csv.DictReader(f, dialect = self.dialect)
-            self.columnNames = reader.fieldnames
-            f.close()
+            self.columnNames = df.columns.tolist()
+            del(df)
             return True
         except csv.Error:
             print "ERROR:: The csv file "+filename+" is not correct, please check it..."
-            f.close()
+            del(df)
             return False
-        
-        #TODO: check if the file descriptor has to be closed
     
     def GetFileName(self):
         """
@@ -118,8 +148,7 @@ class CsvReader():
             self.columnSelected = columnName
             return True
         else:
-            print "ERROR:: The column selected "+str(columnName)+"is not part of the columns names list"
-            print self.GetColumnNames()
+            print "ERROR:: The column selected",str(columnName),"is not part of the columns names list",str(self.columnNames)
             return False
             
     def GetSelectedColumn(self):
@@ -149,31 +178,21 @@ class CsvReader():
         """
         Once the csv file and its column have been selected, it is possible to read the data from the csv
         file and return them. Please remember that the first column of the csv file HAS to be the time.
-        This method returns a dictionary:
-        
-        dataSeries = {"time": [0, 1, 2, 3, 4, ...], "data": [12, 34, 33, 12.5, 66, ...]}
+        This method returns a pandas data series associated to the selected column.
          
         """
-        dataSeries = {}
+        # initialize with empty pandas data series
+        dataSeries = pd.Series()
+        
         # Check if the file name has been selected
         if self.filename != None and self.filename != "":
             
-            # Open the file
-            try:
-                f = open(self.filename, 'rb')
-            except IOError:
-                print "Error: The csv file ", self.filename, " cannot be open"
-                return dataSeries
+            # Open the csv and get the Data frame
+            df = self.__open_csv__(self.filename)
             
-            # Move the file pointer to the beginning
-            f.seek(0)
-            
-            # Read the csv file and instantiate the reader
-            try:
-                reader = csv.DictReader(f, dialect = self.dialect)
-            except csv.Error:
-                print "ERROR:: The csv file ", self.filename, " is not correct, please check it..."
-                f.close()
+            # If the data frame is empty there were problems while loading the file
+            if len(df.index) == 0:
+                print "ERROR:: The csv file "+self.filename+" is not correct, please check it..."
                 return dataSeries
             
             # Check if the column name is set
@@ -183,18 +202,7 @@ class CsvReader():
                 if self.columnSelected in self.columnNames:
                     
                     # Read the time and data column from the csv file
-                    time = []
-                    data = []
-                    time_key = self.columnNames[0]
-                    for line in reader:
-                        time.append(float(line[time_key]))
-                        data.append(float(line[self.columnSelected]))
-                    
-                    # If the check of the cSV file is successful, return the data series, otherwise
-                    # return an empty dictionary 
-                    if self.CheckTimeSeries(time, self.filename):
-                        dataSeries[Strings.TIME_STRING] = numpy.array(time).astype(numpy.float)
-                        dataSeries[Strings.DATA_STRING] = numpy.matrix(data).astype(numpy.float)
+                    dataSeries = df[self.columnSelected]
                         
                     return dataSeries  
                     
@@ -209,24 +217,3 @@ class CsvReader():
         else:
             print "Select a file for the CSV before trying to read it!"
             return dataSeries
-    
-    @staticmethod
-    def CheckTimeSeries(time, fileName):
-        """
-        This method check if all the time instants of the time series are increasing,
-        If there are two or more equal values a report about this error is returned
-        """
-        N = len(time)
-        wrong = False
-        message = "\nWRONG CSV FILE: "+str(fileName)
-        for i in range(N-1):
-            if time[i] >= time[i+1]:
-                message += "\n-Row("+str(i+1)+") time step="+str(time[i])
-                message += " >= than next row, equal to "+str(time[i+1])
-                wrong = True
-                
-        if wrong:
-            print message
-            return False
-        else:
-            return True     

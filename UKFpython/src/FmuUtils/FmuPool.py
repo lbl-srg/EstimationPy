@@ -99,7 +99,7 @@ class FmuPool():
     This class represents a pool of processes that will run the simulations in parallel
     """
     
-    def __init__(self, model, processes = multiprocessing.cpu_count(), debug = False):
+    def __init__(self, model, processes = multiprocessing.cpu_count()-1, debug = False):
         """
         Initialization of the pool of processes that will run the simulations
         """
@@ -110,7 +110,7 @@ class FmuPool():
         if debug:
             self.f = open('debugFile.log','w')
         
-        # Define the number of processors to be used
+        # Define the number of processes to be used
         if processes >= 1:
             self.N_MAX_PROCESS = processes
         else:

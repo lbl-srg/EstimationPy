@@ -3,7 +3,8 @@ Created on Nov 7, 2013
 
 @author: marco
 '''
-
+import os
+import platform
 import numpy
 import matplotlib.pyplot as plt
     
@@ -15,15 +16,25 @@ def main():
     # Initialize the FMU model empty
     m = Model()
 
+    # Assign an existing FMU to the model, depending on the platform identified
+    dir_path = os.path.dirname(__file__)
+
+    # Define the path of the FMU file
+    if platform.architecture()[0]=="32bit":
+        print "32-bit architecture"
+        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder.fmu")
+    else:
+        print "64-bit architecture"
+        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_64bit.fmu")
+
     # Assign an existing FMU to the model
-    filePath = "../../../modelica/FmuExamples/Resources/FMUs/FirstOrder.fmu"
     m.ReInit(filePath)
 
     # Set the CSV file associated to the input
-    inputPath = "../../../modelica/FmuExamples/Resources/data/SimulationData_FirstOrder.csv"
-    input = m.GetInputByName("u")
-    input.GetCsvReader().OpenCSV(inputPath)
-    input.GetCsvReader().SetSelectedColumn("system.u")
+    inputPath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
+    input_u = m.GetInputByName("u")
+    input_u.GetCsvReader().OpenCSV(inputPath)
+    input_u.GetCsvReader().SetSelectedColumn("system.u")
     
     # Select the states to be modified
     m.AddVariable(m.GetVariableObject("x"))

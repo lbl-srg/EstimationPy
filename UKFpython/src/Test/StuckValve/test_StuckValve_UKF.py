@@ -4,6 +4,7 @@ Created on Nov 7, 2013
 @author: marco
 '''
 import numpy
+import pandas as pd
 from FmuUtils import Model
 from FmuUtils import CsvReader
 from ukf.ukfFMU import ukfFMU
@@ -62,8 +63,11 @@ def main():
     #ukf_FMU.setUKFparams()
     
     # start filter
-    time, x, sqrtP, y, Sy = ukf_FMU.filter(0.0, 5.0, verbose=False)
-    
+    # Start the filter
+    t0 = pd.to_datetime(0.0, unit = "s")
+    t1 = pd.to_datetime(250.0, unit = "s")
+    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose=False)
+
     # Path of the csv file containing the True data series
     csvTrue = "../../../modelica/FmuExamples/Resources/data/SimulationData_StuckValve_quad_noDyn.csv"
     
@@ -83,16 +87,14 @@ def showResults(time, x, sqrtP, y, Sy, csvTrue, m):
     simResults.OpenCSV(csvTrue)
     simResults.SetSelectedColumn("valveStuck.m_flow")
     res = simResults.GetDataSeries()
-    
-    t = res["time"]
-    d = numpy.squeeze(numpy.asarray(res["data"]))
+    t = res.index
+    d = res.values
     
     outputRes = m.GetOutputByName("m_flow").GetCsvReader()
     outputRes.SetSelectedColumn("valveStuck.m_flow")
     res = outputRes.GetDataSeries()
-    
-    to = res["time"]
-    do = numpy.squeeze(numpy.asarray(res["data"]))
+    to = res.index
+    do = res.values
     
     fig0 = plt.figure()
     fig0.set_size_inches(12,8)
@@ -114,11 +116,11 @@ def showResults(time, x, sqrtP, y, Sy, csvTrue, m):
     
     simResults.SetSelectedColumn("valveStuck.valve.opening")
     res = simResults.GetDataSeries()
-    opening = numpy.squeeze(numpy.asarray(res["data"]))
+    opening = res.values
     
     simResults.SetSelectedColumn("valveStuck.cmd")
     res = simResults.GetDataSeries()
-    command = numpy.squeeze(numpy.asarray(res["data"]))
+    command = res.values
     
     fig1 = plt.figure()
     fig1.set_size_inches(12,8)
