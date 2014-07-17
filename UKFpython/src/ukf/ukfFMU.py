@@ -757,7 +757,7 @@ class ukfFMU():
 		return (ix_start, ix_stop)
 			
 	
-	def filter(self, start, stop, verbose=False, forSmoothing = False):
+	def filter(self, start, stop, verbose = False, forSmoothing = False):
 		"""
 		This method starts the filtering process and performs a loop of ukf-steps
 		"""
@@ -813,7 +813,8 @@ class ukfFMU():
 		print "SMOOTHING "*4
 		
 		# get the number of time steps		
-		s = np.reshape(time,(-1,1)).shape
+		#s = np.reshape(time,(-1,1)).shape
+		s = time.shape
 		nTimeStep = s[0]
 		
 		# initialize the smoothed states and covariance matrix
@@ -910,7 +911,7 @@ class ukfFMU():
 			# How to introduce constrained estimation
 			Xsmooth[i]  = self.constrainedState(Xsmooth[i])
 			
-			X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigmaPointProj([Xsmooth[i]],time[i], time[i]+1e-8)
+			X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigmaPointProj([Xsmooth[i]],time[i], time[i])
 			Yfull_smooth[i] = Zfull_proj[0]
 			
 			V          = np.dot(D.T, Ssmooth[i+1] - Snew)
