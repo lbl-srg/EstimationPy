@@ -4,9 +4,12 @@ Created on Nov 7, 2013
 @author: marco
 '''
 import os
+import platform
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from FmuUtils import Model
+from FmuUtils import CsvReader
 
 def condenser_water_temperature(oat, max_T, min_T, T_ref = 273.15 + 24):
     """
@@ -33,12 +36,17 @@ def flow_generator(flow_n, time):
 
 def main(days = 1):
     
+    # Assign an existing FMU to the model, depending on the platform identified
+    dir_path = os.path.dirname(__file__)
+    if platform.architecture()[0]=="32bit":
+        print "32-bit architecture"
+        filePath = os.path.join(dir_path, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "Chiller_dymola2015_etaPL.fmu")
+    else:
+        print "64-bit architecture"
+        filePath = os.path.join(dir_path, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "ChillerSim_64bit.fmu")
+    
     # Initialize the FMU model empty
     m = Model.Model()
-    
-    # Assign an existing FMU to the model
-    dir = os.path.dirname(__file__)
-    filePath = os.path.join(dir, "..", "..","..", "modelica", "FmuExamples", "Resources", "FMUs", "Chiller_dymola2015_etaPL.fmu")
     
     # ReInit the model with the new FMU
     m.ReInit(filePath)
@@ -53,7 +61,7 @@ def main(days = 1):
     print "The names of the FMU outputs are:", m.GetOutputNames(), "\n"
     
     # Set the CSV file associated to the input
-    inputPath = os.path.join(dir, "..", "..","..", "modelica", "FmuExamples", "Resources", "data", "Jun11.csv")
+    inputPath = os.path.join(dir_path, "..", "..","..", "modelica", "FmuExamples", "Resources", "data", "Jun11.csv")
     input = m.GetInputByName("On")
     input.GetCsvReader().OpenCSV(inputPath)
     input.GetCsvReader().SetSelectedColumn("ON")
@@ -83,17 +91,17 @@ def main(days = 1):
     
     # Reinitialize state variables (temperatures in the volumes, of the sensors, and control action)
     m.SetReal(m.GetVariableObject("chi.vol1.dynBal.medium.T"), 300)
-    m.SetReal(m.GetVariableObject("TCDWlea.T"), 300)
+    #m.SetReal(m.GetVariableObject("TCDWlea.T"), 300)
     m.SetReal(m.GetVariableObject("chi.vol2.dynBal.medium.T"), 279)
-    m.SetReal(m.GetVariableObject("TCHWleachi.T"), 279)
+    #m.SetReal(m.GetVariableObject("TCHWleachi.T"), 279)
     m.SetReal(m.GetVariableObject("conPI.I.y"), 0.83)
     
     # Change the nominal power of the compressor
     m.SetReal(m.GetVariableObject("P_nominal"), 1500e3)
     
     # Decide to use a fixed efficiency or not
-    m.SetReal(m.GetVariableObject("chi.external_etaPL"), False)
-    m.SetReal(m.GetVariableObject("eta_PL"), 0.7)
+    #m.SetReal(m.GetVariableObject("chi.external_etaPL"), False)
+    #m.SetReal(m.GetVariableObject("eta_PL"), 0.7)
     
     # Show the values of the state variables
     print "The state vector is:",m.GetState()
@@ -102,7 +110,7 @@ def main(days = 1):
     # Take the data series from the CSV file and create modified input time series
     JuneData = np.genfromtxt(inputPath, delimiter=",", skip_header=1)
     
-    time = JuneData[:,0]
+    time = pd.to_datetime(JuneData[:,0], unit="s")
     OAT = JuneData[:,14]
     
     ON = JuneData[:,13]
@@ -116,7 +124,9 @@ def main(days = 1):
     
     ####################################################################################
     # Simulate
-    time, results = m.Simulate(final_time = 3600*24*days, time = time, Input = input_data, complete_res = True)
+    t0 = pd.to_datetime(0.0, unit = "s")
+    t1 = pd.to_datetime(3600.0*24*days, unit = "s")
+    time, results = m.Simulate(start_time = t0, final_time = t1, time = time, Input = input_data, complete_res = True)
     
     return (time, results)
     
@@ -124,8 +134,6 @@ def showResults(time, results):
     """
     This function shows the results of the simulation
     """
-    
-    time = time/3600/24
     
     fig1 = plt.figure()
     ax1  = fig1.add_subplot(211)
@@ -163,7 +171,7 @@ def showResults(time, results):
     ax3.grid(False)
     
     ax4  = fig2.add_subplot(312)
-    ax4.plot(time,results["chi.COP"],'k',label='$COP$',alpha=1.0)
+    ax4.plot(time,results["chi.ext_COP"],'k',label='$COP$',alpha=1.0)
     ax4.plot(time,results["chi.COPCar"],'r',label='$COP_{CAR}$',alpha=1.0)
     ax4.plot([time[0], time[-1]], [results["chi.COP_nominal"], results["chi.COP_nominal"]],'k--',label='$COP_{n}$',alpha=1.0)
     ax4.set_xlabel('Time [s]')
