@@ -786,7 +786,7 @@ class ukfFMU():
 			z = measuredOuts[i,1:]
 			
 			# execute a filtering step
-			X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1], sqrtP[i-1], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
+			X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1-ix_start], sqrtP[i-1-ix_start], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
 			
 			x.append(X_corr)
 			sqrtP.append(sP)
