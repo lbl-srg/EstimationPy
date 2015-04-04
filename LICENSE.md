@@ -1,0 +1,1 @@
+License file for software EstimationPy

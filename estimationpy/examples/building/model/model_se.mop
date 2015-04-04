@@ -1,0 +1,40 @@
+package SE
+
+import FB = FastBuildings;
+
+model Sim "Basically, this only instantiates a building, modifies
+  it and passes inputs"
+    
+    inner FB.Input.SIM_Inputs simFasBui;
+    FB.Experimental.KK bui(
+		redeclare FB.Experimental.HVAC_KK_TZon hva(
+			redeclare FB.Experimental.HP_AW_QSet_COP_full hp1,
+			redeclare FB.Experimental.HP_AW_QSet_COP_full hp2,
+			redeclare FB.Experimental.GB_QSet_Eta_full gb),
+        redeclare FB.Zones.ZonInt_A zon,
+		use(fraPowEle=1.0));
+	
+    input Real TAmb = simFasBui.TAmb;
+    input Real powEle = simFasBui.powEle;
+	input Real QCon = simFasBui.qHeaCoo;
+    input Real prfOcc = bui.use.prfOcc;
+    input Real prfVen = bui.ven.prfVen;
+    input Real Q_GB = bui.hva.gb.QSet;
+    input Real Q_HP1 = bui.hva.hp1.QSet;
+    input Real Q_HP2 = bui.hva.hp2.QSet;
+    
+    input Real I_GloHor_sat = simFasBui.irr[1];
+	
+	// Measured outputs, needed by the UKF algorithm
+	output Real TZon = bui.zon.TZon "Temperature of the zone";
+	output Real T_emi_sup = bui.hva.capHea.heaPor.T "Temperature of the heating system";
+	
+	// Unmeasured outputs, needed to display the results
+	output Real T_tec_roo = bui.hva.capTecRoo.heaPor.T "Temperature of the technical room";
+	output Real T_int_mas = bui.hva.capTecRoo.heaPor.T "Temperature  of the internal mass";
+	
+  equation
+    simFasBui.TSet = 0;
+end Sim;
+
+end SE;
