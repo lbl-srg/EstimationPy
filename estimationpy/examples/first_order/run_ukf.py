@@ -21,16 +21,16 @@ def main():
     # Define the path of the FMU file
     if platform.architecture()[0]=="32bit":
         print "32-bit architecture"
-        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder.fmu")
+        filePath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder.fmu")
     else:
         print "64-bit architecture"
-        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_64bit.fmu")
+        filePath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_64bit.fmu")
         
     # Initialize the FMU model empty
     m = Model(filePath)
     
     # Path of the csv file containing the data series
-    csvPath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "data", "NoisySimulationData_FirstOrder.csv")
+    csvPath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "NoisySimulationData_FirstOrder.csv")
     
     # Set the CSV file associated to the input, and its covariance
     input_u = m.get_input_by_name("u")

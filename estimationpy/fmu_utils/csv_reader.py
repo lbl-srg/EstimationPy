@@ -8,7 +8,7 @@ import csv
 import numpy
 import pandas as pd
 
-import Strings
+from estimationpy.fmu_utils import strings
 
 class CsvReader():
     """

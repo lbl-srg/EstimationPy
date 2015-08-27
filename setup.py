@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
     README = readme.read()
@@ -10,11 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 setup(
     name = 'estimationpy',
     version = '0.1.0',
-    packages = ['estimationpy', 
-                'estimationpy.tests',
-                'estimationpy.ukf',
-                'estimationpy.fmu_utils',
-                'estimationpy.examples'],
+    packages = find_packages(),
     include_package_data = True,
     license = 'BSD License',
     description = 'A python package for state and parameter estimation \
@@ -32,6 +28,7 @@ compliant with the Functional Mockup Interface standard',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Topic :: Scientific/Engineering',
-    ]
+        'Topic :: Scientific/Engineering :: Mathematics',
+    ],
+    test_suite = 'estimationpy.tests',
 )

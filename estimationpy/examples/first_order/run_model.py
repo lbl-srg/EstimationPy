@@ -20,10 +20,10 @@ def main():
     # Define the path of the FMU file
     if platform.architecture()[0]=="32bit":
         print "32-bit architecture"
-        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder.fmu")
+        filePath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder.fmu")
     else:
         print "64-bit architecture"
-        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_64bit.fmu")
+        filePath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_64bit.fmu")
     
     # ReInit the model with the new FMU
     m.re_init(filePath)
@@ -38,7 +38,7 @@ def main():
     print "The names of the FMU outputs are:", m.get_output_names(), "\n"
     
     # Set the CSV file associated to the input
-    inputPath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
+    inputPath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
     input_u = m.get_input_by_name("u")
     input_u.get_csv_reader().open_csv(inputPath)
     input_u.get_csv_reader().set_selected_column("system.u")
