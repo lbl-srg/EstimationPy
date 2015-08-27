@@ -1,10 +1,6 @@
-all: clean add
+all: clean
 
 clean:
 	find . -iname "*.pyc" -delete
 	find . -iname "*~" -delete
-
-add:
-	find . -iname "*.py" -exec git add '{}' \;
-	
 
