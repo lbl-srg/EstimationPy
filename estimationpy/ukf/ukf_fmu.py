@@ -425,7 +425,7 @@ class UkfFmu():
 		
 		P[i,j] = W_c[i]*(Xs[i] - Xavg)^2 + Q[i,j]
 		
-		The vectors X_ contain the all the states (observed and not) and the estimated parameters.
+		The vectors X_p contain the all the states (observed and not) and the estimated parameters.
 		The non observed states should be removed, and then computing P which has size of (n_state_obs + n_pars).
 		Note that Q has size n_state_obs, thus it has to be expanded with zero elements when added.
 		
