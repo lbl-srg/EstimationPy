@@ -99,7 +99,7 @@ class Model():
         # See what can be done in catching the exception/propagating it
         if fmuFile != None:
             self.__set_fmu__(fmuFile, result_handler, solver, atol, rtol, verbose)
-            if setTrees:
+            if set_trees:
                 self.__set_trees__()
     
     def add_parameter(self, obj):
@@ -1089,7 +1089,7 @@ class Model():
         
         return LoadedOutputs
     
-    def re_init(self, fmuFile, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, setTrees = False, verbose=None):
+    def re_init(self, fmuFile, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, set_trees = False, verbose=None):
         """
         This function reinitializes the FMU associated to the model
         """
@@ -1097,7 +1097,7 @@ class Model():
         print "Reinitialized model with: ",fmuFile
         if self.fmu != None:
             self.fmu = None
-        self.__init__(fmuFile, result_handler, solver, atol, rtol, setTrees, verbose)
+        self.__init__(fmuFile, result_handler, solver, atol, rtol, set_trees, verbose)
     
     def remove_parameter(self, obj):
         """
