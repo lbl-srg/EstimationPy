@@ -88,6 +88,37 @@ class EstimationVariable(object):
         self.constraintLow = True
         self.constraintHigh = True
     
+    def modify_initial_value_in_fmu(self, fmu):
+        """
+        This method takes as argument an instance of type **FmuModel**
+        and sets the initial value of the variable represented
+        by this class to its initial value.
+        The method returns True if the value has been set corectly, False
+        otherwise.
+        
+        :param FmuModel fmu: an object representing an FMU model in PyFMI.
+        
+        :return: The outcome of the set operation, either True or False.
+        
+        :rtype: bool
+        
+        """
+        type = self.type
+        if type == pyfmi.fmi.FMI_REAL:
+            fmu.set_real(self.value_reference, self.initValue)
+        elif type == pyfmi.fmi.FMI_INTEGER:
+            fmu.set_integer(self.value_reference, self.initValue)
+        elif type == pyfmi.fmi.FMI_BOOLEAN:
+            fmu.set_boolean(self.value_reference, self.initValue)
+        elif type == pyfmi.fmi.FMI_ENUMERATION:
+            fmu.set_int(self.value_reference, self.initValue)
+        elif type == pyfmi.fmi.FMI_STRING:
+            fmu.set_string(self.value_reference, self.initValue)
+        else:
+            print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
+            return False
+        return True
+    
     def read_value_in_fmu(self, fmu):
         """
         This method reads the value of a variable/parameter 
