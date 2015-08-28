@@ -12,12 +12,26 @@ import pyfmi
 
 class InOutVar():
     """
-    This class either represent an input or output variable.
-    Both are variable with associated a data series contained in a .csv file
-    This is a wrapper around the pyfmi.fmi.ScalarVariable class.
+    This class represents a generic input or output variable of a
+    dynamic system.
+    In case of state and parameter estimation both input and outputs 
+    of a system have the characteristic of having measurements associated
+    to them. These measurements, together with other informations that can
+    quantify their unsertanty, are used by the estimation algorithm.
     
-    for i in range(len(df.index[:])):
-        print (df.index[i] - df.index[0]).total_seconds()
+    This class can be seen as a wrapper around the class **pyfmi.fmi.ScalarVariable**
+    with the addition of an object that represent a measurement time series.
+    The time series can be directly defined as a pandas.Series object or with the
+    convenience class :class:`estimationpy.fmu_utils.csv_reader.CsvReader`.
+    
+    **Note**
+    
+        When dealing with real systems not all the output measurements can be measured.
+        For example a translational mechanic system can have as outputs the position of a mass, 
+        it velocity, and its acceleration. However, in a real application one may only have 
+        access to one of these measurements.
+        The class uses a boolean flag to define whether an output is actually being measured and
+        thus can be used by a state estimation algorithm.
     
     """
     
