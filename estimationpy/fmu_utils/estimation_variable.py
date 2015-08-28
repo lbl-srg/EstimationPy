@@ -1,31 +1,72 @@
 '''
-Created on Nov 11, 2013
-
-@author: marco
+@author: Marco Bonvini
 '''
 import numpy
 import pyfmi
 
-class EstimationVariable():
+class EstimationVariable(object):
     '''
-    classdocs
+    This class represents a variable that is part of an estimation
+    problem, and it can be either a state variable or a parameter.
+    
+    An in stance of class :class:`EstimationVariable` has multiple
+    attributes and properties that are used during the estimation process.
+    The most relevant attributes are
+    
+    * ``minValue`` is the minimum value a variable can assume and is
+      specified in the model description file of the FMU. For example for a
+      temperature measured in Kelvin, the ``minValue`` is 0.0.
+      
+    * ``maxValue`` is the minimum value a variable can assume and is
+      specified in the model description file of the FMU. For example for a
+      real number that represents a percentage the ``maxValue`` can be either
+      1.0 or 100.0.
+      
+    * ``cov`` is the covariance :math:`\sigma^2` associated to the variable or
+      parameter estimated.
+      
+    * ``initValue`` is the initial value used at the beginning of the estimation
+      algorithm.
+      
+    * ``constraintLow`` is the lower limit the variable can assume during the estimation
+      algorithm. This value is usualy set to impose ad-hoc boundaries to the estimation
+      algorithm that may be physically not possible or reasonable.
+    
+    * ``constraintHigh`` is the upper limit the variable can assume during the estimation
+      algorithm. This value is usualy set to impose ad-hoc boundaries to the estimation
+      algorithm that may be physically not possible or reasonable.
+    
     '''
 
-    def __init__(self, object, fmu):
+    def __init__(self, fmi_var, fmu):
         '''
-        Constructor
+        Constructor of the class. This method takes as arguments
+        an **FmiVariable** object and an **FmuModel** object and instantiates
+        an :class:`EstimationVariable` object.
+        
+        :param FmiVariable fmi_var: an object representing a variable of an FMU model
+          in PyFMI.
+        :param FmuModel fmu: an object representing an FMU model in PyFMI.
+        
+        :raise TypeError: the method raises a ``TypeError`` if the start value of the
+          variable is either missing or equal to ``None``.
+        
+        @todo: verify if ``value[0]`` can be different from the ``start`` value in a ``FmiVariable``.
+        
         '''
-        self.object = object
-        self.alias = object.alias
-        self.causality = object.causality
-        self.description = object.description
-        self.name = object.name
-        self.type = object.type
-        self.value_reference = object.value_reference
-        self.variability = object.variability
+        
+        # Save data relative to the FMI variable
+        self.fmi_var = fmi_var
+        self.alias = fmi_var.alias
+        self.causality = fmi_var.causality
+        self.description = fmi_var.description
+        self.name = fmi_var.name
+        self.type = fmi_var.type
+        self.value_reference = fmi_var.value_reference
+        self.variability = fmi_var.variability
         
         # Take the start, min and max value of this variable
-        type, value, start, min, max = fmu.get_variable_info_numeric(object)
+        type, value, start, min, max = fmu.get_variable_info_numeric(fmi_var)
         
         # TODO: it can be either value[0] or start. Not yet sure about the difference...
         try:
@@ -38,37 +79,28 @@ class EstimationVariable():
                 self.initValue = start
         except TypeError:
             print "Missing start value (equal to None)"
-            self.initValue = start       
+            self.initValue = start
+        
+        # Set the attributes of the object
         self.minValue = min
         self.maxValue = max
         self.cov = 1.0
         self.constraintLow = True
         self.constraintHigh = True
     
-    def modify_initial_value_in_fmu(self, fmu):
-        """
-        Given an FMU model, this method sets the value of the variable/parameter to
-        the one indicated by the initialValue
-        """
-        type = self.type
-        if type == pyfmi.fmi.FMI_REAL:
-            fmu.set_real(self.value_reference, self.initValue)
-        elif type == pyfmi.fmi.FMI_INTEGER:
-            fmu.set_integer(self.value_reference, self.initValue)
-        elif type == pyfmi.fmi.FMI_BOOLEAN:
-            fmu.set_boolean(self.value_reference, self.initValue)
-        elif type == pyfmi.fmi.FMI_ENUMERATION:
-            fmu.set_int(self.value_reference, self.initValue)
-        elif type == pyfmi.fmi.FMI_STRING:
-            fmu.set_string(self.value_reference, self.initValue)
-        else:
-            print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
-            return False
-        return True
-    
     def read_value_in_fmu(self, fmu):
         """
-        Given an FMU model, this method reads the value of the variable/parameter
+        This method reads the value of a variable/parameter 
+        assumes in a specific FMU object.
+        
+        :param FMuModel fmu: an object representing an FMU model in PyFMI.
+        
+        :return: The value of the variable represented by an instance of this class.
+          The method returns `None` is the type of the variable is not recognized as one
+          of the available ones (Real, Integer, Boolean, Enumeration, String).
+        
+        :rtype: float, None
+        
         """
         type = self.type
         if type == pyfmi.fmi.FMI_REAL:
@@ -88,7 +120,14 @@ class EstimationVariable():
     
     def info(self):
         """
-        Method that return a string representation of the estimation variable
+        This method return a string that contains a formatted
+        representation of the **EstimationVariable** object.
+        
+        :return: String rerpesentation of the variable being estimated
+          and its attributes.
+        
+        :rtype: string
+        
         """
         description = "\nName: "+str(self.name)
         description += "\nV_REF: "+str(self.value_reference)
@@ -110,13 +149,42 @@ class EstimationVariable():
     
     def set_initial_value(self, value):
         """
-        This method sets the initial value of the estimation variable
+        This method sets the initial value associated to
+        an instance of the class :class:`EstimationVariable` that is used
+        by the state and parameter estimation algorithm.
+        
+        :param float value: The value to be used as initial value in the estimation
+          algorithm.
+          
         """
         self.initValue = value
+    
+    def get_initial_value(self):
+        """
+        This method returns a **numpy.array** containing the initial value of
+        the **EstimationVariable** object.
         
+        :return: a 1-dimensional numpy array of length equal to 1 containing the
+          initial value of the **EstimationVariable**.
+          
+        :rtype: numpy.Array
+        
+        """
+        return numpy.array(self.initValue)
+    
     def set_covariance(self, cov):
         """
-        This method sets the covariance associated to the estimation variable
+        This method sets the covariance associated to
+        an instance of the class :class:`EstimationVariable` that is used
+        by the state and parameter estimation algorithm.
+        
+        :param float cov: The value to be used as initial value in the estimation
+            algorithm. The value must be positive.
+        
+        :return: True if the value has been set corectly, False otherwise.
+        
+        :rtype: bool
+        
         """
         if cov > 0.0:
             self.cov = cov
@@ -128,33 +196,82 @@ class EstimationVariable():
         
     def get_covariance(self):
         """
-        This method returns the covariance of the variable
+        This method returns the covariance of the **EstimationVariable** object.
+        
+        :return: the covariance of the variable.
+        :rtype: float
+        
         """
         return self.cov
     
     def set_min_value(self, value):
+        """
+        This method sets the minimum value for the **EstimationVariable** object.
+        
+        :param float value: The minimum value for the variable.
+        """
         self.minValue = value
     
     def set_max_value(self, value):
+        """
+        This method sets the maximum value for the **EstimationVariable** object.
+        
+        :param float value: The maximum value for the variable.
+        """
         self.maxValue = value
         
-    def set_constraint_high(self, setConstr):
-        self.constraintHigh = setConstr
+    def set_constraint_high(self, value):
+        """
+        This method sets the upper bound constraint for the **EstimationVariable** object.
+        
+        :param float value: The upper bound constraint value for the variable.
+        """
+        self.constraintHigh = value
     
-    def set_constraint_low(self, setConstr):
-        self.constraintLow = setConstr
-    
-    def get_initial_value(self):
-        return numpy.array(self.initValue)
+    def set_constraint_low(self, value):
+        """
+        This method sets the upper bound constraint for the **EstimationVariable** object.
+        
+        :param float value: The upper bound constraint value for the variable.
+        """
+        self.constraintLow = value
     
     def get_min_value(self):
+        """
+        This method returns the minimum value of the **EstimationVariable** object.
+        
+        :return: the minimum value of the variable.
+        :rtype: float
+        
+        """
         return self.minValue
     
     def get_max_value(self):
+        """
+        This method returns the maximum value of the **EstimationVariable** object.
+        
+        :return: the maximum value of the variable.
+        :rtype: float
+        
+        """
         return self.maxValue
     
     def get_constraint_high(self):
+        """
+        This method returns the upper bound constraint value of the **EstimationVariable** object.
+        
+        :return: the upper bound constraint of the variable.
+        :rtype: float
+        
+        """
         return self.constraintHigh
     
     def get_constraint_low(self):
+        """
+        This method returns the lower bound constraint value of the **EstimationVariable** object.
+        
+        :return: the lower bound constraint of the variable.
+        :rtype: float
+        
+        """
         return self.constraintLow

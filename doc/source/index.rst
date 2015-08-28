@@ -26,7 +26,7 @@ of the models.
   :maxdepth: 2
 	     
   installation
-  modules/utilities
+  modules/fmu_utils
   modules/ukf
   modules/examples
   faq
