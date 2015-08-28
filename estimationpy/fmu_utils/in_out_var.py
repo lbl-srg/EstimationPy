@@ -7,7 +7,7 @@ import numpy
 import pandas as pd
 
 from estimationpy.fmu_utils.csv_reader import CsvReader
-import Strings
+from estimationpy.fmu_utils import strings
 import pyfmi
 
 class InOutVar():

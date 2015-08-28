@@ -1,7 +1,5 @@
 '''
-Created on Sep 6, 2013
-
-@author: marco
+@author: Marco Bonvini
 '''
 
 import csv
@@ -13,33 +11,42 @@ from estimationpy.fmu_utils import strings
 class CsvReader():
     """
     
-    This class provides the functionalities necessary to open and manage a csv file.
-    This class is used because the input and output data series to be provided at the FMU are contained into
-    csv files.
+    This class provides functionalities that can be used to provide input to an
+    FMU model or to a state/parameter estimation algorithm through CSV files.
     
-    The csv files should be like
+    An object of class :class:`CsvReader` manages CSV file that have the
+    following format::
     
-    time, x, y, zeta, kappa hat, T [k]
-    0.0, 3.4, 23.0, 22, 5, 77.5
-    0.1, 3.4, 23.0, 22, 5, 77.3
-    0.2, 3.4, 23.0, 22, 5, 76.8
-    0.3, 3.4, 23.0, 22, 5, 34.4
-    0.4, 3.4, 23.0, 22, 5, 72.22
-    0.5, 3.4, 23.0, 22, 5, 71.9
-    0.6, 3.4, 23.0, 22, 5, 70.9
+        time, x, y, zeta, kappa hat, T [k]
+        0.0, 3.4, 23.0, 22, 5, 77.5
+        0.1, 3.4, 23.0, 22, 5, 77.3
+        0.2, 3.4, 23.0, 22, 5, 76.8
+        0.3, 3.4, 23.0, 22, 5, 34.4
+        0.4, 3.4, 23.0, 22, 5, 72.22
+        0.5, 3.4, 23.0, 22, 5, 71.9
+        0.6, 3.4, 23.0, 22, 5, 70.9
     
-    The first row IS ALWAYS the header of the file and contains a brief description of the columns.
-    The other rows contain the data separated by commas.
+    The first row is mandatory and is the header of the corresponding table created
+    when importing the CSV file. The remaining rows contain data that are separated by
+    commas.
     
-    The first column HAS to be the time associated to the data series.
-    This column will be used as index for the associated pandas data series. Since the first column is used
-    as index its name will not appear between the column names.
+    The first column is time associated to the data series.
+    This column will be used as index to create a pandas DataFrame.
+    Since the first column is used as index, its name won't be available among
+    the column names associated tot the DataFrame.
     
     """
     
     def __init__(self, filename = ""):
         """
-        Initialization method of the CsvReader class
+        Constructor for the class :class:`CsvReader`.
+        The method initializes the type of dialect used to interpet the CSV file,
+        the list containing the names of the columns, and which columns
+        are selected.
+        
+        :param str filename: The path that defines the CSV file to open.
+           The argument is optinal because it can be specified later.
+        
         """
         
         # The default dialect is e
@@ -56,9 +63,11 @@ class CsvReader():
     
     def __str__(self):
         """
+        This method returns a string representation of the
+        instance.
         
-        This method returns a string that describe the CSV reader object
-        
+        :return: a String representation of the instance.
+        :rtype: string
         """
         string = "CsvReader Object"
         string += "\n-File: "+str(self.filename)
@@ -70,8 +79,21 @@ class CsvReader():
     
     def __open_csv__(self, csv_file):
         """
-        This method is used to open a csv file and create a corresponding pandas
-        data frame
+        This private method is used to open a CSV file given a path name specified by the
+        parameter ``csv_file``.
+        The method uses the function ``pandas.io.parsers.read_csv`` to open
+        the file.
+        
+        :param str filename: The path that defines the CSV file to open.
+        
+        :return: The DataFrame object containing the data of the CSV file.
+        :rtype: pandas.DataFrame
+        
+        :raises IOError: The method raises an ``IOErrror`` if the file specified by the argument
+            ``csv_file`` does not exist.
+            
+        :raises ValueError: The method raises an ``ValueError`` if the file specified by the argument
+            ``csv_file`` can't be succesfully indexed.
         """
         # Open the file passed as parameter.
         # Read the csv file and instantiate the data frame
@@ -101,11 +123,23 @@ class CsvReader():
             print e
             return pd.DataFrame()
      
-    def open_csv(self, filename = ""):
+    def open_csv(self, filename):
         """
+        This method open a CSV file given a path name specified by the
+        parameter ``filename``.
+        The method uses the underlying method :func:`__open_csv__` to open
+        the file.
         
-        Open a CSV file
+        :param str filename: The path that defines the CSV file to open.
         
+        :return: True is the CSV is loaded and is not empty, False otherwise.
+        :rtype: bool
+        
+        :raises IOError: The method raises an ``IOErrror`` if the file specified by the argument
+            ``csv_file`` does not exist.
+        
+        :raises ValueError: The method raises an ``ValueError`` if the file specified by the argument
+            ``csv_file`` can't be succesfully indexed.
         """
         # Reinitialize all
         self.__init__(filename)
@@ -130,19 +164,34 @@ class CsvReader():
     
     def get_file_name(self):
         """
-        This method returns the filename of the CSV file associated
+        This method returns the filename of the CSV file associated to this object.
+        
+        :return: a String representing the path of the CSV file.
+        :rtype: string
         """
         return self.filename
         
     def get_column_names(self):
         """
-        This method returns a list containing the names of the columns contained in the csv file
+        This method returns a list containing the names of the columns contained in the csv file.
+        
+        :return: a List containing the names of the columns in the CSV file.
+        :rtype: list(str)
+        
         """
         return self.columnNames
     
     def set_selected_column(self, columnName):
         """
-        This method allows to specify which is the column to be selected
+        This method allows to specify which of the columns in the CSV file is selected.
+        Once a column is selecetd, it's possible to get the corresponding ``pandas.Series``
+        with the method :func:`get_data_series` .
+        
+        :param str columnName: The name of the column to be selected.
+        
+        :return: True if the name is successfully selected, False otherwise (e.g., if
+            the name is not present in the available column names).
+        :rtype: bool
         """
         if columnName in self.get_column_names():
             self.columnSelected = columnName
@@ -153,7 +202,12 @@ class CsvReader():
             
     def get_selected_column(self):
         """
-        This method returns the column selected for this CSV reader
+        This method returns the name of the column selected.
+        
+        :return: Name of the column selected. If no columns are selected the
+          method returns an empty string.
+        :rtype: string
+        
         """
         if self.columnSelected != None:
             return self.columnSelected
@@ -162,7 +216,9 @@ class CsvReader():
             
     def print_dialect_information(self):
         """
-        This method print the information about the dialect used by the Csv Reader
+        This method print the information about the dialect used by the Csv Reader.
+        
+        :return: None
         """
         print "CsvReader Dialect informations:"
         print "* Delimiter: "+str(self.dialect.delimiter)
@@ -174,9 +230,20 @@ class CsvReader():
         
     def get_data_series(self):
         """
-        Once the csv file and its column have been selected, it is possible to read the data from the csv
-        file and return them. Please remember that the first column of the csv file HAS to be the time.
-        This method returns a pandas data series associated to the selected column.
+        This method returns a pandas Series object that contains the data 
+        read from the CSV file at the column selected with the method :func:`set_selected_column`.
+        
+        Before calling this method make sure:
+        
+        1. the path of the CSV file has been specified,
+        2. the name of the column to selected has been specified.
+        
+        :return: A Series object representing the time series data contained in the selected column.
+            In case the file is not specified, or the column is not specified, the method
+            returns an empty Series.
+            
+        :rtype: pandas.Series
+        
         """
         # initialize with empty pandas data series
         dataSeries = pd.Series()
