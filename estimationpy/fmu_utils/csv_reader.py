@@ -35,6 +35,10 @@ class CsvReader():
     Since the first column is used as index, its name won't be available among
     the column names associated tot the DataFrame.
     
+    **NOTE:**
+        The method assumes the first column of the CSV file is time, measured in seconds,
+        and UTC referenced.
+    
     """
     
     def __init__(self, filename = ""):
@@ -84,6 +88,10 @@ class CsvReader():
         The method uses the function ``pandas.io.parsers.read_csv`` to open
         the file.
         
+        **NOTE:**
+            The method assumes the first column of the CSV file is time, measured in seconds,
+            and UTC referenced.
+        
         :param str filename: The path that defines the CSV file to open.
         
         :return: The DataFrame object containing the data of the CSV file.
@@ -106,7 +114,7 @@ class CsvReader():
             
             # convert the index to a datetime object, assuming the values have been specified
             # using the SI unit for time [s]
-            df.index = pd.to_datetime(df.index, unit="s")
+            df.index = pd.to_datetime(df.index, unit="s", utc=True)
             
             # Sort values with respect to the index
             df.sort(inplace = True)
@@ -129,6 +137,10 @@ class CsvReader():
         parameter ``filename``.
         The method uses the underlying method :func:`__open_csv__` to open
         the file.
+        
+        **NOTE:**
+            The method assumes the first column of the CSV file is time, measured in seconds,
+            and UTC referenced.
         
         :param str filename: The path that defines the CSV file to open.
         

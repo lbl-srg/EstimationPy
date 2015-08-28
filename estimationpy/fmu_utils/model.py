@@ -1493,8 +1493,8 @@ class Model():
         # Obtain the results
         # TIME in seconds has to be converted to datetime
         # and it has to maintain the same offset specified by the input time series in t[0]
-        offset = time[0] - pd.to_datetime(res[fmu_util_strings.TIME_STRING][0])
-        t     = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s") + offset
+        offset = time[0] - pd.to_datetime(res[fmu_util_strings.TIME_STRING][0], utc = True)
+        t     = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + offset
         
         # Get the results, either all or just the selected ones
         if complete_res == False:

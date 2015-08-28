@@ -6,6 +6,7 @@ Created on Jul 7, 2014
 import unittest
 import platform
 import os
+import pytz
 import pandas as pd
 import numpy as np
 
@@ -53,7 +54,7 @@ class Test(unittest.TestCase):
         m.re_init(self.filePath)
         
         # Create a pandas.Series for the input u
-        ind = pd.date_range('2000-1-1', periods = 31, freq='s')
+        ind = pd.date_range('2000-1-1', periods = 31, freq='s', tz = pytz.utc)
         ds = pd.Series(np.ones(31), index = ind)
         
         # Set the CSV file associated to the input
@@ -91,8 +92,8 @@ class Test(unittest.TestCase):
             values.append(temp)
     
         # Run simulations in parallel
-        t0 = datetime(2000, 1, 1, 0, 0, 0)
-        t1 = datetime(2000, 1, 1, 0, 0, 30)
+        t0 = datetime(2000, 1, 1, 0, 0, 0, tzinfo = pytz.utc)
+        t1 = datetime(2000, 1, 1, 0, 0, 30, tzinfo = pytz.utc)
         poolResults = pool.run(values, start = t0, stop = t1)
         
         # Verify that the number of results is equal to the number of different initial conditions specified

@@ -20,6 +20,14 @@ EstimationPy strongly relies on `PyFMI <http://www.pyfmi.org/>`_ and
 `Assimulo <http://www.assimulo.org/>`_ for running the simulations
 of the models.
 
+**Timezone info**
+
+The package assumes that ALL the data series and the data imported
+from CSV files use UTC as Timezone. Please make sure that when you
+associate a **pandas.Series** to an input or output it uses
+UTC as timezone. The examples and the unit tests show how this can
+be done.
+
 **Contents**
 
 .. toctree::

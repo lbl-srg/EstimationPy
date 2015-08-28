@@ -118,7 +118,7 @@ class Test(unittest.TestCase):
         
         # Retrieve data and compare to known values
         col_name = self.colNames[0]
-        data = pd.Series(self.u, index = pd.to_datetime(self.t, unit = "s"), name = col_name)
+        data = pd.Series(self.u, index = pd.to_datetime(self.t, unit = "s", utc = True), name = col_name)
         
         # Select the column and retrieve the data 
         self.io_var.get_csv_reader().set_selected_column(col_name)
@@ -145,7 +145,7 @@ class Test(unittest.TestCase):
         self.assertRaises(TypeError, self.io_var.set_data_series, s)
         
         # Convert the index type to pandas.DatetimeIndex
-        s.index = pd.to_datetime(s.index, unit="s")
+        s.index = pd.to_datetime(s.index, unit="s", utc = True)
         # Set the data series
         self.io_var.set_data_series(s)
         
@@ -164,7 +164,7 @@ class Test(unittest.TestCase):
         # Set a pandas.Series that has an integer index
         s = pd.Series(x, index = t)
         # Convert the index type to pandas.DatetimeIndex
-        s.index = pd.to_datetime(s.index, unit="s")
+        s.index = pd.to_datetime(s.index, unit="s", utc = True)
         
         # Set the data series
         self.io_var.set_data_series(s)
@@ -178,7 +178,7 @@ class Test(unittest.TestCase):
         
         for new_t in new_ts:
             # Create a new index 
-            new_ix = pd.to_datetime(new_t, unit="s")
+            new_ix = pd.to_datetime(new_t, unit="s", utc = True)
             
             # Compute value with method and with Numpy
             int_v = self.io_var.read_from_data_series(new_ix)
@@ -190,7 +190,7 @@ class Test(unittest.TestCase):
         # Check that returns False if the index is out of the range
         out_ts = numpy.array([-5.0, 90.1, -0.01])
         for out_t in out_ts:
-            out_ix = pd.to_datetime(out_t, unit="s")    
+            out_ix = pd.to_datetime(out_t, unit="s", utc = True)    
             # Check that returns False
             self.assertFalse(self.io_var.read_from_data_series(out_ix), "The index is out of range and the method ReadFromDataSeries has to return False")
 

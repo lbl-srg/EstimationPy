@@ -74,7 +74,7 @@ class Test(unittest.TestCase):
         
         # Retrieve data and compare to known values
         col_name = self.colNames[0]
-        data = pd.Series(self.u, index = pd.to_datetime(self.t, unit = "s"), name = col_name)
+        data = pd.Series(self.u, index = pd.to_datetime(self.t, unit = "s", utc = True), name = col_name)
                  
         self.r.set_selected_column(col_name)
         self.assertTrue(numpy.allclose(data.values, self.r.get_data_series().values), "The pandas Series get is not equal to %s" % str(data.values))
@@ -82,7 +82,7 @@ class Test(unittest.TestCase):
         
         # Retrieve data and compare to known values
         col_name = self.colNames[1]
-        data = pd.Series(self.x, index = pd.to_datetime(self.t, unit = "s"), name = col_name)
+        data = pd.Series(self.x, index = pd.to_datetime(self.t, unit = "s", utc = True), name = col_name)
                  
         self.r.set_selected_column(col_name)
         self.assertTrue(numpy.allclose(data.values, self.r.get_data_series().values), "The pandas Series get is not equal to %s" % str(data.values))
@@ -90,7 +90,7 @@ class Test(unittest.TestCase):
         
         # Retrieve data and compare to known values
         col_name = self.colNames[2]
-        data = pd.Series(self.y, index = pd.to_datetime(self.t, unit = "s"), name = col_name)
+        data = pd.Series(self.y, index = pd.to_datetime(self.t, unit = "s", utc = True), name = col_name)
                  
         self.r.set_selected_column(col_name)
         self.assertTrue(numpy.allclose(data.values, self.r.get_data_series().values), "The pandas Series get is not equal to %s" % str(data.values))
@@ -114,7 +114,7 @@ class Test(unittest.TestCase):
         # Retrieve data unsorted in the csv. The data should be automatically sorted and then
         # compared to the to known values
         col_name = self.colNames[0]
-        data = pd.Series(self.u_unsorted, index = pd.to_datetime(self.t_unsorted, unit = "s"), name = col_name)
+        data = pd.Series(self.u_unsorted, index = pd.to_datetime(self.t_unsorted, unit = "s", utc = True), name = col_name)
                  
         self.r.set_selected_column(col_name)
         self.assertTrue(numpy.allclose(data.values, self.r.get_data_series().values), "The pandas Series get is not equal to %s" % str(data.values))

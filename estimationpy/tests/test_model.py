@@ -6,6 +6,7 @@ Created on July 3, 2014
 import unittest
 import platform
 import os
+import pytz
 import pandas as pd
 import numpy as np
 
@@ -173,8 +174,8 @@ class Test(unittest.TestCase):
         # values of the parameters a = -1, b = 2.5, c = 3.0, d = 0.1,
         
         # Read the simulation time vector
-        self.assertEqual(pd.to_datetime(0.0, unit = "s"), time[0], "The initial time does not correspond")
-        self.assertEqual(pd.to_datetime(30.0, unit = "s"), time[-1], "The final time does not correspond")
+        self.assertEqual(pd.to_datetime(0.0, unit = "s", utc = True), time[0], "The initial time does not correspond")
+        self.assertEqual(pd.to_datetime(30.0, unit = "s", utc = True), time[-1], "The final time does not correspond")
         
         # Read the results of the simulation
         # x' = -1*x + 2.5*u
@@ -199,7 +200,7 @@ class Test(unittest.TestCase):
         m.re_init(self.filePath)
         
         # Create a pandas.Series for the input u
-        ind = pd.date_range('2000-1-1', periods = 31, freq='s')
+        ind = pd.date_range('2000-1-1', periods = 31, freq='s', tz = pytz.utc)
         ds = pd.Series(np.ones(31), index = ind)
         
         # Set the CSV file associated to the input
@@ -226,8 +227,8 @@ class Test(unittest.TestCase):
         self.assertEqual(0.0, m.get_real(par_d), "Parameter d of the FMU has to be equal to 0.0")
         
         # Simulate using start and final time of type datetime.datetime
-        t0 = datetime(2000, 1, 1, 0, 0, 10)
-        t1 = datetime(2000, 1, 1, 0, 0, 25)
+        t0 = datetime(2000, 1, 1, 0, 0, 10, tzinfo = pytz.utc)
+        t1 = datetime(2000, 1, 1, 0, 0, 25, tzinfo = pytz.utc)
         time, results = m.simulate(start_time = t0, final_time = t1)
         
         # Read the simulation time vector
@@ -261,7 +262,7 @@ class Test(unittest.TestCase):
         m.re_init(self.filePath)
         
         # Create a pandas.Series for the input u
-        ind = pd.date_range('2000-1-1', periods = 31, freq='s')
+        ind = pd.date_range('2000-1-1', periods = 31, freq='s', tz = pytz.utc)
         ds = pd.Series(np.ones(31), index = ind)
         
         # Set the CSV file associated to the input
@@ -272,11 +273,12 @@ class Test(unittest.TestCase):
         self.assertRaises(TypeError, m.initialize_simulator, 0.0)
         self.assertRaises(TypeError, m.initialize_simulator, [0.0])
         self.assertRaises(TypeError, m.initialize_simulator, "2000-1-1 00:00:00")
-        self.assertRaises(IndexError, m.initialize_simulator, datetime(1999, 12, 31, 23, 59, 59))
-        self.assertRaises(IndexError, m.initialize_simulator, datetime(2000, 1, 1, 0, 0, 30, 1000))
+        self.assertRaises(IndexError, m.initialize_simulator, datetime(1999, 12, 31, 23, 59, 59, tzinfo = pytz.utc))
+        self.assertRaises(IndexError, m.initialize_simulator, datetime(2000, 1, 1, 0, 0, 30, 1000, tzinfo = pytz.utc))
         
         # Initialize with a correct value
-        self.assertTrue(m.initialize_simulator(datetime(2000, 1, 1, 0, 0, 0)), "The model has not been correctly initialized")
+        self.assertTrue(m.initialize_simulator(datetime(2000, 1, 1, 0, 0, 0, tzinfo = pytz.utc)), \
+                        "The model has not been correctly initialized")
         
     def test_model_simulate_exceptions(self):
         """
@@ -291,7 +293,7 @@ class Test(unittest.TestCase):
         m.re_init(self.filePath)
         
         # Create a pandas.Series for the input u
-        ind = pd.date_range('2000-1-1', periods = 31, freq='s')
+        ind = pd.date_range('2000-1-1', periods = 31, freq='s', tz=pytz.utc)
         ds = pd.Series(np.ones(31), index = ind)
         
         # Set the CSV file associated to the input
@@ -299,22 +301,24 @@ class Test(unittest.TestCase):
         inp.set_data_series(ds)
         
         # Initialize with a correct value
-        m.initialize_simulator(datetime(2000, 1, 1, 0, 0, 0))
+        m.initialize_simulator(datetime(2000, 1, 1, 0, 0, 0, tzinfo = pytz.utc))
         
         # Try to simulate passing wrong values
         self.assertRaises(TypeError, m.simulate, 0)
         self.assertRaises(TypeError, m.simulate, [0.0])
         self.assertRaises(TypeError, m.simulate, "0.0")
-        self.assertRaises(IndexError, m.simulate, datetime(1999, 12, 31, 23, 59, 59))
-        self.assertRaises(IndexError, m.simulate, datetime(2000, 1, 1, 0, 0, 30, 1000))
+        self.assertRaises(IndexError, m.simulate, datetime(1999, 12, 31, 23, 59, 59, tzinfo = pytz.utc))
+        self.assertRaises(IndexError, m.simulate, datetime(2000, 1, 1, 0, 0, 30, 1000, tzinfo = pytz.utc))
         
         self.assertRaises(TypeError, m.simulate, None, 0)
         self.assertRaises(TypeError, m.simulate, None, [0.0])
         self.assertRaises(TypeError, m.simulate, None, "0.0")
-        self.assertRaises(IndexError, m.simulate, None, datetime(1999, 12, 31, 23, 59, 59))
-        self.assertRaises(IndexError, m.simulate, None, datetime(2000, 1, 1, 0, 0, 30, 1000))
+        self.assertRaises(IndexError, m.simulate, None, datetime(1999, 12, 31, 23, 59, 59, tzinfo = pytz.utc))
+        self.assertRaises(IndexError, m.simulate, None, datetime(2000, 1, 1, 0, 0, 30, 1000, tzinfo = pytz.utc))
         
-        self.assertRaises(IndexError, m.simulate, datetime(2000, 1, 1, 0, 0, 10), datetime(2000, 1, 1, 0, 0, 5))
+        self.assertRaises(IndexError, m.simulate, \
+                          datetime(2000, 1, 1, 0, 0, 10, tzinfo = pytz.utc), \
+                          datetime(2000, 1, 1, 0, 0, 5, tzinfo = pytz.utc))
     
     def test_model_not_aligned_inputs(self):
         """
