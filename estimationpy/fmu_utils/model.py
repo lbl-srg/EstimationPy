@@ -17,31 +17,42 @@ import estimationpy.fmu_utils.strings as fmu_util_strings
 
 class Model():
     """
+    The class :class:`Model` represents an extension of an FMU model.
+    The FMU model is meant to be used for simulation purposes only.
+    An object of type **Model** groups multiple information that make
+    it useful for a state or parameter estimation algorithm.
     
-    This class contains a reference to a particular FMU that has been loaded into the tool.
-    For this FMU, several information are collected together. These information describe what to do with the FMU in 
-    the future steps.
+    The **Model** contains a reference to the particular FMU that is being 
+    loaded and will be used to perform simulation, but also contains
+    other information such as
+
+    * the parameters of the models to estimate,
+    * the state variables of the model to estimate,
+    * the inputs and output variables as well the data associated to them.
     
-    A list of:
-    
-    - parameters,
-    - and state variables
-    
-    that will be estimated/identified.
-    
-    A list of:
-    
-    - inputs data series,
-    - and output data series
-    
-    that will be used for simulating the FMU and comparing results.
+    The parameters and state variables to be stimated will be represented
+    by objects of type :class:`estimationpy.fmu_utils.estimation_variable.EstimationVariable`,
+    the input and output variables are represented by objects of type
+    :class:`estimationpy.fmu_utils.in_out_var.InOutVar`.
     
     """
     
-    def __init__(self, fmuFile = None, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, setTrees = False, verbose = None):
+    def __init__(self, fmuFile = None, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, set_trees = False, verbose = None):
         """
         
-        Constructor of the class Model.
+        Constructor method that initializes an object of type **Model** that can be used for simulation
+        purposes or within an estimation algorithm.
+        
+        :param string fmuFile: String representing the path of an FMU model.
+        :param string result_handler: String that specifies how pyfmi should handle the results of 
+          the simulations of the FMU model. See :module:`estimationpy.fmu_utils.strings` for available options.
+        :param string solver: String that specifies the solver used by pyfmi to simulate 
+          the FMU model. See :module:`estimationpy.fmu_utils.strings` for available options.
+        :param float atol: Absolute tolerance used by the solver when simulating the FMU model.
+        :param float rtol: relative tolerance used by the solver when simulating the FMU model.
+        :param bool set_trees: Boolean flag that indicates whether building the trees representing
+          the structure of the variables/parameters of the model.
+        :param string verbose: level of verbosity required when log messagess are generated. 
         
         """
         
@@ -61,7 +72,7 @@ class Model():
         self.name = ""
         self.author = ""
         self.description = ""
-        self.type = ""
+        self.fmu_type = ""
         self.version = ""
         self.guid = ""
         self.tool = ""
@@ -93,8 +104,19 @@ class Model():
     
     def add_parameter(self, obj):
         """
-        This method add one object to the list of parameters. This list contains only the parameters that 
-        will be modified during the further analysis
+        This method adds one object to the list of parameters to estimate.
+        This list contains only the parameters that will be modified by further
+        algorithms that make use of objects of type **Model**.
+        
+        :param FmiVariable obj: an object representing a variable of the FMU in PyFMI.
+          This object, if not already present, is used to instantiate a new object
+          of type :class:`estimationpy.fmu_utils.estimation_variable.EstimationVariable`.
+
+        :return: a boolean flag that indicates success. True if added, False if, e.g.,
+          the parameter was already present.
+
+        :rtype: bool
+
         """
         if self.is_parameter_present(obj):
             print "Parameter: ", obj, " not added, already present"
@@ -103,14 +125,25 @@ class Model():
             # the object is not yet part of the list, add it            
             par = EstimationVariable(obj, self)
             self.parameters.append(par)
-            print "Added variable: ",obj," (",par,")"
+            print "Added parameter: ",obj," (",par,")"
             
             return True
     
     def add_variable(self, obj):
         """
-        This method add one object to the list of variables. This list contains only the variables that 
-        will be modified during the further analysis
+        This method adds one object to the list of state variables to estimate.
+        This list contains only the states that will be modified by further
+        algorithms that make use of objects of type **Model**.
+        
+        :param FmiVariable obj: an object representing a variable of the FMU in PyFMI.
+          This object, if not already present, is used to instantiate a new object
+          of type :class:`estimationpy.fmu_utils.estimation_variable.EstimationVariable`.
+
+        :return: a boolean flag that indicates success. True if added, False if, e.g.,
+          the variable was already present.
+
+        :rtype: bool
+
         """
         if self.is_variable_present(obj):
             print "Variable: ", obj, " not added, already present"
@@ -125,18 +158,35 @@ class Model():
     
     def check_input_data(self, align = True):
         """
-        This method check if all the input data are ready to be used or not. If not because they are not aligned, this method
-        tries to correct them providing an interpolation
+        This method checks if all the data series associated to the inputs
+        variables of this model are ready to be used or not.
+        In case they're not ready because they are not aligned, this method
+        tries to correct them providing an interpolation.
+        
+        See :func:`check_data_list` for more info.
+        
+        :param bool align: boolean paramater that indicate whether this method should try to 
+          align the input data series in case they aren't.
+
+        :return: True if the data is ready, False otherwise.
+
+        :rtype: bool
+
         """
         return self.check_data_list(self.inputs, align)
     
     def check_data_list(self, dataList, align = True):
         """
         This method check if all the data series provided by the dataList are ready to be used or not.
-        If not because they are not aligned, this method tries to correct them providing an interpolation
-        """
-        # TODO: Done
+        If not because they are not aligned, this method tries to correct them providing an interpolation.
         
+        :param List(InOutVar) dataList: a list that contains object of type :class:`InOutVar`.
+        :param bool align: boolean parameter that specifies whether the method should simply check is the
+          the data is correctly aligned or correct them in case they're not aligned.
+        :return: a boolean flag that indicates if the data is valid or not.
+        :rtype: bool
+        """
+                
         # Create a list of data series, one for each input
         dataSeries = []
         for inp in dataList:
@@ -188,8 +238,12 @@ class Model():
 
     def get_constr_obs_states_high(self):
         """
-        This method returns an array of boolean flags that indicate if an observed state variable is either
-        constrained or not
+        This method returns a **numpy.array** that contains the upper boundary of the constraints
+        over the observed state variables.
+        
+        :return: **numpy.array** containing the upper bounds of the constraints for the state variables.
+        :rtype: numpy.array
+
         """
         constrHi = numpy.empty(self.get_num_variables())
         i = 0
@@ -200,8 +254,12 @@ class Model():
     
     def get_constr_obs_states_low(self):
         """
-        This method returns an array of boolean flags that indicate if an observed state variable is either
-        constrained or not
+        This method returns a **numpy.array** that contains the lower boundary of the constraints
+        over the observed state variables.
+        
+        :return: **numpy.array** containing the lower bounds of the constraints for the state variables.
+        :rtype: numpy.array
+
         """
         constrLow = numpy.empty(self.get_num_variables())
         i = 0
@@ -212,8 +270,12 @@ class Model():
     
     def get_constr_pars_high(self):
         """
-        This method returns an array of boolean flags that indicate if an estimated parameter is either
-        constrained or not
+        This method returns a **numpy.array** that contains the upper boundary of the constraints
+        over the estimated parameters.
+        
+        :return: **numpy.array** containing the upper bounds of the constraints for the estimated parameters.
+        :rtype: numpy.array
+
         """
         constrHi = numpy.empty(self.get_num_parameters())
         i = 0
@@ -224,8 +286,12 @@ class Model():
     
     def get_constr_pars_low(self):
         """
-        This method returns an array of boolean flags that indicate if an estimated parameter is either
-        constrained or not
+        This method returns a **numpy.array** that contains the lower boundary of the constraints
+        over the estimated parameters.
+        
+        :return: **numpy.array** containing the lower bounds of the constraints for the estimated parameters.
+        :rtype: numpy.array
+
         """
         constrLow = numpy.empty(self.get_num_parameters())
         i = 0
@@ -236,7 +302,12 @@ class Model():
     
     def get_cov_matrix_states(self):
         """
-        This method returns the covariance matrix of the state variables
+        This method returns a **numpy.ndarray** representing the covariance matrix of the estimated
+        state variables. The matrix is diagonal.
+        
+        :return: **numpy.ndarray** that is the covariance matrix of the state variables.
+        :rtype: numpy.ndarray
+
         """
         cov = numpy.diag(numpy.zeros(self.get_num_variables()))
         i = 0
@@ -247,7 +318,12 @@ class Model():
     
     def get_cov_matrix_state_pars(self):
         """
-        This method returns the covariance matrix of the state variables and parameters
+        This method returns a **numpy.ndarray** representing the covariance matrix of the estimated
+        state variables and parameters. The matrix is diagonal.
+        
+        :return: **numpy.ndarray** that is the covariance matrix of the state variables and parameters.
+        :rtype: numpy.ndarray
+
         """
         cov = numpy.diag(numpy.zeros(self.get_num_variables() + self.get_num_parameters()))
         i = 0
@@ -261,7 +337,12 @@ class Model():
     
     def get_cov_matrix_parameters(self):
         """
-        This method returns the covariance matrix of the parameters
+        This method returns a **numpy.ndarray** representing the covariance matrix of the estimated
+        parameters. The matrix is diagonal.
+        
+        :return: **numpy.ndarray** that is the covariance matrix of the estimated parameters.
+        :rtype: numpy.ndarray
+
         """
         cov = numpy.diag(numpy.zeros(self.get_num_parameters()))
         i = 0
@@ -272,7 +353,12 @@ class Model():
     
     def get_cov_matrix_outputs(self):
         """
-        This method returns the covariance matrix of the outputs
+        This method returns a **numpy.ndarray** representing the covariance matrix of the measured
+        output variables. The matrix is diagonal.
+        
+        :return: **numpy.ndarray** that is the covariance matrix of the measured output variables.
+        :rtype: numpy.ndarray
+
         """
         cov = numpy.diag(numpy.zeros(self.get_num_measured_outputs()))
         i = 0
@@ -284,31 +370,54 @@ class Model():
           
     def get_fmu(self):
         """
-        This method return the FMU associated to the model
+        This method return the FMU associated to the model.
+        
+        :return: object representing the FMU model in PyFMI.
+        :rtype: pyfmi.FmuModel
         """
         return self.fmu
     
     def get_fmu_file_path(self):
         """
-        This method returns the filepath of the FMU
+        This method returns the file path of the FMU.
+        
+        :return: String representing the path of the FMU file.
+        :rtype: string
         """
         return self.fmuFile
     
     def get_fmu_name(self):
         """
-        This method returns the name of the FMU associated to the model
+        This method returns the name of the FMU associated to the model.
+        
+        :return: The name of the FMU from its model description XML file.
+        :rtype: string
         """
         return self.name
     
     def get_inputs(self):
         """
-        Return the list of input variables associated to the FMU that have been selected
+        Return the list of input variables associated to the FMU that have been selected.
+        The variables are of type :class:`estimationpy.fmu_utils.in_out_var.InOutVar`.
+        
+        :return: List of **InOutVar** objects representing the inputs of the model.
+        :rtype: List(estimationpy.fmu_utils.in_out_var.InOutVar)
+        
         """
         return self.inputs
     
     def get_input_by_name(self, name):
         """
-        This method returns the input contained in the list of inputs that has a name equal to 'name'
+        This method returns the input variable contained in the list of inputs 
+        associated to this model that has a name equal to the parameter ``name``.
+        
+        :param string name: Name of the input variable to find.
+
+        :return: The input variable associated to the parameter ``name`` if exists, 
+          otherwise ``None``.
+
+        :rtype: estimationpy.fmu_utils.in_out_var.InOutVar, None
+
         """
         for var in self.inputs:
             if var.get_object().name == name:
@@ -317,7 +426,11 @@ class Model():
     
     def get_input_names(self):
         """
-        This method returns a list of names for each input
+        This method returns a list containing the names of the input variables associated
+        to this model.
+        
+        :return: list of input names
+        :rtype: List(string)
         """
         inputNames = []
         for inVar in self.inputs:
@@ -544,7 +657,7 @@ class Model():
         """
         This method returns a tuple containing the properties of the FMU
         """
-        return (self.name, self.author, self.description, self.type, self.version, self.guid, self.tool, self.numStates)
+        return (self.name, self.author, self.description, self.fmu_type, self.version, self.guid, self.tool, self.numStates)
     
     def get_real(self, var):
         """
@@ -1060,7 +1173,7 @@ class Model():
             self.name = str(self.fmu.get_name())
             self.author = str(self.fmu.get_author())
             self.description = str(self.fmu.get_description())
-            self.type = str(self.fmu.__class__.__name__)
+            self.fmu_type = str(self.fmu.__class__.__name__)
             self.version = str(self.fmu.version)
             self.guid = str(self.fmu.get_guid())
             self.tool = str(self.fmu.get_generation_tool())
@@ -1422,7 +1535,7 @@ class Model():
         string += "\n-Name: "+self.name
         string += "\n-Author: "+self.author
         string += "\n-Description: "+ self.description
-        string += "\n-Type: "+self.type
+        string += "\n-Type: "+self.fmu_type
         string += "\n-Version: "+self.version
         string += "\n-GUID: "+self.guid
         string += "\n-Tool: "+self.tool
