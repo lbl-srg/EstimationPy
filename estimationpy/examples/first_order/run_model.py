@@ -60,7 +60,7 @@ def show_results(time, results):
     ax1.set_xlabel('Time [s]')
     ax1.set_ylabel('State variable')
     ax1.set_xlim([time[0], time[-1]])
-    legend = ax1.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=1, fancybox=True, shadow=True)
+    legend = ax1.legend(loc='upper left', ncol=1, fancybox=True, shadow=True)
     legend.draggable()
     ax1.grid(False)
     
@@ -69,10 +69,10 @@ def show_results(time, results):
     ax2.set_xlabel('Time [s]')
     ax2.set_ylabel('Output variable')
     ax2.set_xlim([time[0], time[-1]])
-    legend = ax2.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=1, fancybox=True, shadow=True)
+    legend = ax2.legend(loc='upper left', ncol=1, fancybox=True, shadow=True)
     legend.draggable()
     ax2.grid(False)
-    plt.savefig('FirstOrder.pdf',dpi=300, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('FirstOrder.png',dpi=300, bbox_inches='tight', transparent=True,pad_inches=0.1)
     plt.show()
    
 if __name__ == '__main__':
