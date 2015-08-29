@@ -140,20 +140,20 @@ def threaded_function(queue, results, N_RESULTS):
     
 class FmuPool():
     """
-    This class manages a pool of processes that executed in parallel simulation
-    the FMU model.
+    This class manages a pool of processes that execute parallel simulation
+    of an FMU model.
     
     **NOTE:**
     
-        The processes running the simulations, executed in parallel by different processes, produce
-        results that are stored in a queue. If this queue reaches its limit the execution will be 
+        The processes running the simulations, executed in parallel if multiple processors are available,
+        produce results that are stored in a queue. If the queue reaches its limit the execution will be
         blocked until the resources are freed.
     
     """
     
     def __init__(self, model, processes = multiprocessing.cpu_count()-1, debug = False):
         """
-        Constructore that initializes the pool of processes that will run the simulations.
+        Constructore that initializes the pool of processes that runs the simulations.
         
         :param estimationpy.fmu_utils.model.Model model: The model to simulate
         :param int processes: the number of processes allocated for the job

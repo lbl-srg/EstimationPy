@@ -50,7 +50,7 @@ already been exported as FMUs.
   applications
   faq
   publications
-   
+  license 
 
 .. automodule:: estimationpy.ukf
    
