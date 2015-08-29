@@ -76,3 +76,55 @@ the results of the 10 different simulations that are executed in parallel.
 State estimation
 ++++++++++++++++
 
+The third example shows how to solve a state estimation problem with
+estimationpy and an FMU model.
+
+In this case we have access to a set of measurements and we desire to estimate
+the unknown state of the model. We have available a measurement of the input variable
+:math:`u(t)` corrupted by noise :math:`u_m(t)`. Similarly, we don't know the exact
+value of the output :math:`y(t)` but we have a measure of it :math:`y_m(t)`.
+The state estimation algorithm, implemented using an Unscented Kalman Filter,
+uses these measurements together with the model to estimate the probability
+distribution of the state variable :math:`x(t)` and of the output :math:`y(t)`.
+We indicates the estimated values with a hat, :math:`\hat{x}(t)` and
+:math:`\hat{y}(t)`.
+
+.. literalinclude:: /../../estimationpy/examples/first_order/run_ukf.py
+   :language: python
+   :linenos:
+   :lines:  30-31, 36-57, 72-81
+
+The code snippet shows how this problemis solved. As in the previous cases
+we associate a column of the CSV file (in this case a CSV file with noisy
+data) to the input ``u`` of the FMU model (lines 4-7).
+However in this case we also need to specify which is the measured output, and we
+which measured data is associated to it. Also, we can specify the covariance
+of this data that can be seen as a proxy of the data quality.
+
+After, in line 17, we specify that the model is used for estimating one state variable,
+whose name is ``x``. In lines 20-24 we provide details for the state variable
+to estimate
+
+* initial value :math:`x_0 = 1.5`,
+* covariance :math:`\sigma^2 = 0.5`,
+* lower constraint :math:`x_{min} = 0`
+
+As before we initialize the simulator (line 26), and then we instantiate an
+object of type :class:`estimationpy.ukf.ufk_fmu.UfkFmu`.
+At the end, at line 34, we start the filter and we specify its start and stop
+time by providing two datetime objects. Please not that their time zone
+is set to UTC.
+
+The first plot shows the input data (blue dots) used by the UKF, and the measured
+output data (green dots). The blue line and the green line are the true
+values that were not made available to the UKF. The red line in the bottom plot
+shows the value of the estimated output variable :math:`\hat{y}(t)`, and its
+confidence interval.
+		     
+.. image:: ../../img/FirstOrder_InputOutput.png
+
+The Figure below shows in green the unknown state variable :math:`x(t)` and
+in red its estimation :math:`\hat{x}(t)`. The red area around the estimation indicates the
+confidence interval of the estimation.
+	   
+.. image:: ../../img/FirstOrder_State.png

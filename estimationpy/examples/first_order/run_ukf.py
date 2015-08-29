@@ -6,6 +6,7 @@ Created on Nov 7, 2013
 import os
 import platform
 import numpy
+import pytz
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -75,12 +76,12 @@ def main():
     ukf_FMU = UkfFmu(m, augmented = False)
     
     # Start the filter
-    t0 = pd.to_datetime(0.0, unit = "s")
-    t1 = pd.to_datetime(30.0, unit = "s")
+    t0 = pd.to_datetime(0.0, unit = "s", utc = True)
+    t1 = pd.to_datetime(30.0, unit = "s", utc = True)
     time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose=False)
     
     # Path of the csv file containing the True data series
-    csvTrue = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
+    csvTrue = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
     
     # Get the measured outputs
     show_results(time, x, sqrtP, y, Sy, y_full, csvTrue, csvPath, m)
@@ -132,16 +133,15 @@ def show_results(time, x, sqrtP, y, Sy, y_full, csvTrue, csvNoisy, m):
     fig0.set_size_inches(12,8)
     ax0  = fig0.add_subplot(111)
     ax0.plot(t,d_x,'g',label='$x(t)$',alpha=1.0)
-    ax0.plot(t_n,d_x_n,'go',label='$x_m(t)$',alpha=1.0)
     ax0.plot(time, x,'r',label='$\hat{x}(t)$')
     ax0.fill_between(time, x[:,0] - sqrtP[:,0,0], x[:,0] + sqrtP[:,0,0], facecolor='red', interpolate=True, alpha=0.3)
     ax0.set_xlabel('Time [s]')
     ax0.set_ylabel('State Variable')
     ax0.set_xlim([t[0], t[-1]])
-    legend = ax0.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=1, fancybox=True, shadow=True)
+    legend = ax0.legend(loc='lower right', ncol=1, fancybox=True, shadow=True)
     legend.draggable()
     ax0.grid(False)
-    plt.savefig('FirstOrder_State.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('FirstOrder_State.png',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
     
     fig1 = plt.figure()
     fig1.set_size_inches(12,8)
@@ -153,7 +153,7 @@ def show_results(time, x, sqrtP, y, Sy, y_full, csvTrue, csvNoisy, m):
     ax1.set_xlabel('Time [s]')
     ax1.set_ylabel('Output Variable')
     ax1.set_xlim([t[0], t[-1]])
-    legend = ax1.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=1, fancybox=True, shadow=True)
+    legend = ax1.legend(loc='lower right', ncol=1, fancybox=True, shadow=True)
     legend.draggable()
     ax1.grid(False)
     
@@ -163,10 +163,10 @@ def show_results(time, x, sqrtP, y, Sy, y_full, csvTrue, csvNoisy, m):
     ax2.set_xlabel('Time [s]')
     ax2.set_ylabel('Input Variable')
     ax2.set_xlim([t[0], t[-1]])
-    legend = ax2.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=1, fancybox=True, shadow=True)
+    legend = ax2.legend(loc='lower right', ncol=1, fancybox=True, shadow=True)
     legend.draggable()
     ax2.grid(False)
-    plt.savefig('FirstOrder_InputOutput.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('FirstOrder_InputOutput.png',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
     plt.show()
     
 if __name__ == '__main__':

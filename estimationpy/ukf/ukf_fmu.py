@@ -783,7 +783,7 @@ class UkfFmu():
 		measuredOuts = self.model.get_measured_output_data_series()
 		
 		# Get the time vector 
-		time = pd.to_datetime(measuredOuts[:,0])
+		time = pd.to_datetime(measuredOuts[:,0], utc = True)
 		
 		# find the index of the closest matches for start and stop time
 		ix_start, ix_stop = self.find_closest_matches(start, stop, time)
