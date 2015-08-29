@@ -3,10 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: img/EstimationPy.png   
-   
-EstimationPy's documentation!
-=====================================
+.. image:: img/EstimationPy.png
 
 EstimationPy is a Python package for state and parameter estimation
 of dynamic systems that conform to the Functional Mockup Interface

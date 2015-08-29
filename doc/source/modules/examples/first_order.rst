@@ -77,7 +77,11 @@ State estimation
 ++++++++++++++++
 
 The third example shows how to solve a state estimation problem with
-estimationpy and an FMU model.
+estimationpy and an FMU model. Please note that in this example the model
+used by the state estimation algorithm has been parametrized with values
+for :math:`a`, :math:`b`, :math:`c`, and :math:`d` that are different from
+the ones that were used to generate the measurements. This different represents
+a case of model mismatch between the real system and its model.
 
 In this case we have access to a set of measurements and we desire to estimate
 the unknown state of the model. We have available a measurement of the input variable
