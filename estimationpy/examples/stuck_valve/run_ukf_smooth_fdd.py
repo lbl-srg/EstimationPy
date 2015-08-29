@@ -27,16 +27,16 @@ def main():
     # Define the path of the FMU file
     if platform.architecture()[0]=="32bit":
         print "32-bit architecture"
-        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "Fmu_ValveStuck_bias3.fmu")
+        filePath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "Fmu_ValveStuck_bias3.fmu")
     else:
         print "64-bit architecture"
-        filePath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "Fmu_ValveStuck_bias3.fmu")
+        filePath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "Fmu_ValveStuck_bias3.fmu")
     
     # Initialize the FMU model empty
     m = Model(filePath, atol=1e-5, rtol=1e-6)
     
     # Path of the csv file containing the data series
-    csvPath = os.path.join(dir_path, "..", "..", "..", "modelica", "FmuExamples", "Resources", "data", "NoisyData_ValveBias4.csv")
+    csvPath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "NoisyData_ValveBias4.csv")
     
     # Set the CSV file associated to the input, and its covariance
     input = m.GetInputByName("dp")
@@ -110,7 +110,7 @@ def main():
     time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filterAndSmooth(start = t0, stop = t1, verbose=False)
     
     # Path of the csv file containing the True data series
-    csvTrue = "../../../modelica/FmuExamples/Resources/data/SimulationData_ValveBias4.csv"
+    csvTrue = "../../modelica/FmuExamples/Resources/data/SimulationData_ValveBias4.csv"
     
     # Get the measured outputs
     showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvTrue, m)
@@ -198,7 +198,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     legend = ax0.legend(loc='lower right', ncol=1, fancybox=True, shadow=True)
     legend.draggable()
     ax0.grid(False)
-    plt.savefig('Flow.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('Flow.png',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
     
     ####################################################################
     # Display results
@@ -223,7 +223,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     ax1_bis  = plt.subplot(gs[1])
     plotFaultStatus(time, faultStatus, ax1_bis)
     
-    plt.savefig('Positions.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('Positions.png',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
     
     
     
@@ -240,7 +240,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     legend = ax2.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=4, fancybox=True, shadow=True)
     legend.draggable()
     ax2.grid(False)
-    plt.savefig('Temperature.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('Temperature.png',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
     
     ax4  = fig2.add_subplot(212)
     ax4.plot(t,d_dp/1e5,'g',label='$\Delta p$',alpha=1.0)
@@ -252,7 +252,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     legend = ax4.legend(loc='upper center',bbox_to_anchor=(0.5, 1.1), ncol=4, fancybox=True, shadow=True)
     legend.draggable()
     ax4.grid(False)
-    plt.savefig('Pressure.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('Pressure.png',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
     
     
     fig3 = plt.figure()
@@ -271,7 +271,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     legend = ax3.legend(loc='lower right', ncol=1, fancybox=True, shadow=True)
     legend.draggable()
     ax3.grid(False)
-    plt.savefig('Drift.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('Drift.png',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
     
     
     plt.show()
@@ -345,7 +345,7 @@ def plotProbabilities(time, probFault, faultStatus):
     
     ax5 = fig4.add_subplot(212)
     plotFaultStatus(time, faultStatus, ax5)
-    plt.savefig('Probability.pdf',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('Probability.png',dpi=400, bbox_inches='tight', transparent=True,pad_inches=0.1)
     
     return
 
