@@ -87,7 +87,7 @@ def show_results(pool_results):
     ax2.set_ylabel('Output variable')
     ax2.set_xlim([time[0], time[-1]])
     ax2.grid(False)
-    plt.savefig('FirstOrderPool.pdf',dpi=300, bbox_inches='tight', transparent=True,pad_inches=0.1)
+    plt.savefig('FirstOrderPool.png',dpi=300, bbox_inches='tight', transparent=True,pad_inches=0.1)
     plt.show()
     
 if __name__ == '__main__':

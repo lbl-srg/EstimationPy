@@ -44,7 +44,9 @@ After, the CSV file is associated to the input variable (line 10), and the
 name of the column is indicated in line 11.
 
 The instructions at line 14 and 17 respectively initialize the model, and run the
-simulation. The figure below shows the result.
+simulation. The simulation command does not have arguments thus the time model
+is simulated for the time period specified in the CSV file.
+The figure below shows the result.
 
 .. image:: ../../img/FirstOrder.png
 
@@ -52,7 +54,25 @@ simulation. The figure below shows the result.
 Run multiple simulations
 ++++++++++++++++++++++++
 
+The second example shows how to run a pool of models that use
+all the same FMU model.
 
+.. literalinclude:: /../../estimationpy/examples/first_order/run_pool.py
+   :language: python
+   :linenos:
+   :lines:  16-18, 30-59
+   :emphasize-lines: 19-20, 32-33 
+
+In this case the only difference with respect tp the previosu case is that instead
+of calling directly the :func:`estimationpy.fmu_utils.model.Model.simulate` method,
+we define a :class:`estimationpy.fmu_utils.fmu_pool.FmuPool` object.
+Then in lines 26-30 we create 10 different initial conditions for the
+state vector, and in line 33 we run the simulation. The Figure below shows
+the results of the 10 different simulations that are executed in parallel.
+		     
+.. image:: ../../img/FirstOrderPool.png
+
+	   
 State estimation
 ++++++++++++++++
 
