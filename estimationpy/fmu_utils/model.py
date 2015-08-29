@@ -45,9 +45,9 @@ class Model():
         
         :param string fmuFile: String representing the path of an FMU model.
         :param string result_handler: String that specifies how pyfmi should handle the results of 
-          the simulations of the FMU model. See :module:`estimationpy.fmu_utils.strings` for available options.
+          the simulations of the FMU model. See :mod:`estimationpy.fmu_utils.strings` for available options.
         :param string solver: String that specifies the solver used by pyfmi to simulate 
-          the FMU model. See :module:`estimationpy.fmu_utils.strings` for available options.
+          the FMU model. See :mod:`estimationpy.fmu_utils.strings` for available options.
         :param float atol: Absolute tolerance used by the solver when simulating the FMU model.
         :param float rtol: relative tolerance used by the solver when simulating the FMU model.
         :param bool set_trees: Boolean flag that indicates whether building the trees representing
@@ -1378,11 +1378,12 @@ class Model():
         """
         This method simulates the model from the start_time to the final_time, using a given set of simulation
         options. Since it may happen that a simulation fails without apparent reason (!!), it is better to 
-        simulate again the model if an error occurs. After N_TRIES it stops.
-        input = [[u1(T0), u2(T0), ...,uM(T0)],
-                 [u1(T1), u2(T1), ...,uM(T1)],
-                 ...
-                 [u1(Tend), u2(Tend), ...,uM(Tend)]]
+        simulate again the model if an error occurs. After N_TRIES it stops::
+        
+            input = [[u1(T0), u2(T0), ...,uM(T0)],
+                     [u1(T1), u2(T1), ...,uM(T1)],
+                     ...
+                     [u1(Tend), u2(Tend), ...,uM(Tend)]]
         """
         # TODO
         

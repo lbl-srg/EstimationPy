@@ -51,7 +51,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'EstimationPy'
-copyright = u'2013-2015, Marco Bonvini'
+copyright = u'2013-2015, The Regents of the University of California (through Lawrence Berkeley National Laboratory), subject to receipt of any required approvals from U.S. Department of Energy'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -124,7 +124,7 @@ html_logo = os.path.abspath(os.path.join('.','img','EstimationPy_logo_small.png'
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = os.path.abspath(os.path.join('.','img','EstimationPy_logo_ico.ico'))
+html_favicon = os.path.abspath(os.path.join('.','img','EstimationPy_logo.ico'))
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
