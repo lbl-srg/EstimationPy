@@ -191,6 +191,8 @@ Therefore, for parameter estimation, a nonlinear filtering and smoothing techniq
 
 .. automodule:: estimationpy.ukf.ukf_fmu
     :members:
+    :special-members:
+    :private-members:
 
 Footnotes
 +++++++++
