@@ -6,20 +6,46 @@ from estimationpy.fmu_utils.fmu_pool import FmuPool
 
 class UkfFmu():
 	"""
-	This class represents an Unscented Kalman Filter (UKF) that can be used for the state and parameter estimation of nonlinear dynamic systems
+	This class represents an Unscented Kalman Filter (UKF) that can be used for the 
+        state and parameter estimation of nonlinear dynamic systems represented
+        by FMU models.
+    
+        This class uses an object ot type :class:`estimationpy.fmu_utils.model.Model` to 
+        represent the system. The model once, instantiated and configured,
+        already contains the data series associated to the measured inputs and outputs,
+        states and parameters to estimates, covariances, and boundaries.
+        See :mod:`estimationpy.fmu_utils.model` for more information.
+    
+        The class internally uses an :class:`estimationpy.fmu_utils.fmu_pool.FmuPool` to 
+        run simulations in paraller over multiple processors. Please have a look to
+        :mod:`estimationpy.fmu_utils.fmu_pool` for more information.
+    
 	"""
 	
 	def __init__(self, model, augmented = False):
 		"""
-		Initialization of the UKF and its parameters. Provide the Model (FMU) as input
+		Constructor of the class that initializes an object that can be used to solve
+                state and parameter estimation problems by using the UKF and smoothing algorithms.
+                The constructor requires a model representing the systems which states and/or parameters
+                have to be estimated.
 		
-		The initialization assign these parameters then,
+		The method performs the following steps
 		
-		1- compute the number of sigma points to be used
-		2- define the parameters of the filter
-		3- compute the weights associated to each sigma point
-		4- initialize the constraints on the observed state variables
-		 
+                1. creates a reference to the models and instantiales an object of type \
+                :class:`estimationpy.fmu_utils.fmu_pool.FmuPool` for running simulations in parallel,
+                2. compute the number of sigma points to be used,
+                3. define the parameters of the filter,
+                4. compute the weights associated to each sigma point,
+                5. initialize the constraints on the observed state variables,
+                
+                :param estimationpy.fmu_utils.model.Model model: the model which states and/or parameters
+                  have to be estimated.
+                :param bool augmented: boolean flag that indicates if the UKF uses the augmented form or not.
+                
+                :raises Exception: The method raises an exception if there are not measured outputs, the 
+                  number of states to estimate is higher than the total number of states, of the number of
+                  parameters to estimate is invalid.
+        
 		"""
 		
 		# Set the model
@@ -43,7 +69,8 @@ class UkfFmu():
 		
 		# some check
 		if self.n_state_obs > self.n_state:
-			raise Exception('The number of observed states ('+str(self.n_state_obs)+') cannot be higher that the number of states ('+str(self.n_state)+')!')
+			raise Exception('The number of observed states ('+str(self.n_state_obs)+') cannot be \
+higher that the number of states ('+str(self.n_state)+')!')
 		if self.n_pars < 0:
 			raise Exception('The number of estimated parameters cannot be < 0')
 		if self.n_outputs < 0:
@@ -59,6 +86,7 @@ class UkfFmu():
 		# set the default constraints for the observed state variables (not active by default)
 		self.constrStateHigh = self.model.get_constr_obs_states_high()
 		self.constrStateLow = self.model.get_constr_obs_states_low()
+        
 		# Max and Min Value of the states constraints
 		self.constrStateValueHigh = self.model.get_state_observed_max()
 		self.constrStateValueLow  = self.model.get_state_observed_min()
@@ -66,13 +94,18 @@ class UkfFmu():
 		# set the default constraints for the estimated parameters (not active by default)
 		self.constrParsHigh = self.model.get_constr_pars_high()
 		self.constrParsLow = self.model.get_constr_pars_low()
+        
 		# Max and Min Value of the parameters constraints
 		self.constrParsValueHigh = self.model.get_parameters_max()
 		self.constrParsValueLow  = self.model.get_parameters_min()
 	
 	def __str__(self):
 		"""
-		This method returns a string that describe the object
+		This method returns a string representation of the object.
+        
+                :return: string representation of the object
+                :rtype: string
+        
 		"""
 		string  = "\nUKF algorithm for FMU model"
 		string += "\nThe FMU model name is:                     "+self.model.get_fmu_name()
@@ -121,7 +154,8 @@ class UkfFmu():
 	
 	def compute_weights(self):
 		"""
-		This method computes the weights of the UKF filter. These weights are associated to each sigma point and are used to
+		This method computes the weights of the UKF filter.
+        These weights are associated to each sigma point and are used to
 		compute the mean value (W_m) and the covariance (W_c) of the estimation
 		"""
 		
