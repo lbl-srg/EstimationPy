@@ -55,10 +55,10 @@ class UkfFmu():
 		self.pool = FmuPool(self.model, debug = False)
 		
 		# Set the number of states variables (total and observed), parameters estimated and outputs
-		self.n_state     = self.model.get_num_states()
+		self.n_state = self.model.get_num_states()
 		self.n_state_obs = self.model.get_num_variables()
-		self.n_pars      = self.model.get_num_parameters()
-		self.n_outputs   = self.model.get_num_measured_outputs()
+		self.n_pars = self.model.get_num_parameters()
+		self.n_outputs = self.model.get_num_measured_outputs()
 		self.n_outputsTot= self.model.get_num_outputs()
 		
 		self.augmented = augmented
@@ -69,16 +69,16 @@ class UkfFmu():
 		
 		# some check
 		if self.n_state_obs > self.n_state:
-			raise Exception('The number of observed states ('+str(self.n_state_obs)+') cannot be \
-higher that the number of states ('+str(self.n_state)+')!')
+			msg = 'The number of observed states ('+str(self.n_state_obs)+') cannot be '
+                        msg+= 'higher that the number of states ('+str(self.n_state)+')!'
+                        raise Exception(msg)
 		if self.n_pars < 0:
 			raise Exception('The number of estimated parameters cannot be < 0')
 		if self.n_outputs < 0:
 			raise Exception('The number of outputs cannot be < 0')
 		
-		
 		# compute the number of sigma points
-		self.n_points    = 1 + 2*self.N
+		self.n_points = 1 + 2*self.N
 
 		# define UKF parameters with default values
 		self.set_ukf_params()
@@ -107,7 +107,7 @@ higher that the number of states ('+str(self.n_state)+')!')
                 :rtype: string
         
 		"""
-		string  = "\nUKF algorithm for FMU model"
+		string = "\nUKF algorithm for FMU model"
 		string += "\nThe FMU model name is:                     "+self.model.get_fmu_name()
 		string += "\nThe total number of state variables is:    "+str(self.n_state)
 		string += "\nThe number of state variables observed is: "+str(self.n_state_obs)
@@ -118,7 +118,26 @@ higher that the number of states ('+str(self.n_state)+')!')
 	
 	def set_default_ukf_params(self):
 		"""
-		This method set the default parameters of the UKF
+		This method initializes the parameters of the UKF to their
+                default values and then computes the weights by calling the method
+                :func:`compute_weights`. The default values are
+                
+                +------------------+---------------------------------+
+                | parameter name   |  value                          |
+                +==================+=================================+
+                | :math:`\\alpha`   |  0.01                           |
+                +------------------+---------------------------------+
+                | :math:`\\beta`    |   1                             |
+                +------------------+---------------------------------+
+                | :math:`k`        |   2                             |
+                +------------------+---------------------------------+
+                | :math:`\\lambda`  | :math:`2 \\alpha (N + k) - N`    |
+                +------------------+---------------------------------+
+                | :math:`\\sqrt{C}` | :math:`\\alpha \\sqrt{N+k}`       |
+                +------------------+---------------------------------+
+                
+                where :math:`N` is the total number of states and parameter to estimate. 
+                
 		"""
 		self.alpha    = 0.01
 		self.k        = 1
@@ -134,7 +153,20 @@ higher that the number of states ('+str(self.n_state)+')!')
 
 	def set_ukf_params(self, alpha = 1.0/np.sqrt(3.0), beta = 2, k = None):
 		"""
-		This method set the non default parameters of the UKF
+		This method allows to set the parameters of the UKF.
+                
+                :param float alpha: The parameter :math:`\\alpha` of the UKF
+                :param float beta: The parameter :math:`\\beta` of the UKF
+                :param float k: The parameter :math:`k` of the UKF
+
+                given these parameters, the method computes
+                
+                .. math::
+                    \\lambda  &= 2 \\alpha (N + k) - N \\\\
+                    \\sqrt{C} &= \\alpha \\sqrt{N+k}
+                
+                where :math:`N` is the total number of states and parameters to estimate.
+
 		"""
 		self.alpha     = alpha
 		self.beta      = beta
@@ -154,9 +186,16 @@ higher that the number of states ('+str(self.n_state)+')!')
 	
 	def compute_weights(self):
 		"""
-		This method computes the weights of the UKF filter.
-        These weights are associated to each sigma point and are used to
-		compute the mean value (W_m) and the covariance (W_c) of the estimation
+		This method computes the vector of weights used by the UKF filter.
+                These weights are associated to each sigma point and are used to
+		compute the mean value and the covariance of the estimation at each step
+                of the fitering process.
+                
+                There are two types of weigths
+                
+                * :math:`W_m` is used to compute the mean value
+                * :math:`W_c` is used to compute the convariance
+                
 		"""
 		
 		n = self.N
@@ -173,13 +212,25 @@ higher that the number of states ('+str(self.n_state)+')!')
 	
 	def get_weights(self):
 		"""
-		This method returns the vectors containing the weights for the UKF
+		This method returns a tuple that contains the vectors :math:`W_m` and :math:`W_c`
+                containing the weights used by the UKF. Each vector is a **numpy.array**.
+                
+                :return: tuple with first element :math:`W_m`, and second :math:`W_c`
+                :rtype: tuple
 		"""
 		return (self.W_m, self.W_c)
 
 	def square_root(self, A):
 		"""
-		This method computes the square root of a square matrix A, using the Cholesky factorization
+		This method computes the square root of a square matrix :math:`A`.
+                The method uses the Cholesky factorization provided by the linear algebra
+                package in **numpy**.
+                
+                :param numpy.ndarray A: square matrix :math:`A`
+                :return: square root of math:`A`, such that :math:`S^T S = A`
+
+                :rtype: numpy.ndarray
+                
 		"""
 		try:
 			sqrtA = np.linalg.cholesky(A)
@@ -189,34 +240,41 @@ higher that the number of states ('+str(self.n_state)+')!')
 			print "Matrix "+str(A)+" is not positive semi-definite"
 			return A	
 	
-	def constrained_state(self, X):
+	def constrained_state(self, x_A):
 		"""
-		This method apply the constraints to the state vector (only to the estimated states)
+		This method applies the constraints associated to the state variables and
+                parameters being estimated to the state vector :math:`\\mathbf{x}^A`.
+                The constraints are applied only to the states and parameters estimated.
+                
+                :param numpy.ndarray x_A: vector :math:`\mathbf{x}^A` containing the states to be constrained
+                :return: the constrained version of :math:`\mathbf{x}^A`
+                :rtype: numpy.ndarray
+                
 		"""
 			
 		# Check for every observed state
 		for i in range(self.n_state_obs):
 		
 			# if the constraint is active and the threshold is violated
-			if self.constrStateHigh[i] and X[i] > self.constrStateValueHigh[i]:
-				X[i] = self.constrStateValueHigh[i]
+			if self.constrStateHigh[i] and x_A[i] > self.constrStateValueHigh[i]:
+				x_A[i] = self.constrStateValueHigh[i]
 				
 			# if the constraint is active and the threshold is violated	
-			if self.constrStateLow[i] and X[i] < self.constrStateValueLow[i]:
-				X[i] = self.constrStateValueLow[i]
+			if self.constrStateLow[i] and x_A[i] < self.constrStateValueLow[i]:
+				x_A[i] = self.constrStateValueLow[i]
 				
 		# Check for every observed state
 		for i in range(self.n_pars):
 		
 			# if the constraint is active and the threshold is violated
-			if self.constrParsHigh[i] and X[self.n_state_obs+i] > self.constrParsValueHigh[i]:
-				X[self.n_state_obs+i] = self.constrParsValueHigh[i]
+			if self.constrParsHigh[i] and x_A[self.n_state_obs+i] > self.constrParsValueHigh[i]:
+				x_A[self.n_state_obs+i] = self.constrParsValueHigh[i]
 				
 			# if the constraint is active and the threshold is violated	
-			if self.constrParsLow[i] and X[self.n_state_obs+i] < self.constrParsValueLow[i]:
-				X[self.n_state_obs+i] = self.constrParsValueLow[i]
+			if self.constrParsLow[i] and X_A[self.n_state_obs+i] < self.constrParsValueLow[i]:
+				x_A[self.n_state_obs+i] = self.constrParsValueLow[i]
 		
-		return X
+		return x_A
 				
 	def compute_sigma_points(self, x, pars, sqrtP, sqrtQ = None, sqrtR = None):
 		"""
@@ -331,14 +389,30 @@ higher that the number of states ('+str(self.n_state)+')!')
 		
 		return Xs
 
-	def sigma_point_proj(self, Xs, t_old, t):
+	def sigma_point_proj(self, x_A, t_old, t):
 		"""
+		This method, given a set of sigma points represented by the vector :math:`\\mathbf{x}^A`,
+                propagates them using the state transition function. The state transition function is 
+                a simulation run from time :math:`t_{old}` to :math:`t`.
+		The simulations are managed by a **FmuPool** object.
 		
-		This function, given a set of sigma points Xs, propagate them using the state transition function.
-		The simulations are run in parallel if the flag parallel is set to True
-		
+                :param numpy.ndarray x_A: the vector containing the sigma points to propagate
+                :param datetime.datetime t_old: the start time for the simulation that computes the propagations
+                :param datetime.datetime t: the final time for the simulation that computes the propagations
+
+                :return: a tuple that contains the projected states (only the estimated ones + estimated parameters), \
+                the projected outputs (only the measured ones), the full projected states (both estimated and not), \
+                the full projected outputs (either measured or not).
+                
+                :rtype: tuple
+                
+                **Note:**
+                If for any reason the results of the simulation pool is an empty dictionary,
+                the method tries again to run the simulations up to the maximum number
+                of simulations allowed MAX_RUN. y default MAX_RUN is equal to 3.
+                
 		"""
-		row, col = np.shape(Xs)
+		row, col = np.shape(x_A)
 		
 		# initialize the vector of the NEW STATES
 		X_proj = np.zeros((row, self.n_state_obs + self.n_pars))
@@ -348,7 +422,7 @@ higher that the number of states ('+str(self.n_state)+')!')
 		
 		# from the sigma points, get the value of the states and parameters
 		values = []
-		for sigma in Xs:
+		for sigma in x_A:
 			x = sigma[0:self.n_state_obs]
 			pars = sigma[self.n_state_obs:self.n_state_obs+self.n_pars]
 			temp = {"state":x, "parameters":pars}
@@ -382,16 +456,22 @@ higher that the number of states ('+str(self.n_state)+')!')
 			
 		return X_proj, Z_proj, Xfull_proj, Zfull_proj
 
-	def average_proj(self,X_proj):
+	def average_proj(self, x_proj):
 		"""
-		This function averages the projection of the sigma points (both states and outputs)
-		using a weighting vector W_m
+		This function averages the projection of the sigma points.
+                The function can be used to compute the average of both the state vector or
+                the measured outputs. The weigths vetcor used is :math:`W_m`.
+                
+                :param np.ndarray x_proj: the vector to average :math:`x`
+                :return: the average of the vector computed as :math:`W_m^T x`
+                :rtype: numpy.ndarray
+                
 		"""
 		# make sure that the shape is [1+2*n, ...]
-		X_proj.reshape(self.n_points, -1)
+		x_proj.reshape(self.n_points, -1)
 		
 		# dot product of the two matrices
-		avg = np.dot(self.W_m.T, X_proj)
+		avg = np.dot(self.W_m.T, x_proj)
 		
 		return avg
 
@@ -428,9 +508,18 @@ higher that the number of states ('+str(self.n_state)+')!')
 
 	def __new_Q__(self, Q):
 		"""
-		This method, given the covariance matrix of the process noise (n_state_obs x n_state_obs)
-		returns a new covariance matrix that has size (n_state_obs+n_pars x n_state_obs+n_pars)
+		This method, given the covariance matrix of the process noise :math:`Q` whose sizes are
+                :math:`N_o \\times N_o`, where :math:`N_o` is the total number of observed states,
+                computes a new covariance matrix that has size :math:`N_{o+p} \\times N_{o+p}`
+                where :math:`N_{o+p}` is the total number of observed stated plus the estimated
+                parameters.
+                
+                :param numpy.ndarray Q: process covariance matrix
+                :return: the modified covariance matrix
+                :rtype: numpy.ndarray
+                
 		"""
+                # TODO: Check this method and where it's called
 		return Q
 		nso = self.n_state_obs
 		no  = self.n_outputs 
@@ -453,22 +542,28 @@ higher that the number of states ('+str(self.n_state)+')!')
 			newQ = np.vstack((top, bot))
 		return newQ
 		
-	def compute_P(self, X_p, Xa, Q):
+	def compute_P(self, x, x_avg, Q):
 		"""
-		This function computes the state covariance matrix P as
+		This method computes the state covariance matrix :math:`P` as
 		
-		P[i,j] = W_c[i]*(Xs[i] - Xavg)^2 + Q[i,j]
+                :math:`P_{i,j} = W_c_i (\\mathbb{x}_i - \\mathbb{x}_{avg})^2 + Q_{i,j}`
 		
-		The vectors X_p contain the all the states (observed and not) and the estimated parameters.
-		The non observed states should be removed, and then computing P which has size of (n_state_obs + n_pars).
-		Note that Q has size n_state_obs, thus it has to be expanded with zero elements when added.
-		
+                The method removes the not observed states from :math:`\\mathbb{x}` and computes
+                the covariance matrix :math:`\\mathbb{P}`, that has size :math:`N_{o+p} \\times N_{o+p}`.
+                Note that because the matrix :math:`Q` has size :math:`N_{o} \\times N_{o}` it is
+                expanded with the method :func:`__new_Q__`.
+
+                :param numpy.array x: vector that conatins the full state of the system (estimated, not estimated states, as well
+                  the estimated parameters), this vector can be seen as the propagated sigma points
+                :param numpy.array x_avg: vector that contains the average of the propagated sigma points
+                :param numpy.ndarray Q: covariance matrix
+
 		"""
 		# create a diagonal matrix containing the weights
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points, self.n_points)
 		
-		# subtract each sigma point with the average Xa, and tale just the augmented state
-		V = self.__aug_state_from_full_state__(X_p - Xa)
+		# subtract each sigma point with the average x_avg, and tale just the augmented state
+		V = self.__aug_state_from_full_state__(x - x_avg)
 		
 		# create the new Q matrix to add
 		newQ = self.__new_Q__(Q)
@@ -477,57 +572,124 @@ higher that the number of states ('+str(self.n_state)+')!')
 		Pnew = np.dot(np.dot(V.T, W), V) + newQ
 		return Pnew
 		
-	def compute_cov_z(self, Z_p, Za, R):
+	def compute_cov_z(self, z, z_avg, R):
 		"""
-		This function computes the output covariance matrix CovZ as
+		This method computes the output covariance matrix :math:`C_Z`
+                that is the covariance matrix of the outputs, corrected
+                by the measurements covariance matrix :math:`R`.
+                
+                :math:`C_z_{i,j} = W_c_i (\\mathbb{z}_i - \\mathbb{z}_{avg})^2 + R_{i,j}`
 		
-		CovZ[i,j] = W_c[i]*(Zs[i] - Zavg)^2 + R[i,j]
-		
+                :param numpy.array z: vector containing the outputs
+                :param numpy.array z_avg: vector containing the average of the outputs
+                :param numpy.ndarray R: measurements covarnace matrix
+                :returns: output covariance matrix :math:`C_z`
+                :rtype: numpy.ndarray
+                
 		"""
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points, self.n_points)
 
-		V =  np.zeros(Z_p.shape)
+		V =  np.zeros(z.shape)
 		for j in range(self.n_points):
-			V[j,:]   = Z_p[j,:] - Za[0]
+			V[j,:]   = z[j,:] - z_avg[0]
 		
 		covZ = np.dot(np.dot(V.T,W),V) + R
+                
 		return covZ
 	
-	def compute_cov_x_z(self,X_p, Xa, Z_p, Za):
+	def compute_cov_x_z(self, x, x_avg, z, z_avg):
 		"""
-		This function computes the state-output cross covariance matrix (between X and Z)
+		This method computes the cross covariance matrix :math:`C_{xz}`
+                between the states and outputs vectors.
+                
+                :param numpy.array x: vector that conatins the full state of the system (estimated, not estimated states, as well
+                  the estimated parameters), this vector can be seen as the propagated sigma points
+                :param numpy.array x_avg: vector that contains the average of the propagated sigma points
+                :param numpy.array z: vector containing the outputs
+                :param numpy.array z_avg: vector containing the average of the outputs
+                
+                :returns: state-outputs covariance matrix :math:`C_{xz}`
+                :rtype: numpy.ndarray
+                
 		"""
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
 			
-		Vx = self.__aug_state_from_full_state__(X_p - Xa)
+		Vx = self.__aug_state_from_full_state__(x - x_avg)
 		
-		Vz = np.zeros(Z_p.shape)
+		Vz = np.zeros(z.shape)
 		for j in range(self.n_points):
-			Vz[j,:]   = Z_p[j,:] - Za[0]
+			Vz[j,:]   = z[j,:] - z_avg[0]
 	
 		covXZ = np.dot(np.dot(Vx.T,W),Vz)
+                
 		return covXZ
 	
-	def compute_cov_x_x(self, X_p_1, Xa_1, X_p, Xa):
+	def compute_cov_x_x(self, x_new, x_new_avg, x, x_avg):
 		"""
-		This function computes the state-state cross covariance matrix (between X and Xnew)
+		This method computes the state-state cross covariance matrix :math:`C_{xx}`.
+                The different states are the state before and after the propagation.
+                
+                :param numpy.array x_new: vector that contains the full state of the system (estimated, not estimated states, as well
+                  the estimated parameters), this vector can be seen as the propagated sigma points
+                :param numpy.array x_avg_new: vector that contains the average of the propagated sigma points
+                :param numpy.array x: vector containing initial states before the progatation
+                :param numpy.array x_avg: vector containing the average of the initial state before the propagation
+                
+                :returns: state-state covariance matrix :math:`C_{xx}`
+                :rtype: numpy.ndarray
+                
 		"""
 		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
 			
-		Vx1 = self.__aug_state_from_full_state__(X_p_1 - Xa_1)
-		Vx  = self.__aug_state_from_full_state__(X_p - Xa)
+		Vx_new = self.__aug_state_from_full_state__(x_new - x_avg_new)
+		Vx  = self.__aug_state_from_full_state__(x - x_avg)
 	
-		covXX = np.dot(np.dot(Vx.T,W),Vx1)
+		covXX = np.dot(np.dot(Vx.T,W),Vx_new)
+                
 		return covXX
-	
-	def compute_S(self, X_proj, Xave, sqrtQ):
+
+        def compute_C_x_x(self, x_new, x):
 		"""
-		This function computes the squared covariance matrix using QR decomposition + a Cholesky update
+		This method computes the state-state cross covariance matrix :math:`C_{xx}` 
+                between the old state :math:`\\mathbb{x}` and the new state :math:`\\mathbb{x}_{new}`.
+		**Note:** This is method is used by the smoothing process.
+                
+                :param numpy.array x_new: vector that contains the full state of the system (estimated, not estimated states, as well
+                  the estimated parameters), this vector can be seen as the propagated sigma points
+                :param numpy.array x: vector containing initial states before the progatation
+                
+                :returns: state-state covariance matrix :math:`C_{xx}`
+                :rtype: numpy.ndarray
+                
+		"""
+		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
+		x_ave_next = self.average_proj(X_next)
+		x_ave_now  = self.average_proj(X_now)
+		
+		Vnext = self.__aug_state_from_full_state__(X_next - x_ave_next)
+		Vnow  = self.__aug_state_from_full_state__(X_now - x_ave_now)
+	
+		Cxx = np.dot(np.dot(Vnext.T, W), Vnow)
+		return Cxx
+
+        
+	def compute_S(self, x_proj, x_ave, sqrt_Q):
+		"""
+		This method computes the squared root covariance matrix using the QR decomposition
+                combined with a Cholesky update.
+                
+                :param numpy.array x_proj: projected full state vector
+                :param numpy.array x_avg: average of the full state vector
+                :param numpy.ndarray sqrt_Q: square root process covariance matrix
+                
+                :return: the square root of the updated state covariance matrix
+                :rtype: nunmpy.ndarray
+
 		"""
 		# take the augmented states of the sigma points vectors
 		# that are the observed states + estimated parameters
-		X_proj_obs = self.__aug_state_from_full_state__(X_proj)
-		Xave_obs  = self.__aug_state_from_full_state__(Xave)
+		x_proj_obs = self.__aug_state_from_full_state__(x_proj)
+		x_ave_obs  = self.__aug_state_from_full_state__(x_ave)
 		
 		# Matrix of weights and signs of the weights
 		weights = np.sqrt( np.abs(self.W_c[:,0]) )
@@ -536,72 +698,92 @@ higher that the number of states ('+str(self.n_state)+')!')
 		# create matrix A that contains the error between the sigma points and the average
 		A     = np.array([[]])
 		i     = 0
-		for x in X_proj_obs:
+		for x in x_proj_obs:
 			
-			error = signs[i]*weights[i]*(x - Xave_obs)
+			error = signs[i]*weights[i]*(x - x_ave_obs)
 			
 			# ignore when i==0, this will be done in the update
-			if i==1:
+			if i == 1:
 				A = error.T
-			elif i>1:
-				A = np.hstack((A,error.T))
-			i    += 1
+			elif i > 1:
+				A = np.hstack((A, error.T))
+			i += 1
 		
-		# put on the side the matrix sqrtQ, that have to be modified to fit the dimension of the augmenets state	
-		new_sqrtQ = self.__new_Q__(sqrtQ)
-		A = np.hstack((A,new_sqrtQ))
+		# Put on the side the matrix sqrt_Q, that have to be modified to fit the dimension of the augmenets state	
+		new_sqrt_Q = self.__new_Q__(sqrt_Q)
+		A = np.hstack((A, new_sqrt_Q))
 		
 		# QR factorization
-		q,L = np.linalg.qr(A.T)
+		q, L = np.linalg.qr(A.T)
 		
-		# execute Cholesky update
-		x = signs[0]*weights[0]*(X_proj_obs[0,] - Xave_obs)
-		
+		# Execute Cholesky update
+		x = signs[0]*weights[0]*(x_proj_obs[0,] - x_ave_obs)
 		L = self.chol_update(L, x.T, self.W_c[:,0])
 		
 		return L
 		
-	def compute_S_y(self, Z_proj, Zave, sqrtR):
+	def compute_S_y(self, z_proj, z_ave, sqrt_R):
+                """
+		This method computes the squared root covariance matrix using the QR decomposition
+                combined with a Cholesky update.
+                
+                :param numpy.array z_proj: projected full state vector
+                :param numpy.array z_avg: average of the full state vector
+                :param numpy.ndarray sqrt_R: square root process covariance matrix
+                
+                :return: the square root of the updated output covariance matrix
+                :rtype: nunmpy.ndarray
+
 		"""
-		This function computes the squared covariance matrix using QR decomposition + a Cholesky update
-		"""
-		# Matrix of weights and signs of the weights
+                # Matrix of weights and signs of the weights
 		weights = np.sqrt( np.abs(self.W_c[:,0]) )
 		signs   = np.sign( self.W_c[:,0] )
 		
 		# create matrix A that contains the error between the sigma points outputs and the average
 		A     = np.array([[]])
 		i     = 0
-		for z in Z_proj:
-			error = signs[i]*weights[i]*(z - Zave)
-			if i==1:
+		for z in z_proj:
+			error = signs[i]*weights[i]*(z - z_ave)
+			if i == 1:
 				A = error.T
-			elif i>1:
-				A = np.hstack((A,error.T))
+			elif i > 1:
+				A = np.hstack((A, error.T))
 			i    += 1
 			
 		# put the square root R matrix on the side
-		A = np.hstack((A,sqrtR))
+		A = np.hstack((A, sqrt_R))
 		
 		# QR factorization
-		q,L = np.linalg.qr(A.T)
+		q, L = np.linalg.qr(A.T)
 
-		# NOW START THE CHOLESKY UPDATE
-		z = signs[0]*weights[0]*(Z_proj[0,] - Zave)
-		
+		# Execute the Cholesky update
+		z = signs[0]*weights[0]*(z_proj[0,] - z_ave)
 		L = self.chol_update(L, z.T, self.W_c[:,0])
 		
 		return L
 	
 	def chol_update(self, L, X, W):
 		"""
-		This function computes the Cholesky update
+		This method computes the Cholesky update of a matrix.
+                
+                :param numpy.ndarray L: lower triangular matrix computed with QR factorization
+                :param numpy.array X: vector used to compute the covariance matrix. It can either be a vector
+                  representing the deviation of the state from its average, or the deviation from an output
+                  from its average.
+                :param numpy.array W: vector of weights
+                
+                :return: the square root matrix computed using the Cholesky update
+                :rtype: numpy.ndarray
+                
 		"""
+                # Copy the matrix
 		Lc = L.copy()
+                
+                # Compute signs of the weights
 		signs   = np.sign( W )
 	
-		# NOW START THE CHOLESKY UPDATE
-		# DO IT FOR EACH COLUMN IN THE X MATRIX
+		# Start the Cholesky update and do it for every column
+		# of matrix X
 		
 		(row, col) = X.shape
 		
@@ -626,31 +808,38 @@ higher that the number of states ('+str(self.n_state)+')!')
 		else:
 			return Lc
 	
-	def compute_C_x_x(self, X_next, X_now):
+	def ukf_step(self, x, sqrtP, sqrtQ, sqrtR, t_old, t, z = None, verbose = False):
 		"""
-		This function computes the state-state cross covariance matrix (between the old Xold and the new Xnew state vectors).
-		This is used by the smoothing process
-		"""
-		W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
-		Xave_next = self.average_proj(X_next)
-		Xave_now  = self.average_proj(X_now)
+                This method implements the basic step that constitutes the UKF algorithm.
+                The main steps are two:
+                
+                1. predition of the new state by projection,
+                2. correction of the projection using the measurements
+                
+                :param numpy.array x: initial state vector
+                :param numpy.ndarray sqrtP: square root of the process covariance matrix
+                :param numpy.ndarray sqrtQ: square root of the process covariance matrix
+                :param numpy.ndarray sqrtR: square root of the measurements/outputs covariance matrix
+                :param datetime.datetime t_old: initial time for running the simulaiton
+                :param datetime.datetime t: final time for runnign the simulation
+                :param numpy.array z: measured outputs at time ``t```. If not provided the method retieves
+                  the data automatically by calling the method :func:`estimationpy.fmu_utils.model.Model.get_measured_data_ouputs`.
+                :param boolean verbose: this boolean flag defines the level of logging required, set the flag to True only
+                  in debug mode.
 		
-		Vnext = self.__aug_state_from_full_state__(X_next - Xave_next)
-		Vnow  = self.__aug_state_from_full_state__(X_now - Xave_now)
-	
-		Cxx = np.dot(np.dot(Vnext.T, W), Vnow)
-		return Cxx
+                :return: a tuple with the following variables
+                
+                  * a vector containing the corrected state,
+                  * the corrected quare root of the state covariance matrix, 
+                  * the average of the measured outputs, 
+                  * the square root of the output covariance matrix,
+                  * the average of the complete output vector,
+                  * the average of the full corrected state vector	
+                
+                :rtype: tuple
+		"""
 
-	def ukf_step(self, x, sqrtP, sqrtQ, sqrtR, t_old, t, z = None, verbose=False):
-		"""
-		z,x,S,sqrtQ,sqrtR,u_old,u,
-		
-		This methods contains all the steps that have to be performed by the UKF:
-		
-		1- prediction
-		2- correction and update
-		"""
-		
+                # Get the parameters and the states to observe
 		pars = x[self.n_state_obs:]
 		x = x[:self.n_state_obs]
 		
@@ -670,27 +859,27 @@ higher that the number of states ('+str(self.n_state)+')!')
 			print X_proj
 	
 		# compute the average
-		Xave = self.average_proj(X_proj)
+		x_ave = self.average_proj(X_proj)
 		Xfull_ave = self.average_proj(Xfull_proj)
 		
 		if verbose:
 			print "Averaged projected sigma points"
-			print Xave
+			print x_ave
 		
 		if verbose:
 			print "Averaged projected full state"
 			print Xfull_ave
 		
 		# compute the new squared covariance matrix S
-		Snew = self.compute_S(X_proj,Xave,sqrtQ)
+		Snew = self.compute_S(X_proj,x_ave,sqrtQ)
 		
 		if verbose:
 			print "New squared S matrix"
 			print Snew
 		
 		# redraw the sigma points, given the new covariance matrix
-		x    = Xave[0,0:self.n_state_obs]
-		pars = Xave[0,self.n_state_obs:]
+		x    = x_ave[0,0:self.n_state_obs]
+		pars = x_ave[0,self.n_state_obs:]
 		Xs   = self.compute_sigma_points(x, pars, Snew, sqrtQ, sqrtR)
 		
 		# Merge the real full state and the new ones
@@ -726,7 +915,7 @@ higher that the number of states ('+str(self.n_state)+')!')
 			print "Sy =",Sy
 		
 		# compute the cross covariance matrix
-		CovXZ = self.compute_cov_x_z(X_proj, Xave, Z_proj, Zave)
+		CovXZ = self.compute_cov_x_z(X_proj, x_ave, Z_proj, Zave)
 		
 		if verbose:
 			print "State output covariance matrix"
@@ -751,7 +940,7 @@ higher that the number of states ('+str(self.n_state)+')!')
 			print "K=",K
 		
 		# State correction using the measurements
-		X_corr = Xave + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
+		X_corr = x_ave + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
 		
 		# If constraints are active, they are imposed in order to avoid the corrected value to fall outside
 		X_corr[0,:] = self.constrained_state(X_corr[0,:])
@@ -780,38 +969,44 @@ higher that the number of states ('+str(self.n_state)+')!')
 		self.model.set_state_selected(X_corr[0,:self.n_state_obs])
 		self.model.set_parameters_selected(X_corr[0,self.n_state_obs:])
 		
-		return (X_corr[0], S_corr, Zave, Sy, Zfull_ave, Xfull_ave[0])
-	
-	@staticmethod
-	def find_closest_matches(start, stop, time):
-		"""
-		Given the vector time and the start and stop values, the function returns the elements
-		in the vector time that are as close as possible to the start and stop.
-		NOTE:
-		It is assumed that the vector time is sorted.
-		"""
-		import bisect
-		
-		# Check that start and stop times are within the acceptable time range
-		if not (start >= time[0] and start <= time[-1]):
-			raise IndexError("The start time has to be between the time range")
-		
-		if not (stop >= time[0] and stop <= time[-1]):
-			raise IndexError("The stop time has to be between the time range")
-		
-		if not (stop >= start):
-			raise ValueError("The stop time has to be after the start time")
-		
-		# Find the closest value 
-		ix_start = bisect.bisect_left(time, start)
-		ix_stop = bisect.bisect_right(time, stop)
-		
-		return (ix_start, ix_stop)
-			
+		return (X_corr[0], S_corr, Zave, Sy, Zfull_ave, Xfull_ave[0])		
 	
 	def filter(self, start, stop, verbose = False, forSmoothing = False):
 		"""
-		This method starts the filtering process and performs a loop of ukf-steps
+		This method starts the filtering process. The filtering process
+                is a loop of multiple calls of the basic method :func:`ukf_step`.
+                
+                :param datetime.datetime start: time stamp that indicates the beginning of the
+                  filtering period
+                :param datetime.datetime stop: time stamp that identifies the end of the
+                  filtering period
+                :param bool verbose: Boolean flag that indicates the level of verbosity required
+                  when logging. Set to True only in debug mode.
+                :param bool forSmoothing: Boolean flag that indicates if the data computed by this method
+                  will be used by a smoother. If True, the function returns more data do the smoother
+                  can use it.
+                
+                :return: the method returns a tuple containinig
+                
+                  * time vector containing the instants at which the filter corrected
+                    and estimated the states and/or parameters,
+                  * the estimated states and parameters,
+                  * the square root of the covariance matrix of the estimated states and parameters,
+                  * the measured outputs,
+                  * the square root of the covariance matrix of the outputs,
+                  * the full outputs of the model
+
+                  if ``forSmoothing==True``, the following variables are added
+                
+                  * the full states of the model,
+                  * the square root of the process covariance matrix,
+                  * the square root of the measurements covariance matrix
+                
+                  **Note:** please note that every vector and matrix returned by this method is a list that
+                  contains the vector/matrices for each time stamp of the filtering process.
+                
+                :rtype: tuple
+                
 		"""
 		# Read the output measured data
 		measuredOuts = self.model.get_measured_output_data_series()
@@ -887,7 +1082,7 @@ higher that the number of states ('+str(self.n_state)+')!')
 		# iterating starting from the end and back
 		# i : nTimeStep-2 -> 0
 		#
-		# From point i with an estimation Xave[i], and S[i]
+		# From point i with an estimation x_ave[i], and S[i]
 		# new sigma points are created and propagated, the result is a 
 		# new vector of states X[i+1] (one for each sigma point)
 		#
@@ -929,14 +1124,14 @@ higher that the number of states ('+str(self.n_state)+')!')
 				print X_plus_1
 			
 			# average of the sigma points
-			Xave_plus_1 = self.average_proj(X_plus_1)
+			x_ave_plus_1 = self.average_proj(X_plus_1)
 			
 			if verbose:
 				print "Averaged propagated sigma points"
-				print Xave_plus_1
+				print x_ave_plus_1
 			
 			# compute the new covariance matrix
-			Snew = self.compute_S(X_plus_1, Xave_plus_1, sqrtQ)
+			Snew = self.compute_S(X_plus_1, x_ave_plus_1, sqrtQ)
 			
 			if verbose:
 				print "Former S matrix used to draw the points"
@@ -946,7 +1141,7 @@ higher that the number of states ('+str(self.n_state)+')!')
 			
 			# compute the cross covariance matrix of the two states
 			# (new state already corrected, coming from the "future", and the new just computed through the projection)
-			Cxx  = self.compute_cov_x_x(X_plus_1, Xave_plus_1, Xs_i, Xs_i_ave)
+			Cxx  = self.compute_cov_x_x(X_plus_1, x_ave_plus_1, Xs_i, Xs_i_ave)
 			
 			if verbose:
 				print "Cross state-state covariance matrix"
@@ -957,12 +1152,12 @@ higher that the number of states ('+str(self.n_state)+')!')
 			D             = np.linalg.lstsq(Snew, firstDivision)[0]
 			#D             = D.T
 			
-			correction = np.dot(np.matrix(Xsmooth[i+1]) - Xave_plus_1, D)
+			correction = np.dot(np.matrix(Xsmooth[i+1]) - x_ave_plus_1, D)
 			if verbose:
 				print "Old state"
 				print X[i]
 				print "Error:"
-				print Xsmooth[i+1] - Xave_plus_1
+				print Xsmooth[i+1] - x_ave_plus_1
 				print "Correction:"
 				print correction
 			
@@ -1052,7 +1247,7 @@ higher that the number of states ('+str(self.n_state)+')!')
 		# iterating starting from the end and back
 		# i : nTimeStep-2 -> 0
 		#
-		# From point i with an estimation Xave[i], and S[i]
+		# From point i with an estimation x_ave[i], and S[i]
 		# new sigma points are created and propagated, the result is a 
 		# new vector of states X[i+1] (one for each sigma point)
 		#
@@ -1085,14 +1280,14 @@ higher that the number of states ('+str(self.n_state)+')!')
 				print x_plus_1
 			
 			# average of the sigma points
-			Xave_plus_1 = self.average_proj(x_plus_1)
+			x_ave_plus_1 = self.average_proj(x_plus_1)
 			
 			if verbose:
 				print "Averaged propagated sigma points"
-				print Xave_plus_1
+				print x_ave_plus_1
 			
 			# compute the new covariance matrix
-			Snew = self.compute_S(x_plus_1,Xave_plus_1,sqrtQ)
+			Snew = self.compute_S(x_plus_1,x_ave_plus_1,sqrtQ)
 			
 			if verbose:
 				print "New Squared covaraince matrix"
@@ -1100,7 +1295,7 @@ higher that the number of states ('+str(self.n_state)+')!')
 			
 			# compute the cross covariance matrix of the two states
 			# (new state already corrected, coming from the "future", and the new just computed through the projection)
-			Cxx  = self.compute_C_x_x(x_plus_1,Xave_plus_1,Xs_i,Xs_i_ave)
+			Cxx  = self.compute_C_x_x(x_plus_1,x_ave_plus_1,Xs_i,Xs_i_ave)
 			
 			if verbose:
 				print "Cross state-state covariance matrix"
@@ -1115,13 +1310,13 @@ higher that the number of states ('+str(self.n_state)+')!')
 				print "Old state"
 				print Xhat[i,:]
 				print "Error:"
-				print Xsmooth[i+1,0:self.n_state_obs] - Xave_plus_1[0,0:self.n_state_obs]
+				print Xsmooth[i+1,0:self.n_state_obs] - x_ave_plus_1[0,0:self.n_state_obs]
 				print "Correction:"
-				print np.dot(D, Xsmooth[i+1,0:self.n_state_obs] - Xave_plus_1[0,0:self.n_state_obs])
+				print np.dot(D, Xsmooth[i+1,0:self.n_state_obs] - x_ave_plus_1[0,0:self.n_state_obs])
 				
 			# correction (i.e. smoothing, of the state estimation and covariance matrix)
 			Xsmooth[i,self.n_state_obs:]   = Xhat[i,self.n_state_obs:]
-			Xsmooth[i,0:self.n_state_obs]  = Xhat[i,0:self.n_state_obs] + np.dot(D, Xsmooth[i+1,0:self.n_state_obs] - Xave_plus_1[0,0:self.n_state_obs])
+			Xsmooth[i,0:self.n_state_obs]  = Xhat[i,0:self.n_state_obs] + np.dot(D, Xsmooth[i+1,0:self.n_state_obs] - x_ave_plus_1[0,0:self.n_state_obs])
 			
 			# How to introduce constrained estimation
 			Xsmooth[i,0:self.n_state_obs]  = self.constrained_state(Xsmooth[i,0:self.n_state_obs])
@@ -1135,3 +1330,40 @@ higher that the number of states ('+str(self.n_state)+')!')
 			Ssmooth[i,:,:] = self.chol_update(S[i,:,:],V,-1*np.ones(self.n_state_obs))
 			
 		return (Xsmooth, Ssmooth)
+
+        @staticmethod
+	def find_closest_matches(start, stop, time):
+		"""
+		Given the vector that contains all the time stamps over which the inputs and measured
+                outputs are defined, the function identifies which of its elements in the parameter 
+                vector ``time`` are the closest the parameters ``start`` and ``stop``.
+		
+                **Note:**
+		The function assumes the parameter ``time`` is sorted.
+                
+                :param datetime.datetime start: the initial time stamp
+                :param datetime.datetime start: the final time stamp
+                :param list time: a datetime index for the data
+                
+                :return: a tuple that contains the selected start and stop elements from ``time``
+                  that are the closest to ``start`` and ``stop``.
+                :rtype: tuple
+                
+		"""
+		import bisect
+		
+		# Check that start and stop times are within the acceptable time range
+		if not (start >= time[0] and start <= time[-1]):
+			raise IndexError("The start time has to be between the time range")
+		
+		if not (stop >= time[0] and stop <= time[-1]):
+			raise IndexError("The stop time has to be between the time range")
+		
+		if not (stop >= start):
+			raise ValueError("The stop time has to be after the start time")
+		
+		# Find the closest value 
+		ix_start = bisect.bisect_left(time, start)
+		ix_stop = bisect.bisect_right(time, stop)
+		
+		return (ix_start, ix_stop)
