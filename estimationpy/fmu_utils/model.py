@@ -10,7 +10,6 @@ import pandas as pd
 import datetime
 
 from estimationpy.fmu_utils.in_out_var import InOutVar
-from estimationpy.fmu_utils.tree import Tree
 from estimationpy.fmu_utils.estimation_variable import EstimationVariable
 
 import estimationpy.fmu_utils.strings as fmu_util_strings
@@ -37,7 +36,7 @@ class Model():
     
     """
     
-    def __init__(self, fmuFile = None, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, set_trees = False, verbose = None):
+    def __init__(self, fmuFile = None, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, verbose = None):
         """
         
         Constructor method that initializes an object of type **Model** that can be used for simulation
@@ -50,8 +49,6 @@ class Model():
           the FMU model. See :mod:`estimationpy.fmu_utils.strings` for available options.
         :param float atol: Absolute tolerance used by the solver when simulating the FMU model.
         :param float rtol: relative tolerance used by the solver when simulating the FMU model.
-        :param bool set_trees: Boolean flag that indicates whether building the trees representing
-          the structure of the variables/parameters of the model.
         :param string verbose: level of verbosity required when log messagess are generated. 
         
         """
@@ -78,12 +75,6 @@ class Model():
         self.tool = ""
         self.numStates = ""
         
-        # Trees that describe parameters, state variables, inputs and outputs hierarchy
-        self.treeParameters = Tree(fmu_util_strings.PARAMETER_STRING)
-        self.treeVariables = Tree(fmu_util_strings.VARIABLE_STRING)
-        self.treeInputs = Tree(fmu_util_strings.INPUT_STRING)
-        self.treeOutputs = Tree(fmu_util_strings.OUTPUT_STRING)
-        
         # Number of maximum tries for a simulation to be successfully run
         self.SIMULATION_TRIES = 4
         
@@ -99,8 +90,7 @@ class Model():
         # See what can be done in catching the exception/propagating it
         if fmuFile != None:
             self.__set_fmu__(fmuFile, result_handler, solver, atol, rtol, verbose)
-            if set_trees:
-                self.__set_trees__()
+        return
     
     def add_parameter(self, obj):
         """
@@ -449,11 +439,6 @@ class Model():
             outputs.append(inVar.read_from_data_series(t))
         return outputs
     
-    def get_inputs_tree(self):
-        """
-        This method returns the tree associated to the inputs of the model
-        """
-        return self.treeInputs
     
     def get_measured_outputs_values(self):
         """
@@ -591,12 +576,6 @@ class Model():
             i += 1
         return obsOut
     
-    def get_outputs_tree(self):
-        """
-        This method returns the tree associated to the outputs of the model
-        """
-        return self.treeOutputs
-    
     def get_parameters(self):
         """
         Return the list of parameters contained by the FMU that have been selected
@@ -646,12 +625,6 @@ class Model():
             obsPars[i] = p.read_value_in_fmu(self.fmu)
             i += 1
         return obsPars
-    
-    def get_parameters_tree(self):
-        """
-        This method returns the tree associated to the parameters of the model
-        """
-        return self.treeParameters
     
     def get_properties(self):
         """
@@ -710,79 +683,7 @@ class Model():
             maxValues[i] = v.get_max_value()
             i += 1
         return maxValues
-    
-    def get_tree(self, objectTree, variability, causality, onlyStates = False, pedantic = False):
-        """
-        This function, provided one tree, populates it.
-        The tree is used to represent the parameters, variables, input, outputs with the dot notation,
-        and used as support for the graphical object tree
-        """
-        try:
-            
-            # Take the variable of the FMU that have the specified variability and causality
-            # the result is a dictionary which has as key the name of the variable with the dot notation
-            # and as element a class of type << pyfmi.fmi.ScalarVariable >>
-            # Alias variable removed for clarity.
-            dictParameter = self.fmu.get_model_variables(include_alias = False, variability = variability, causality = causality)
-            
-            if onlyStates and pedantic:
-                print "Ref. values of the states: "+str(self.stateValueReferences)
-            
-            for k in dictParameter.keys():
-                ####################################################################################
-                # TODO: check if it's true to don't add now the variables which have derivatives
-                #       I think in general is not true, but be careful with the extraction of the 
-                #       name with the dot notation
-                ####################################################################################
-                if "der(" not in k:
-                    
-                    # Split the variable name that is written with the dot notation
-                    strNames = k.split(".")
-                    
-                    # Given the vector of names obtained with the dot notation creates the branches of the tree
-                    # and name correctly each node and leaf.
-                    #
-                    # The object attached to each leaf of the tree is << dictParameter[k] >>
-                    # which is of type << pyfmi.fmi.ScalarVariable >>
-                    if onlyStates:
-                        
-                        # Add the variables that are in the state vector of the system
-                        if dictParameter[k].value_reference in self.stateValueReferences:
-                            objectTree.addFromString(strNames, dictParameter[k])
-                            if pedantic:
-                                print str(k) + " with Ref. value =" + str(dictParameter[k].value_reference)
-                                print str(k) + " with Name =" + str(dictParameter[k].name)
-                                print dictParameter[k]
-                            
-                    else:
-                        objectTree.addFromString(strNames, dictParameter[k])
-            
-            if pedantic:
-                print objectTree.get_all()
-            
-            return True
         
-        except IndexError:
-            # An error can occur if the FMU has not yet been loaded
-            print "FMU not yet loaded..."
-            return False
-    
-    def get_tree_by_type(self, Type):
-        """
-        This method given a string that describes a given type of tree, it returns that tree
-        """
-        if Type == fmu_util_strings.PARAMETER_STRING:
-            return self.treeParameters
-        if Type == fmu_util_strings.VARIABLE_STRING:
-            return self.treeVariables
-        if Type == fmu_util_strings.INPUT_STRING:
-            return self.treeInputs
-        if Type == fmu_util_strings.OUTPUT_STRING:
-            return self.treeOutputs
-        else:
-            print "No Match between the type passes and the available trees"
-            return None
-    
     def get_variables(self):
         """
         Return the list of state variables contained by the FMU that have been selected
@@ -916,12 +817,6 @@ class Model():
         else:
             print "Impossible to look for the name because it is None or empty"
             return None
-    
-    def get_variables_tree(self):
-        """
-        This method returns the tree associated to the state variables of the model
-        """
-        return self.treeVariables
     
     def initialize_simulator(self, startTime = None):
         """
@@ -1089,7 +984,7 @@ class Model():
         
         return LoadedOutputs
     
-    def re_init(self, fmuFile, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, set_trees = False, verbose=None):
+    def re_init(self, fmuFile, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, verbose=None):
         """
         This function reinitializes the FMU associated to the model
         """
@@ -1097,7 +992,7 @@ class Model():
         print "Reinitialized model with: ",fmuFile
         if self.fmu != None:
             self.fmu = None
-        self.__init__(fmuFile, result_handler, solver, atol, rtol, set_trees, verbose)
+        self.__init__(fmuFile, result_handler, solver, atol, rtol, verbose)
     
     def remove_parameter(self, obj):
         """
@@ -1187,33 +1082,6 @@ class Model():
         else:
             print "WARNING: The fmu has already been assigned to this model! Check your code!"
         
-    def __set_inputs_tree__(self):
-        """
-        This method updates the inputs tree structure
-        """
-        if not self.__set_generalized_tree__(None, 0):
-            print "Problems while creating the inputs tree"
-            self.treeInputs = Tree(fmu_util_strings.INPUT_STRING)
-            
-    def __set_generalized_tree__(self, variability, causality, onlyStates = False, pedantic = False):
-        """
-        This method populates 
-        """
-        if variability == 1 and causality == None:
-            # parameters
-            done = self.get_tree(self.treeParameters, variability, causality, onlyStates, pedantic)
-        if variability == 3 and causality == None:
-            # state variables
-            done = self.get_tree(self.treeVariables, variability, causality, onlyStates, pedantic)
-        if variability == None and causality == 1:
-            # outputs
-            done = self.get_tree(self.treeOutputs, variability, causality, onlyStates, pedantic)
-        if variability == None and causality == 0:
-            # inputs
-            done = self.get_tree(self.treeInputs, variability, causality, onlyStates, pedantic)
-            
-        return done
-    
     def __set_inputs__(self):
         """
         This function sets the input variables of a model
@@ -1254,22 +1122,6 @@ class Model():
         This function sets the output variables of a model
         """
         self.__set_in_out_var__(None, 1)
-    
-    def __set_outputs_tree__(self):
-        """
-        This method updates the outputs tree structure
-        """
-        if not self.__set_generalized_tree__(None, 1):
-            print "Problems while creating the outputs tree"
-            self.treeOutputs = Tree(fmu_util_strings.OUTPUT_STRING)
-    
-    def __set_parameters_tree__(self):
-        """
-        This method updates the parameters tree structure
-        """
-        if not self.__set_generalized_tree__(1, None):
-            print "Problems while creating the parameters tree"
-            self.treeParameters = Tree(fmu_util_strings.PARAMETER_STRING)
     
     def set_result_file(self, fileName):
         """
@@ -1355,24 +1207,6 @@ class Model():
         else:
             # the vectors are not compatibles
             return False
-    
-    def __set_trees__(self):
-        """
-        This method sets the trees associated to all parameters, variables, inbputs and outputs
-        """
-        self.__set_inputs_tree__()
-        self.__set_outputs_tree__()
-        self.__set_parameters_tree__()
-        self.__set_variables_tree__()
-        pass
-    
-    def __set_variables_tree__(self):
-        """
-        This method updates the variables tree structure
-        """
-        if not self.__set_generalized_tree__(3, None, True):
-            print "Problems while creating the variables tree"
-            self.treeVariables = Tree(fmu_util_strings.VARIABLE_STRING)
     
     def simulate(self, start_time = None, final_time = None, time = pd.DatetimeIndex([]), Input = None, complete_res = False):
         """
