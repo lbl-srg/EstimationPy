@@ -1190,50 +1190,6 @@ class UkfFmu():
 		
 		# Return the results of the filtering and smoothing
 		return time, X, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth
-	
-	def parameter_estimation(self, start, stop, maxIter=100, verbose=False):
-		"""
-		This method provides a parameter estimation using the UKF smoother
-		"""
-		pars = []
-		
-		for i in range(maxIter):
-			print "ITERATION "*3,i
-			time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = self.filter_and_smooth(start=start, stop=stop, verbose=verbose)
-			
-			x  = np.array(x)
-			xs = np.array(Xsmooth)
-			Ss = np.array(Ssmooth)
-			
-			x0 = xs[0,:self.n_state_obs]
-			p0 = x[0,self.n_state_obs:]
-			p  = xs[0,self.n_state_obs:]
-			p_mean  = np.mean(xs[:,self.n_state_obs:], 0)
-			print "init_pars=",p0
-			print "pars=",p
-			#print "pars_m=",p_mean
-			pars.append(p)
-			
-			j = 0
-			for var in self.model.get_variables():
-				var.set_initial_value(xs[0,j])
-				var.set_covariance(Ss[0,j,j])
-				j += 1
-			
-			self.model.set_parameters_selected(p)
-			j = 0
-			for var in self.model.get_parameters():
-				#var.SetInitialValue(p[j])
-				#var.SetInitialValue(p_mean[j])
-				var.set_covariance(Ss[0,j,j])
-				j += 1
-		
-		return pars
-			
-			
-			
-			
-		
 			
 	def smooth(self,time,Xhat,S,sqrtQ,U,m,verbose=False):
 		"""
