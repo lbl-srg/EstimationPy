@@ -25,12 +25,7 @@ def main():
     dir_path = os.path.dirname(__file__)
     
     # Define the path of the FMU file
-    if platform.architecture()[0]=="32bit":
-        print "32-bit architecture"
-        filePath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "Fmu_ValveStuck_bias3.fmu")
-    else:
-        print "64-bit architecture"
-        filePath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "Fmu_ValveStuck_bias3.fmu")
+    filePath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "FMUs", "ValveStuck.fmu")
     
     # Initialize the FMU model empty
     m = Model(filePath, atol=1e-5, rtol=1e-6)
@@ -88,7 +83,6 @@ def main():
     var.SetMaxValue(0.025)
     var.SetConstraintHigh(True)
     
-    
     # Initialize the model for the simulation
     m.InitializeSimulator()
     
@@ -101,16 +95,16 @@ def main():
     m.SetReal(Lambda, 0.0)
     
     # instantiate the UKF for the FMU
-    ukf_FMU = ukfFMU(m, augmented = False)
+    ukf_FMU = UkfFmu(m)
     ukf_FMU.setUKFparams()
     
     # start filter
-    t0 = pd.to_datetime(0.0, unit = "s")
-    t1 = pd.to_datetime(360.0, unit = "s")                                            
-    time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filterAndSmooth(start = t0, stop = t1, verbose=False)
+    t0 = pd.to_datetime(0.0, unit = "s", utc = True)
+    t1 = pd.to_datetime(360.0, unit = "s", utc = True)                                            
+    time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = ukf_FMU.filter_and_smooth(start = t0, stop = t1, verbose=False)
     
     # Path of the csv file containing the True data series
-    csvTrue = "../../modelica/FmuExamples/Resources/data/SimulationData_ValveBias4.csv"
+    csvTrue = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_ValveBias4.csv")
     
     # Get the measured outputs
     showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, csvTrue, m)
@@ -129,7 +123,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     
     ####################################################################
     # Display results
-    simResults = CsvReader.CsvReader()
+    simResults = csv_reader.CsvReader()
     simResults.OpenCSV(csvTrue)
     simResults.SetSelectedColumn("valveStuck.T_in")
     res = simResults.GetDataSeries()
