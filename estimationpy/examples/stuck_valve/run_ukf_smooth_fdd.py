@@ -36,7 +36,7 @@ def main():
     m = Model(filePath, atol=1e-5, rtol=1e-6)
     
     # Path of the csv file containing the data series
-    csvPath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "NoisyData_ValveBias4.csv")
+    csvPath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "NoisyData_ValveStuck.csv")
     
     # Set the CSV file associated to the input, and its covariance
     input = m.get_input_by_name("dp")
@@ -116,7 +116,7 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, m
     
     # Path of the csv file containing the True data series
     dir_path = os.path.dirname(__file__)
-    csvTrue = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_ValveBias4.csv")
+    csvTrue = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_ValveStuck.csv")
     
     ####################################################################
     # Convert the results computed by the filter and smoother
