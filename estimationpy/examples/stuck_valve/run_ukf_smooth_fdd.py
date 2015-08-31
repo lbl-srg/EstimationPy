@@ -34,40 +34,40 @@ def main():
     csvPath = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "NoisyData_ValveBias4.csv")
     
     # Set the CSV file associated to the input, and its covariance
-    input = m.GetInputByName("dp")
-    input.GetCsvReader().OpenCSV(csvPath)
-    input.GetCsvReader().SetSelectedColumn("valveStuck.dp")
+    input = m.get_input_by_name("dp")
+    input.get_csv_reader().open_csv(csvPath)
+    input.get_csv_reader().set_selected_column("valveStuck.dp")
     
     # Set the CSV file associated to the input, and its covariance
-    input = m.GetInputByName("cmd")
-    input.GetCsvReader().OpenCSV(csvPath)
-    input.GetCsvReader().SetSelectedColumn("valveStuck.cmd")
+    input = m.get_input_by_name("cmd")
+    input.get_csv_reader().open_csv(csvPath)
+    input.get_csv_reader().set_selected_column("valveStuck.cmd")
     
     # Set the CSV file associated to the input, and its covariance
-    input = m.GetInputByName("T_in")
-    input.GetCsvReader().OpenCSV(csvPath)
-    input.GetCsvReader().SetSelectedColumn("valveStuck.T_in")
+    input = m.get_input_by_name("T_in")
+    input.get_csv_reader().open_csv(csvPath)
+    input.get_csv_reader().set_selected_column("valveStuck.T_in")
     
     # Set the CSV file associated to the output, and its covariance
-    output = m.GetOutputByName("m_flow")
-    output.GetCsvReader().OpenCSV(csvPath)
-    output.GetCsvReader().SetSelectedColumn("valveStuck.m_flow")
-    output.SetMeasuredOutput()
-    output.SetCovariance(0.05) #0.03
+    output = m.get_output_by_name("m_flow")
+    output.get_csv_reader().open_csv(csvPath)
+    output.get_csv_reader().set_selected_column("valveStuck.m_flow")
+    output.set_measured_output()
+    output.set_covariance(0.05) #0.03
     
     
     #################################################################
     # Select the variable to be estimated
-    m.AddVariable(m.GetVariableObject("command.y"))
+    m.add_variable(m.get_variable_cbject("command.y"))
     
     # Set initial value of parameter, and its covariance and the limits (if any)
-    var = m.GetVariables()[0]
-    var.SetInitialValue(1.0)
-    var.SetCovariance(0.05) # 0.08
-    var.SetMinValue(0.0)
-    var.SetConstraintLow(True)
-    var.SetMaxValue(1.00)
-    var.SetConstraintHigh(True)
+    var = m.get_variables()[0]
+    var.set_initial_value(1.0)
+    var.set_covariance(0.05) # 0.08
+    var.set_min_value(0.0)
+    var.set_constraint_Low(True)
+    var.set_max_value(1.00)
+    var.set_constraint_high(True)
     
     #################################################################
     # Select the variable to be estimated
@@ -76,27 +76,27 @@ def main():
     
     # Set initial value of parameter, and its covariance and the limits (if any)
     var = m.GetParameters()[0]
-    var.SetInitialValue(0.00)
-    var.SetCovariance(0.0007)
-    var.SetMinValue(-0.005)
-    var.SetConstraintLow(True)
-    var.SetMaxValue(0.025)
-    var.SetConstraintHigh(True)
+    var.set_initial_value(0.00)
+    var.set_covariance(0.0007)
+    var.set_min_value(-0.005)
+    var.set_constraint_Low(True)
+    var.set_max_value(0.025)
+    var.set_constraint_high(True)
     
     # Initialize the model for the simulation
-    m.InitializeSimulator()
+    m.initialize_simulator()
     
     # Set a parameter of the model
     # This parameter specifies
-    use_cmd = m.GetVariableObject("use_cmd")
-    m.SetReal(use_cmd, 0.0)
+    use_cmd = m.get_variable_object("use_cmd")
+    m.set_real(use_cmd, 0.0)
     
-    Lambda = m.GetVariableObject("lambda")
-    m.SetReal(Lambda, 0.0)
+    Lambda = m.get_variable_object("lambda")
+    m.set_real(Lambda, 0.0)
     
     # instantiate the UKF for the FMU
     ukf_FMU = UkfFmu(m)
-    ukf_FMU.setUKFparams()
+    ukf_FMU.set_default_ukf_params()
     
     # start filter
     t0 = pd.to_datetime(0.0, unit = "s", utc = True)
@@ -124,50 +124,50 @@ def showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, c
     ####################################################################
     # Display results
     simResults = csv_reader.CsvReader()
-    simResults.OpenCSV(csvTrue)
-    simResults.SetSelectedColumn("valveStuck.T_in")
-    res = simResults.GetDataSeries()
+    simResults.open_csv(csvTrue)
+    simResults.set_selected_column("valveStuck.T_in")
+    res = simResults.get_data_series()
     t = res.index
     d_temp = res.values
     
-    simResults.SetSelectedColumn("valveStuck.dp")
-    res = simResults.GetDataSeries()
+    simResults.set_selected_column("valveStuck.dp")
+    res = simResults.get_data_series()
     d_dp = res.values
     
-    input = m.GetInputByName("T_in")
-    input.GetCsvReader().SetSelectedColumn("valveStuck.T_in")
-    res = input.GetCsvReader().GetDataSeries()
+    inp = m.get_input_by_name("T_in")
+    inp.get_csv_reader().set_selected_column("valveStuck.T_in")
+    res = inp.get_csv_reader().get_data_series()
     
     t_t = res.index
     d_temp_noisy = res.values
     
-    input = m.GetInputByName("dp")
-    input.GetCsvReader().SetSelectedColumn("valveStuck.dp")
-    res = input.GetCsvReader().GetDataSeries()
+    inp = m.get_input_by_name("dp")
+    inp.get_csv_reader().set_selected_column("valveStuck.dp")
+    res = inp.get_csv_reader().get_data_series()
     d_dp_noisy = res.values
     
-    simResults.SetSelectedColumn("valveStuck.m_flow_real")
-    res = simResults.GetDataSeries()
+    simResults.set_selected_column("valveStuck.m_flow_real")
+    res = simResults.get_data_series()
     d_real = res.values
     
-    simResults.OpenCSV(csvTrue)
-    simResults.SetSelectedColumn("valveStuck.lambda")
-    res = simResults.GetDataSeries()
+    simResults.open_csv(csvTrue)
+    simResults.set_selected_column("valveStuck.lambda")
+    res = simResults.get_data_series()
     d_lambda = res.values
     
-    outputRes = m.GetOutputByName("m_flow").GetCsvReader()
-    outputRes.SetSelectedColumn("valveStuck.m_flow")
-    res = outputRes.GetDataSeries()
+    outputRes = m.get_output_by_name("m_flow").get_csv_reader()
+    outputRes.set_selected_column("valveStuck.m_flow")
+    res = outputRes.get_data_series()
     
     to = res.index
     do = res.values
     
-    simResults.SetSelectedColumn("valveStuck.valve.opening")
-    res = simResults.GetDataSeries()
+    simResults.set_selected_column("valveStuck.valve.opening")
+    res = simResults.get_data_series()
     opening = res.values
     
-    simResults.SetSelectedColumn("valveStuck.cmd")
-    res = simResults.GetDataSeries()
+    simResults.set_selected_column("valveStuck.cmd")
+    res = simResults.get_data_series()
     command = res.values
     
     ####################################################################
