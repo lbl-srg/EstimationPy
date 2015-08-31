@@ -265,7 +265,7 @@ class UkfFmu():
                 x_A[self.n_state_obs+i] = self.constrParsValueHigh[i]
                 
             # if the constraint is active and the threshold is violated    
-            if self.constrParsLow[i] and X_A[self.n_state_obs+i] < self.constrParsValueLow[i]:
+            if self.constrParsLow[i] and x_A[self.n_state_obs+i] < self.constrParsValueLow[i]:
                 x_A[self.n_state_obs+i] = self.constrParsValueLow[i]
         
         return x_A
@@ -574,7 +574,7 @@ class UkfFmu():
         
         :param numpy.array x_new: vector that contains the full state of the system (estimated, not estimated states, as well
           the estimated parameters), this vector can be seen as the propagated sigma points
-        :param numpy.array x_avg_new: vector that contains the average of the propagated sigma points
+        :param numpy.array x_new_avg: vector that contains the average of the propagated sigma points
         :param numpy.array x: vector containing initial states before the progatation
         :param numpy.array x_avg: vector containing the average of the initial state before the propagation
         
@@ -584,7 +584,7 @@ class UkfFmu():
         """
         W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
             
-        Vx_new = self.__aug_state_from_full_state__(x_new - x_avg_new)
+        Vx_new = self.__aug_state_from_full_state__(x_new - x_new_avg)
         Vx  = self.__aug_state_from_full_state__(x - x_avg)
     
         covXX = np.dot(np.dot(Vx.T,W),Vx_new)
@@ -780,6 +780,8 @@ class UkfFmu():
         
         :rtype: tuple
         """
+        if verbose:
+            print "Start UKF step"
         
         # Get the parameters and the states to observe
         pars = x[self.n_state_obs:]
@@ -981,6 +983,7 @@ class UkfFmu():
                 X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1-ix_start], sqrtP[i-1-ix_start], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
             except Exception, e:
                 print "Exception while running UKF step from {0} to {1}".format(t_old, t)
+                print str(e)
                 print "The state X is"
                 print x[i-1-ix_start]
                 print "The sqrtP matrix is"
