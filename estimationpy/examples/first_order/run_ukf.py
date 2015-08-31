@@ -73,7 +73,7 @@ def main():
     m.initialize_simulator()
     
     # instantiate the UKF for the FMU
-    ukf_FMU = UkfFmu(m, augmented = False)
+    ukf_FMU = UkfFmu(m)
     
     # Start the filter
     t0 = pd.to_datetime(0.0, unit = "s", utc = True)

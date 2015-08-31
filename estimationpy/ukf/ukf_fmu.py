@@ -22,7 +22,7 @@ class UkfFmu():
     
 	"""
 	
-	def __init__(self, model, augmented = False):
+	def __init__(self, model):
 		"""
 		Constructor of the class that initializes an object that can be used to solve
                 state and parameter estimation problems by using the UKF and smoothing algorithms.
@@ -40,7 +40,6 @@ class UkfFmu():
                 
                 :param estimationpy.fmu_utils.model.Model model: the model which states and/or parameters
                   have to be estimated.
-                :param bool augmented: boolean flag that indicates if the UKF uses the augmented form or not.
                 
                 :raises Exception: The method raises an exception if there are not measured outputs, the 
                   number of states to estimate is higher than the total number of states, of the number of
@@ -61,11 +60,7 @@ class UkfFmu():
 		self.n_outputs = self.model.get_num_measured_outputs()
 		self.n_outputsTot= self.model.get_num_outputs()
 		
-		self.augmented = augmented
-		if not augmented:
-			self.N = self.n_state_obs + self.n_pars
-		else:
-			self.N = self.n_state_obs + self.n_pars + self.n_state_obs + self.n_pars + self.n_outputs
+		self.N = self.n_state_obs + self.n_pars
 		
 		# some check
 		if self.n_state_obs > self.n_state:
@@ -315,10 +310,7 @@ class UkfFmu():
 		#      ....
 		#  [0.0, 0.0, 0.0]]
 		
-		if self.augmented:
-			Xs = np.zeros((self.n_points, self.n_state_obs + self.n_pars + self.n_state_obs + self.n_pars + self.n_outputs))
-		else:
-			Xs = np.zeros((self.n_points, self.n_state_obs + self.n_pars))
+		Xs = np.zeros((self.n_points, self.n_state_obs + self.n_pars))
 
 		# Now using the sqrtP matrix that is lower triangular:
 		# create the sigma points by adding and subtracting the rows of the matrix sqrtP, to the lines of Xs
@@ -326,21 +318,7 @@ class UkfFmu():
 		#  [s12, s22, 0  ],
 		#  [s13, s23, s33]]
 		
-		if self.augmented:
-			zerosQ = np.zeros((1, self.n_state_obs + self.n_pars))
-			zerosR = np.zeros((1, self.n_outputs))
-			xs0    = np.hstack((x, pars, zerosQ, zerosR))
-			
-			zero1 = np.zeros((self.n_state_obs+self.n_pars, self.n_state_obs + self.n_pars))
-			zero2 = np.zeros((self.n_state_obs+self.n_pars, self.n_outputs))
-			zero3 = np.zeros((self.n_state_obs+self.n_pars, self.n_outputs))
-			
-			row1 = np.hstack((sqrtP,   zero1,   zero2)) 
-			row2 = np.hstack((zero1.T, sqrtQ,   zero3))
-			row3 = np.hstack((zero2.T, zero3.T, sqrtR))
-			sqrtP = np.vstack((row1, row2, row3))
-		else:
-			xs0 = np.hstack((x, pars))
+		xs0 = np.hstack((x, pars))
 			
 		Xs[0,:] = xs0
 		
@@ -356,22 +334,11 @@ class UkfFmu():
 			
 			try:
 				
-				if self.augmented:
-					Xs[i,  0:nso] += self.sqrtC*row[0:nso]
-					Xs[i,  ns:ns+npa] += self.sqrtC*row[ns:ns+npa]
-					Xs[i,  ns+npa:ns+npa+nso] += self.sqrtC*row[ns+npa:ns+npa+nso]
-					Xs[i,  ns+npa+nso:] += self.sqrtC*row[ns+npa+nso:]
-					
-					Xs[i+N,  0:nso] -= self.sqrtC*row[0:nso]
-					Xs[i+N,  ns:ns+npa] -= self.sqrtC*row[ns:ns+npa]
-					Xs[i+N,  ns+npa:ns+npa+nso] -= self.sqrtC*row[ns+npa:ns+npa+nso]
-					Xs[i+N,  ns+npa+nso:] -= self.sqrtC*row[ns+npa+nso:]
-				else:
-					Xs[i,  0:nso] += self.sqrtC*row[0:nso]
-					Xs[i,  ns:ns+npa] += self.sqrtC*row[ns:]
-					
-					Xs[i+N,  0:nso] -= self.sqrtC*row[0:nso]
-					Xs[i+N,  ns:] -= self.sqrtC*row[ns:]
+				Xs[i,  0:nso] += self.sqrtC*row[0:nso]
+				Xs[i,  ns:ns+npa] += self.sqrtC*row[ns:]
+				
+				Xs[i+N,  0:nso] -= self.sqrtC*row[0:nso]
+				Xs[i+N,  ns:] -= self.sqrtC*row[ns:]
 					
 			except ValueError:
 				print "Is not possible to generate the sigma points..."
@@ -481,28 +448,12 @@ class UkfFmu():
 		this method returns a vector that contains the augmented and observed states:
 		[ observed states, parameters estimated]
 		"""
-		#return Xfull
-		if False:
-			row, col = np.shape(Xfull)
-			Xaug = np.zeros((row, self.n_state_obs + self.n_pars + self.n_state_obs + self.n_outputs))
+		row, col = np.shape(Xfull)
+		Xaug = np.zeros((row, self.n_state_obs + self.n_pars))
 			
-			nso = self.n_state_obs
-			ns  = self.n_state 
-			npa  = self.n_pars
-			
-			for i in range(row):
-				Xaug[i, 0:nso] = Xfull[i, 0:nso] 
-				Xaug[i, ns:ns+npa] = Xfull[i, ns:ns+npa]
-				Xaug[i, ns+npa:ns+npa+nso] = Xfull[i, ns+npa:ns+npa+nso]
-				Xaug[i, ns+npa+nso:] = Xfull[i, ns+npa+nso:]
-				
-		else:
-			row, col = np.shape(Xfull)
-			Xaug = np.zeros((row, self.n_state_obs + self.n_pars))
-			
-			for i in range(row):
-				Xaug[i, 0:self.n_state_obs] = Xfull[i, 0:self.n_state_obs]
-				Xaug[i, self.n_state_obs:] = Xfull[i, self.n_state_obs:self.n_state_obs+self.n_pars]
+		for i in range(row):
+			Xaug[i, 0:self.n_state_obs] = Xfull[i, 0:self.n_state_obs]
+			Xaug[i, self.n_state_obs:] = Xfull[i, self.n_state_obs:self.n_state_obs+self.n_pars]
 				
 		return Xaug
 
@@ -524,23 +475,16 @@ class UkfFmu():
 		nso = self.n_state_obs
 		no  = self.n_outputs 
 		npa  = self.n_pars
-		if False:
-			# create the new Q matrix to add
-			A = np.zeros((nso, npa+nso+no))
-			B = np.zeros((npa+nso+no, nso))
-			C = np.zeros((npa+nso+no, npa+nso+no))
-			top = np.hstack((Q, A))
-			bot = np.hstack((B,C))
-			newQ = np.vstack((top, bot))
-		else:
-			# create the new Q matrix to add
-			A = np.zeros((nso, npa))
-			B = np.zeros((npa, nso))
-			C = np.zeros((npa, npa))
-			top = np.hstack((Q, A))
-			bot = np.hstack((B,C))
-			newQ = np.vstack((top, bot))
-		return newQ
+		
+		# create the new Q matrix to add
+		A = np.zeros((nso, npa))
+		B = np.zeros((npa, nso))
+		C = np.zeros((npa, npa))
+		top = np.hstack((Q, A))
+		bot = np.hstack((B,C))
+		newQ = np.vstack((top, bot))
+
+                return newQ
 		
 	def compute_P(self, x, x_avg, Q):
 		"""
