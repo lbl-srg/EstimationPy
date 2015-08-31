@@ -1,6 +1,5 @@
 within FmuExamples;
-model FirstOrder
-  "Model of a linear SISO first order system"
+model FirstOrder "Model of a linear SISO first order system"
   output Real x(start = 2.0) "State variable of the system";
   input Real u "Input variable";
   output Real y "Output of the system";
