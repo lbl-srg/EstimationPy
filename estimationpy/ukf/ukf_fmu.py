@@ -971,7 +971,7 @@ class UkfFmu():
 		
 		return (X_corr[0], S_corr, Zave, Sy, Zfull_ave, Xfull_ave[0])		
 	
-	def filter(self, start, stop, verbose = False, forSmoothing = False):
+	def filter(self, start, stop, verbose = False, for_smoothing = False):
 		"""
 		This method starts the filtering process. The filtering process
                 is a loop of multiple calls of the basic method :func:`ukf_step`.
@@ -982,7 +982,7 @@ class UkfFmu():
                   filtering period
                 :param bool verbose: Boolean flag that indicates the level of verbosity required
                   when logging. Set to True only in debug mode.
-                :param bool forSmoothing: Boolean flag that indicates if the data computed by this method
+                :param bool for_smoothing: Boolean flag that indicates if the data computed by this method
                   will be used by a smoother. If True, the function returns more data do the smoother
                   can use it.
                 
@@ -996,7 +996,7 @@ class UkfFmu():
                   * the square root of the covariance matrix of the outputs,
                   * the full outputs of the model
 
-                  if ``forSmoothing==True``, the following variables are added
+                  if ``for_smoothing==True``, the following variables are added
                 
                   * the full states of the model,
                   * the square root of the process covariance matrix,
@@ -1007,6 +1007,8 @@ class UkfFmu():
                 
                 :rtype: tuple
                 
+                :raises Exception: The method raises an exception if there are problem during the filtering process,
+                  e.g., numerical problems regarding the estimation.
 		"""
 		# Read the output measured data
 		measuredOuts = self.model.get_measured_output_data_series()
@@ -1032,7 +1034,7 @@ class UkfFmu():
 			t = time[i]
 			z = measuredOuts[i,1:]
 			
-			# execute a filtering step
+			# Execute a filtering step
 			try:
 				X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1-ix_start], sqrtP[i-1-ix_start], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
 			except Exception, e:
@@ -1043,7 +1045,7 @@ class UkfFmu():
 				print sqrtP[i-1-ix_start]
 				raise Exception("Problem while performing a UKF step")
 				
-				
+			# Add data to the list	
 			x.append(X_corr)
 			sqrtP.append(sP)
 			y.append(Zave)
@@ -1054,7 +1056,7 @@ class UkfFmu():
 		# The first of the overall output vector is missing, copy from the second element
 		y_full[0] = y_full[1]
 		
-		if forSmoothing:
+		if for_smoothing:
 			return time[ix_start:ix_stop], x, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR
 		else:
 			return time[ix_start:ix_stop], x, sqrtP, y, Sy, y_full
@@ -1064,9 +1066,11 @@ class UkfFmu():
 		This method executes the filter and then the smoothing of the data
 		"""
 		# Run the filter
-		time, X, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR = self.filter(start, stop, verbose = False, forSmoothing = True)
+		time, X, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR = self.filter(start, stop, verbose = False, for_smoothing = True)
 		
-		print "SMOOTHING "*4
+		print "=============================="
+                print "== Starting the Smoother  ===="
+                print "=============================="
 		
 		# get the number of time steps		
 		#s = np.reshape(time,(-1,1)).shape
