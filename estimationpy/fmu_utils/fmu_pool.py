@@ -256,7 +256,7 @@ class FmuPool():
 
             while n_active < self.N_MAX_PROCESS and i < N_SIMULATIONS:
                 # Run the process that simulate
-                if self.processes == 1:
+                if self.N_MAX_PROCESS <= 1:
                     # Just one process to run, void to do a fork
                     # NOTE: This is used when the process runs with Celery
                     processes[i].run()
