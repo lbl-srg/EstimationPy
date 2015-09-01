@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 from estimationpy.fmu_utils.fmu_pool import FmuPool
 from estimationpy.fmu_utils.model import Model
 
-def main():
+import multiprocessing
+
+def main(n_proc = multiprocessing.cpu_count()-1):
 
     # Initialize the FMU model empty
     m = Model()
@@ -43,7 +45,7 @@ def main():
     m.initialize_simulator()
 
     # Instantiate the pool
-    pool = FmuPool(m, debug = False)
+    pool = FmuPool(m, processes = n_proc, debug = False)
 
     # define the vector of initial conditions for which the simulations
     # have to be performed.
