@@ -24,9 +24,10 @@ class P(Process):
     * ``pars``, the parameters to be modified before simulating the model,
     * ``startTime``, the initial time of the simulation period,
     * ``stopTime``, the end time of the simulation period,
-    * ``result_queue``, a queue of type :class:`multiprocesing.Queue` where all the results of the simulations are stored and can be retrieved after the simulations are terminated,
+    * ``result_queue``, a queue of type :class:`multiprocesing.Queue` where all the results of \
+      the simulations are stored and can be retrieved after the simulations are terminated,
     * ``index``, an integer that is used to sort the results data by the class that manages a pool of processes,
-    * ``debug``, a boolean flag that enables the debug mode when running the simulations.
+    * ``debug``, a boolean flag that enables the debug mode when running the simulations.
     
     """
 
