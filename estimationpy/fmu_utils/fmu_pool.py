@@ -154,12 +154,20 @@ class FmuPool():
     
     def __init__(self, model, processes = multiprocessing.cpu_count()-1, debug = False):
         """
-        Constructore that initializes the pool of processes that runs the simulations.
+        Constructor that initializes the pool of processes that runs the simulations.
         
         :param estimationpy.fmu_utils.model.Model model: The model to simulate
         :param int processes: the number of processes allocated for the job
         :param bool debug: boolean flag that indicates whether the level of logging
           is for debugging or not. If True a file called ``debugFile.log`` is created.
+          
+        **NOTE**
+          If the parameter ``processes`` is less or equal to 1, by default the number of 
+          processes allocated is equal to one. Also, the implementation avoid to spawn a 
+          new process in case ``processes == 1``. This improves the performances and
+          solves an issue when the method :func:`run` is called from a Celery task.
+          The problem is caused by the inability of a Celery task to create a new
+          process.
         """
         self.model = model
         self.debug = debug

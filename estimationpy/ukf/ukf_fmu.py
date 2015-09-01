@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import multiprocessing
 
 from estimationpy.fmu_utils.fmu_pool import FmuPool
 
@@ -21,7 +22,7 @@ class UkfFmu():
 
     """
     
-    def __init__(self, model):
+    def __init__(self, model, n_proc = multiprocessing.cpu_count() - 1):
         """
         Constructor of the class that initializes an object that can be used to solve
         state and parameter estimation problems by using the UKF and smoothing algorithms.
@@ -39,6 +40,10 @@ class UkfFmu():
         
         :param estimationpy.fmu_utils.model.Model model: the model which states and/or parameters
           have to be estimated.
+        :param int n_proc: a positive integer that defines the number of processes that can be spawned
+          when the simulations are run. Make sure this value is equal to 1 if the filtering or smoothing
+          are executed as part of a Celery task. By default this value is equal to the number of 
+          available processors minus one.
         
         :raises Exception: The method raises an exception if there are not measured outputs, the 
           number of states to estimate is higher than the total number of states, of the number of
@@ -50,7 +55,7 @@ class UkfFmu():
         self.model = model
         
         # Instantiate the pool that will run the simulation in parallel
-        self.pool = FmuPool(self.model, debug = False)
+        self.pool = FmuPool(self.model, processes = n_proc, debug = False)
         
         # Set the number of states variables (total and observed), parameters estimated and outputs
         self.n_state = self.model.get_num_states()
