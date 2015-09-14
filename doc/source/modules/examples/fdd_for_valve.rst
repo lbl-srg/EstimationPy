@@ -131,11 +131,3 @@ simulation study. The black lines show the results of the identification using
 the algorithm.
 	   
 .. image:: ../../img/valve_example/Probability.png
-
-References
-++++++++++
-
-.. [Bonvini2014] *An FMI-based framework for state and parameter estimation*
-         Marco Bonvini, Michael Wetter, Michael D. Sohn
-	 In proceedings of 10th International Modelica Conference, 2014 - p. 647-656, Lund, Sweden
-	 http://www.ep.liu.se/ecp/096/068/ecp14096068.pdf   

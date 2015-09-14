@@ -49,7 +49,8 @@ already been exported as FMUs.
   publications
   contributors
   license 
-
+  legal
+  
 .. automodule:: estimationpy.ukf
    
 
