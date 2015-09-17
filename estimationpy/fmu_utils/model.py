@@ -36,7 +36,7 @@ class Model():
     
     """
     
-    def __init__(self, fmuFile = None, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, verbose = None):
+    def __init__(self, fmuFile = None, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, verbose = None, offset = None):
         """
         
         Constructor method that initializes an object of type **Model** that can be used for simulation
@@ -50,7 +50,10 @@ class Model():
         :param float atol: Absolute tolerance used by the solver when simulating the FMU model.
         :param float rtol: relative tolerance used by the solver when simulating the FMU model.
         :param string verbose: level of verbosity required when log messagess are generated. 
-        
+        :param datetime.datetime offset: a datetime object that is used as offset in the simulations. For example
+          when running an FMU that references a weather data file, one can specify as offset the midnight of the first
+          of January (in ISO format UTC referenced <year>-01-01T00:00+0000) and the command :func:`simulate` will use
+          the offset date instead of teh start date to compute the time in seconds.
         """
         
         # Reference to the FMU, that will be loaded using pyfmi
@@ -83,6 +86,9 @@ class Model():
         
         # Set the number of states
         self.N_STATES = 0
+        
+        # Set the simulation date time offset
+        self.offset = offset
         
         # An array that contains the value references for every state variable
         self.stateValueReferences = []
@@ -861,6 +867,7 @@ class Model():
                 raise IndexError("The value selected as initialization start time is outside the time frame")
                 
         # Once the index is know it can be used to define the start_time
+        # If the offset is specified then use it as start time
         start_time = time[index]
         
         # Take all the data series
@@ -1245,8 +1252,13 @@ class Model():
             # Check if the start time is within the range
             if not (start_time >= time[0] and start_time <= time[-1]):
                 raise IndexError("The value selected as initialization start time is outside the time frame")
-            
-        start_time_sec = (start_time - time[0]).total_seconds()
+        
+        # If the offset is defined, the start time in seconds needs to reference
+        # the offset instead of the first time stamp
+        if self.offset:
+            start_time_sec = (start_time - self.offset).total_seconds()
+        else:
+            start_time_sec = (start_time - time[0]).total_seconds()
         
         # Define the final time in seconds
         if final_time == None:
@@ -1262,13 +1274,24 @@ class Model():
             if not (final_time >= start_time):
                 raise IndexError("The final_time %s has to be after the start time %s." % \
                                  (str(final_time), str(start_time)))
-        final_time_sec = (final_time - time[0]).total_seconds()
+                
+        # If the offset is defined, the final time in seconds needs to reference
+        # the offset instead of the first time stamp
+        if self.offset:
+            final_time_sec = (final_time - self.offset).total_seconds()
+        else:
+            final_time_sec = (final_time - time[0]).total_seconds()
+        
             
-        # Transforms to seconds with respect to the first element
+        # Transforms to seconds with respect to the first element, again
+        # if the offset is defined it needs to be used as reference
         Npoints = len(time)
         time_sec = numpy.zeros((Npoints,1))
         for i in range(Npoints):
-            time_sec[i,0] = (time[i] - time[0]).total_seconds()
+            if self.offset:
+                time_sec[i,0] = (time[i] - self.offset).total_seconds()
+            else:
+                time_sec[i,0] = (time[i] - time[0]).total_seconds()
         
         # Convert to numpy matrix in case it will be stacked in a matrix
         time_sec = numpy.matrix(time_sec)
@@ -1328,8 +1351,12 @@ class Model():
         # Obtain the results
         # TIME in seconds has to be converted to datetime
         # and it has to maintain the same offset specified by the input time series in t[0]
-        offset = time[0] - pd.to_datetime(res[fmu_util_strings.TIME_STRING][0], utc = True)
-        t     = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + offset
+        if self.offset:
+            offset_res = self.offset - pd.to_datetime(res[fmu_util_strings.TIME_STRING][0], utc = True)
+        else:
+            offset_res = time[0] - pd.to_datetime(res[fmu_util_strings.TIME_STRING][0], utc = True)
+            
+        t = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + offset_res
         
         # Get the results, either all or just the selected ones
         if complete_res == False:
