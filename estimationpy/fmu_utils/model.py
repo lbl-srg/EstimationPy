@@ -1352,11 +1352,11 @@ class Model():
         # TIME in seconds has to be converted to datetime
         # and it has to maintain the same offset specified by the input time series in t[0]
         if self.offset:
-            offset_res = self.offset - pd.to_datetime(res[fmu_util_strings.TIME_STRING][0], utc = True)
+            offset_res = self.offset - pd.to_datetime(0, unit = 's', utc = True)
+            t = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + self.offset
         else:
             offset_res = time[0] - pd.to_datetime(res[fmu_util_strings.TIME_STRING][0], utc = True)
-            
-        t = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + offset_res
+            t = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + offset_res
         
         # Get the results, either all or just the selected ones
         if complete_res == False:
