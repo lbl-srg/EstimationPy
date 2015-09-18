@@ -1353,7 +1353,7 @@ class Model():
         # and it has to maintain the same offset specified by the input time series in t[0]
         if self.offset:
             offset_res = self.offset - pd.to_datetime(0, unit = 's', utc = True)
-            t = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + self.offset
+            t = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + offset_res
         else:
             offset_res = time[0] - pd.to_datetime(res[fmu_util_strings.TIME_STRING][0], utc = True)
             t = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + offset_res
