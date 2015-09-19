@@ -259,21 +259,18 @@ class UkfFmu():
         """
         This method computes the square root of a square matrix :math:`A`.
         The method uses the Cholesky factorization provided by the linear algebra
-        package in **numpy**.
+        package in **numpy**. The matrix returned is a lower triangular 
+        matrix.
         
         :param numpy.ndarray A: square matrix :math:`A`
-        :return: square root of math:`A`, such that :math:`S^T S = A`
+        :return: square root of math:`A`, such that :math:`S S^T = A`. The
+          matrix is lower triangular.
 
         :rtype: numpy.ndarray
                 
         """
-        try:
-            sqrtA = np.linalg.cholesky(A)
-            return sqrtA
-
-        except np.linalg.linalg.LinAlgError:
-            print "Matrix "+str(A)+" is not positive semi-definite"
-            return A    
+        sqrtA = np.linalg.cholesky(A)
+        return sqrtA
     
     def constrained_state(self, x_A):
         """
@@ -284,9 +281,14 @@ class UkfFmu():
         :param numpy.ndarray x_A: vector :math:`\mathbf{x}^A` containing the states to be constrained
         :return: the constrained version of :math:`\mathbf{x}^A`
         :rtype: numpy.ndarray
-                
+        
+        :raises ValueError: the method raises an exception if the parameter vector has a shape
+          that does not correspond to the total number of states and parameters to estimate.
         """
-            
+
+        if len(x_A) != self.n_state_obs + self.n_pars:
+            raise ValueError("The vector provided as input is not correct, desired length is {0}, provided is {1}".format(self.N, len(x_A)))
+        
         # Check for every observed state
         for i in range(self.n_state_obs):
         
@@ -701,33 +703,45 @@ class UkfFmu():
         Cxx = np.dot(np.dot(Vnext.T, W), Vnow)
         return Cxx
     
-    def compute_S(self, x_proj, x_ave, sqrt_Q):
+    def compute_S(self, x_proj, x_ave, sqrt_Q, w = None):
         """
         This method computes the squared root covariance matrix using the QR decomposition
         combined with a Cholesky update.
+        The matrix returned by this method is upper triangular.
         
         :param numpy.array x_proj: projected full state vector
         :param numpy.array x_avg: average of the full state vector
         :param numpy.ndarray sqrt_Q: square root process covariance matrix
+        :param numpy.array w: vector that contains the weights to use during the
+          update. If not specified the method uses the weights automatically computed
+          by the filter.
         
-        :return: the square root of the updated state covariance matrix
+        :return: the square root of the updated state covariance matrix. The matrix is 
+          upper triangular.
         :rtype: nunmpy.ndarray
 
         """
         # take the augmented states of the sigma points vectors
         # that are the observed states + estimated parameters
-        x_proj_obs = self.__aug_state_from_full_state__(x_proj)
-        x_ave_obs  = self.__aug_state_from_full_state__(x_ave)
+        #x_proj_obs = self.__aug_state_from_full_state__(x_proj)
+        #x_ave_obs  = self.__aug_state_from_full_state__(x_ave)
+
+        x_proj_obs = x_proj
+        x_ave_obs = x_ave
+
         
         # Matrix of weights and signs of the weights
-        weights = np.sqrt( np.abs(self.W_c[:,0]) )
-        signs   = np.sign( self.W_c[:,0] )
+        if w == None:
+            weights = np.sqrt(np.abs(self.W_c[:,0]))
+            signs   = np.sign(self.W_c[:,0])
+        else:
+            weights = np.sqrt(np.abs(w))
+            signs   = np.sign(w)
         
         # create matrix A that contains the error between the sigma points and the average
         A     = np.array([[]])
         i     = 0
         for x in x_proj_obs:
-            
             error = signs[i]*weights[i]*(x - x_ave_obs)
             
             # ignore when i==0, this will be done in the update
@@ -736,10 +750,9 @@ class UkfFmu():
             elif i > 1:
                 A = np.hstack((A, error.T))
             i += 1
-        
+
         # Put on the side the matrix sqrt_Q, that have to be modified to fit the dimension of the augmenets state    
-        new_sqrt_Q = self.__new_Q__(sqrt_Q)
-        A = np.hstack((A, new_sqrt_Q))
+        A = np.hstack((A, sqrt_Q))
         
         # QR factorization
         q, L = np.linalg.qr(A.T)
@@ -808,7 +821,7 @@ class UkfFmu():
         Lc = L.copy()
         
         # Compute signs of the weights
-        signs   = np.sign( W )
+        signs   = np.sign(W)
     
         # Start the Cholesky update and do it for every column
         # of matrix X

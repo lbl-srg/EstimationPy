@@ -140,7 +140,109 @@ class Test(unittest.TestCase):
         
         return
 
+    def test_vector_and_matrix_operations(self):
+        """
+        This method contains several checks for the methods provided by the class
+        to operate with matrices and vectors.
+        """
 
+        # Initialize the first order model
+        self.set_first_order_model()
+
+        # Associate inputs and outputs
+        self.set_first_order_model_input_outputs()
+
+        # Define the variables to estimate
+        self.set_state_to_estimate()
+
+        # Retry to instantiate, now with a proper model
+        ukf_FMU = UkfFmu(self.m)
+
+        # Define square root matrix
+        S = np.random.uniform(size=(6,6))
+        S2 = np.dot(S, S.T)
+
+        # Compute square matrix S
+        s = ukf_FMU.square_root(S2)
+        s2 = np.dot(s, s.T)
+
+        np.testing.assert_almost_equal(s2, S2, 7, "The product of the square root matrix is not equal to the original S2")
+        
+        # Verify ability to apply constraints
+        x = np.array([1.1])
+        x_constr = ukf_FMU.constrained_state(x)
+        self.assertEqual(x_constr, x, "This state vector doesn't require to be constrained")
+
+        x = np.array([-1.1])
+        x_constr = ukf_FMU.constrained_state(x)
+        x_expected = np.zeros(1)
+        self.assertEqual(x_constr, x_expected, "This state vector does require to be constrained and it's not")
+        
+        return
+
+    def test_chol_update(self):
+        """
+        This method tests the Cholesky update method that is used to compute
+        the squared root covariance matrix by the filter.
+        """
+        # Initialize the first order model
+        self.set_first_order_model()
+
+        # Associate inputs and outputs
+        self.set_first_order_model_input_outputs()
+
+        # Define the variables to estimate
+        self.set_state_to_estimate()
+
+        # Retry to instantiate, now with a proper model
+        ukf_FMU = UkfFmu(self.m)
+        
+        # Number of points for computing the covariance matrix
+        n = 100
+        # Number of variables
+        N = 300
+        # True mean vector
+        Xtrue = np.random.uniform(-8.0, 27.5, (1, N))
+        
+        # Generate the sample for computing the covariance matrix
+        notUsed, N = Xtrue.shape
+        Xpoints = np.zeros((n,N))
+        for i in range(n):
+	    noise = np.random.uniform(-2.0,2.0,(1,N)) 
+	    Xpoints[i,:] = Xtrue + noise
+
+        # default covariance to be added
+        Q = 2.0*np.eye(N)
+
+        # definition of the weights
+        Weights = np.zeros(n)
+        for i in range(n):
+	    if i==0:
+		Weights[i] = 0.5
+	    else:
+		Weights[i] = (1.0 - Weights[0])/np.float(n-1)
+
+        #---------------------------------------------------
+        # Standard method based on Cholesky
+        i = 0
+        P = Q
+        for x in Xpoints:
+	    error = x - Xtrue 
+	    P     = P + Weights[i]*np.dot(error.T,error)
+	    i    += 1
+        S = ukf_FMU.square_root(P)
+        
+        np.testing.assert_almost_equal(P, np.dot(S, S.T), 8, \
+                                       "Square root computed with basic Cholesky decomposition is not correct")
+
+        #----------------------------------------------------
+        # Test the Cholesky update
+        sqrtQ = np.linalg.cholesky(Q)
+        L = ukf_FMU.compute_S(Xpoints, Xtrue, sqrtQ, w = Weights)
+        
+        np.testing.assert_almost_equal(P, np.dot(L.T, L), 8, \
+                                       "Square root computed with basic Cholesky update is not correct")
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
