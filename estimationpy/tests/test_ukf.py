@@ -62,14 +62,21 @@ class Test(unittest.TestCase):
 
         return
 
-    def set_first_order_model_input_outputs(self):
+    def set_first_order_model_input_outputs(self, noisy = True):
         """
         This methos associates the input and the measured output of
         the first order model from a CSV file.
+        If the boolean flag ``noisy`` is equal to True then the data that is
+        loaded contains noise, otherwise it is clean.
+        
+        :param bool noisy: flag that indicates which type of data to load.
         """
         # Path of the csv file containing the data series
-        csvPath = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "data", "NoisySimulationData_FirstOrder.csv")
-    
+        if noisy:
+            csvPath = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "data", "NoisySimulationData_FirstOrder.csv")
+        else:
+            csvPath = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
+            
         # Set the CSV file associated to the input, and its covariance
         input_u = self.m.get_input_by_name("u")
         input_u.get_csv_reader().open_csv(csvPath)
@@ -369,6 +376,42 @@ class Test(unittest.TestCase):
 
         # Verify that the second and the last sigma points are symmetric
         self.assertEqual(0.5*(sigma_points[1,:] + sigma_points[2,:]), x0, "The sigma points 1,2 are not symmetric with respect to 0")
+        
+        return
+
+    def test_project_sigma_points(self):
+        """
+        This method tests the function that projects the sigma points
+        by running a simulation.
+        """
+
+        # Initialize the first order model
+        self.set_first_order_model()
+
+        # Associate inputs and outputs
+        self.set_first_order_model_input_outputs(noisy = False)
+
+        # Define the variables to estimate
+        self.set_state_to_estimate_first_order()
+
+        # Initialize the simulator
+        self.m.initialize_simulator()
+        
+        # Instantiate with a proper model
+        ukf_FMU = UkfFmu(self.m)
+
+        # Define the sigma points
+        x0 = np.array([2.5])
+        sigma_points = ukf_FMU.compute_sigma_points(x0, np.array([]), np.diag(np.ones(1)))
+
+        # Propagate the points by simulating from 0 to 12 seconds
+        t0 = pd.to_datetime(0.0, unit = "s", utc = True)
+        t1 = pd.to_datetime(12.0, unit = "s", utc = True)
+        X_proj, Z_proj, Xfull_proj, Zfull_proj = ukf_FMU.sigma_point_proj(sigma_points, t0, t1)
+
+        # Verify that they started from different initial coditions and that they converged
+        # at the same value after 12 seconds
+        np.testing.assert_almost_equal(X_proj, 2.5*np.ones((3,1)), 3, "Verify that the solutions all converge to 2.5")
         
         return
     

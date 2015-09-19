@@ -45,7 +45,7 @@ class UkfFmu():
           are executed as part of a Celery task. By default this value is equal to the number of 
           available processors minus one.
         
-        :raises ValueError: Th emethod raises an exception if the model associated to the filter
+        :raises ValueError: The method raises an exception if the model associated to the filter
           does not have state or parameters to be estimated.
         :raises Exception: The method raises an exception if there are not measured outputs, the 
           number of states to estimate is higher than the total number of states, of the number of
