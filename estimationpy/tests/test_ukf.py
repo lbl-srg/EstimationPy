@@ -334,6 +334,44 @@ class Test(unittest.TestCase):
 
         return
 
+    def test_create_sigma_points(self):
+        """
+        This method tests the Cholesky update method that is used to compute
+        the squared root covariance matrix by the filter.
+        """
+        # Initialize the first order model
+        self.set_first_order_model()
+
+        # Associate inputs and outputs
+        self.set_first_order_model_input_outputs()
+
+        # Define the variables to estimate
+        self.set_state_to_estimate_first_order()
+        
+        # Instantiate with a proper model
+        ukf_FMU = UkfFmu(self.m)
+
+        # Verify that the method raises an exception if the
+        # inputs are wrong
+        self.assertRaises(ValueError, ukf_FMU.compute_sigma_points, np.zeros(3), np.zeros(3), np.zeros((3,3)))
+        self.assertRaises(ValueError, ukf_FMU.compute_sigma_points, np.zeros(2), np.zeros(3), np.zeros((3,3)))
+        self.assertRaises(ValueError, ukf_FMU.compute_sigma_points, np.zeros(1), np.array([]), np.zeros((3,3)))
+
+        # Create the sigma points
+        x0 = np.array([2.5])
+        sigma_points = ukf_FMU.compute_sigma_points(x0, np.array([]), np.diag(np.ones(1)))
+
+        # Check the size
+        self.assertTrue(sigma_points.shape == (3,1), "The size of the sigma points is not correct")
+        
+        # Verify that the first sigma point is equal to the center
+        self.assertEqual(x0, sigma_points[0,:], "First sigma point is not [0]")
+
+        # Verify that the second and the last sigma points are symmetric
+        self.assertEqual(0.5*(sigma_points[1,:] + sigma_points[2,:]), x0, "The sigma points 1,2 are not symmetric with respect to 0")
+        
+        return
+    
     def test_ukf_filter_first_order(self):
         """
         This method tests the ability of the filter to estimate the state

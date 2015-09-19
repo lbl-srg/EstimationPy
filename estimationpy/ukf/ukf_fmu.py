@@ -344,6 +344,10 @@ class UkfFmu():
         :return: a matrix that contains the sigma points, each row is a sigma point that is\
           a vector of state and parameters to be evaluated.
         :rtype: numpy.ndarray
+        
+        :raises ValueError: The method raises a value error if the input parameters\
+          ``x`` or ``pars`` do not respect the dimensions of the observed states and estimated\
+          parameters.
 
         """
         try:
@@ -351,20 +355,20 @@ class UkfFmu():
             x = np.squeeze(x)
             x = x.reshape(1, self.n_state_obs)
         except ValueError:
-            print "The vector of state variables has a wrong size"
-            print x
-            print "It should be long: "+str(self.n_state_obs)
-            return np.array([])
+            msg = "The vector of state variables has a wrong size"
+            msg += "{0} instead of {1}".format(x.shape, self.n_state_obs)
+            print msg
+            raise ValueError(msg)
         
         try:
             # reshape the parameter vector
             pars = np.squeeze(pars)
             pars = pars.reshape(1, self.n_pars)
         except ValueError:
-            print "The vector of parameters has a wrong size"
-            print pars
-            print "It should be long: "+str(self.n_pars)
-            return np.array([])
+            msg = "The vector of parameters has a wrong size"
+            msg += "{0} instead of {1}".format(pars.shape, self.n_pars)
+            print msg
+            raise ValueError(msg)
             
         # initialize the matrix of sigma points
         # the result is
@@ -406,14 +410,13 @@ class UkfFmu():
                 Xs[i+N,  ns:] -= self.sqrtC*row[ns:]
                     
             except ValueError:
-                print "Is not possible to generate the sigma points..."
-                print "the dimensions of the sqrtP matrix and the state and parameter vectors are not compatible"
-                return Xs
+                msg = "Is not possible to generate the sigma points..."
+                msg +="\nthe dimensions of the sqrtP matrix and the state and parameter vectors are not compatible"
+                msg +="\n {0} and {1}".format(sqrtP.shape, Xs.shape)
+                print msg
+                raise ValueError(msg)
             
-            # TODO:
-            # How to introduce constrained points
-            # Xs[i,0:self.n_state_obs] = self.constrained_state(Xs[i,0:self.n_state_obs])
-            # Xs[i+self.n_state_obs,0:self.n_state_obs] = self.constrained_state(Xs[i+self.n_state_obs,0:self.n_state_obs])
+            # Introduce constraints on points
             Xs[i,:] = self.constrained_state(Xs[i,:])
             Xs[i+N,:] = self.constrained_state(Xs[i+N,:])
             
