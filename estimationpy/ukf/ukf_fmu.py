@@ -512,50 +512,6 @@ class UkfFmu():
         
         return avg
 
-    def __aug_state_from_full_state__(self, Xfull):
-        """
-        Given a vector that contains all the state variables of the models and the parameters to be identified,
-        this method returns a vector that contains the augmented and observed states:
-        [ observed states, parameters estimated]
-        """
-        row, col = np.shape(Xfull)
-        Xaug = np.zeros((row, self.n_state_obs + self.n_pars))
-            
-        for i in range(row):
-            Xaug[i, 0:self.n_state_obs] = Xfull[i, 0:self.n_state_obs]
-            Xaug[i, self.n_state_obs:] = Xfull[i, self.n_state_obs:self.n_state_obs+self.n_pars]
-                
-        return Xaug
-
-    def __new_Q__(self, Q):
-        """
-        This method, given the covariance matrix of the process noise :math:`Q` whose sizes are
-        :math:`N_o \\times N_o`, where :math:`N_o` is the total number of observed states,
-        computes a new covariance matrix that has size :math:`N_{o+p} \\times N_{o+p}`
-        where :math:`N_{o+p}` is the total number of observed stated plus the estimated
-        parameters.
-        
-        :param numpy.ndarray Q: process covariance matrix
-        :return: the modified covariance matrix
-        :rtype: numpy.ndarray
-                
-        """
-        # TODO: Check this method and where it's called
-        return Q
-        nso = self.n_state_obs
-        no  = self.n_outputs 
-        npa  = self.n_pars
-        
-        # create the new Q matrix to add
-        A = np.zeros((nso, npa))
-        B = np.zeros((npa, nso))
-        C = np.zeros((npa, npa))
-        top = np.hstack((Q, A))
-        bot = np.hstack((B,C))
-        newQ = np.vstack((top, bot))
-
-        return newQ
-        
     def compute_P(self, x, x_avg, Q):
         """
         This method computes the state covariance matrix :math:`P` as
@@ -580,13 +536,10 @@ class UkfFmu():
         W = np.diag(self.W_c[:,0]).reshape(self.n_points, self.n_points)
         
         # subtract each sigma point with the average x_avg, and tale just the augmented state
-        V = self.__aug_state_from_full_state__(x - x_avg)
-        
-        # create the new Q matrix to add
-        newQ = self.__new_Q__(Q)
+        V = x - x_avg
         
         # compute the new covariance matrix
-        Pnew = np.dot(np.dot(V.T, W), V) + newQ
+        Pnew = np.dot(np.dot(V.T, W), V) + Q
         return Pnew
         
     def compute_cov_z(self, z, z_avg, R):
@@ -637,7 +590,7 @@ class UkfFmu():
         """
         W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
             
-        Vx = self.__aug_state_from_full_state__(x - x_avg)
+        Vx = x - x_avg
         
         Vz = np.zeros(z.shape)
         for j in range(self.n_points):
@@ -668,8 +621,8 @@ class UkfFmu():
         """
         W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
             
-        Vx_new = self.__aug_state_from_full_state__(x_new - x_new_avg)
-        Vx  = self.__aug_state_from_full_state__(x - x_avg)
+        Vx_new = x_new - x_new_avg
+        Vx  = x - x_avg
     
         covXX = np.dot(np.dot(Vx.T,W),Vx_new)
         
@@ -700,8 +653,8 @@ class UkfFmu():
         x_ave_next = self.average_proj(X_next)
         x_ave_now  = self.average_proj(X_now)
         
-        Vnext = self.__aug_state_from_full_state__(X_next - x_ave_next)
-        Vnow  = self.__aug_state_from_full_state__(X_now - x_ave_now)
+        Vnext = X_next - x_ave_next
+        Vnow  = X_now - x_ave_now
     
         Cxx = np.dot(np.dot(Vnext.T, W), Vnow)
         return Cxx
@@ -724,14 +677,8 @@ class UkfFmu():
         :rtype: nunmpy.ndarray
 
         """
-        # take the augmented states of the sigma points vectors
-        # that are the observed states + estimated parameters
-        #x_proj_obs = self.__aug_state_from_full_state__(x_proj)
-        #x_ave_obs  = self.__aug_state_from_full_state__(x_ave)
-
         x_proj_obs = x_proj
         x_ave_obs = x_ave
-
         
         # Matrix of weights and signs of the weights
         if w == None:
