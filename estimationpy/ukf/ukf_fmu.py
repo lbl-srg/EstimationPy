@@ -45,6 +45,8 @@ class UkfFmu():
           are executed as part of a Celery task. By default this value is equal to the number of 
           available processors minus one.
         
+        :raises ValueError: Th emethod raises an exception if the model associated to the filter
+          does not have state or parameters to be estimated.
         :raises Exception: The method raises an exception if there are not measured outputs, the 
           number of states to estimate is higher than the total number of states, of the number of
           parameters to estimate is invalid.
@@ -65,6 +67,9 @@ class UkfFmu():
         self.n_outputsTot= self.model.get_num_outputs()
         
         self.N = self.n_state_obs + self.n_pars
+
+        if self.N <= 0:
+            raise ValueError("The model must have at least one parameter or state to estimate")
         
         # some check
         if self.n_state_obs > self.n_state:
@@ -100,7 +105,8 @@ class UkfFmu():
     
     def __str__(self):
         """
-        This method returns a string representation of the object.
+        This method returns a string representation of the object with
+        a brief description.
         
         :return: string representation of the object
         :rtype: string
@@ -182,7 +188,25 @@ class UkfFmu():
         
         # compute the weights
         self.compute_weights()
-    
+
+    def get_ukf_params(self):
+        """
+        This method returns a tuple containing the parameters of the UKF.
+        The parameters in the return tuple are
+        
+        * :math:`\\alpha`,
+        * :math:`\\beta`,
+        * :math:`k`,
+        * :math:`\\lambda`,
+        * :math:`\\sqrt{C}, and
+        * :math:`N`
+        
+        :return: tuple containing the parameters of the UKF
+        :rtype: tuple
+        """
+
+        return (self.alpha, self.beta, self.k, self.lambd, self.sqrtC, self.N)
+        
     def compute_weights(self):
         """
         This method computes the vector of weights used by the UKF filter.
@@ -190,11 +214,21 @@ class UkfFmu():
         compute the mean value and the covariance of the estimation at each step
         of the fitering process.
                 
-        There are two types of weigths
+        There are two types of weigth vectors
         
-        * :math:`W_m` is used to compute the mean value
-        * :math:`W_c` is used to compute the covariance
-                
+        * :math:`\\mathbf{W}_m` is used to compute the mean value
+        * :math:`\\mathbf{W}_c` is used to compute the covariance
+
+        .. math::
+             \\mathbf{W}_m^{(0)} &=& \\lambda / (N + \\lambda) \\\\
+             \\mathbf{W}_c^{(0)} &=& \\lambda / (N + \\lambda) + (1 - \\alpha^2 + \\beta) , \\\\
+             \\mathbf{W}_m^{(i)} &=& 1 / 2(N + \\lambda) \\ , \\ i=1 \\dots 2N , \\\\
+             \\mathbf{W}_c^{(i)} &=& 1 / 2(N + \\lambda) \\ , \\ i=1 \\dots 2N
+        
+        where :math:`N` is the length os the state vector. In our case it is equal to 
+        total number of states and parameters estimated.
+        Also, :math:`\\mathbf{N}_m^{(i)}` indicates the i-th element of the vector :math:`\\mathbf{W}_m`.
+
         """
         
         n = self.N
@@ -208,13 +242,15 @@ class UkfFmu():
         for i in range(2*n):
             self.W_m[i+1,0] = 1.0/(2.0*(n + self.lambd))
             self.W_c[i+1,0] = 1.0/(2.0*(n + self.lambd))
+
+        return
     
     def get_weights(self):
         """
-        This method returns a tuple that contains the vectors :math:`W_m` and :math:`W_c`
+        This method returns a tuple that contains the vectors :math:`\\mathbf{W}_m` and :math:`\\mathbf{W}_c`
         containing the weights used by the UKF. Each vector is a **numpy.array**.
         
-        :return: tuple with first element :math:`W_m`, and second :math:`W_c`
+        :return: tuple with first element :math:`\\mathbf{W}_m`, and second :math:`\\mathbf{W}_c`
         :rtype: tuple
         """
         return (self.W_m, self.W_c)
@@ -275,15 +311,38 @@ class UkfFmu():
         
         return x_A
                 
-    def compute_sigma_points(self, x, pars, sqrtP, sqrtQ = None, sqrtR = None):
+    def compute_sigma_points(self, x, pars, sqrtP):
         """
         This method computes the sigma points, Its inputs are
         
-        * x     -- the state vector around the points will be propagated,
-        * pars  -- the parameters that are eventually estimated
-        * sqrtP -- the square root matrix of the covariance P (both observed states and estimated parameters),
-                   that is used to spread the sigma points
+        * :math:`\\mathbf{x}`  -- the state vector around the points will be propagated,
+        * :math:`\\mathbf{x}^P`  -- the vector of parameters that are estimated,
+        * :math:`\\sqrt{P}` -- the square root of the state covariance matrix :math:`P`,\
+          this matrix is used to spread the sigma points before their propagation.
         
+        The sigma points are computed as
+
+        .. math::
+
+            \\mathbf{x}^{(0)} &=& \\boldsymbol{\\mu} , \\\\
+            \\mathbf{x}^{(i)} &=& \\boldsymbol{\\mu} + \\left [ \\sqrt{(n+\\lambda) P} \\right ]_i \\ , \\ i=1 \\dots n , \\\\
+            \\mathbf{x}^{(i)} &=& \\boldsymbol{\\mu} - \\left [ \\sqrt{(n+\\lambda) P} \\right ]_{i-n} \\ , \\ i=n+1 \\dots 2n
+        
+        where :math:`\\mu` is the average of the vector :math:`\\mathbf{x}^A`, defined as
+        
+        .. math::
+        
+            \\mathbf{x}^A = \\left[ \\mathbf{x} \\ , \\ \\mathbf{x}^P \\right]
+        
+        and :math:`\\boldsymbol{\\mu}` is its average.
+        
+        :param numpy.array x: vector containing the estimated states,
+        :param numpy.array pars: vector containing the estimated parameters,
+        :param numpy.ndarray sqrtP: square root of the covariance matrix :math:`P`
+        :return: a matrix that contains the sigma points, each row is a sigma point that is\
+          a vector of state and parameters to be evaluated.
+        :rtype: numpy.ndarray
+
         """
         try:
             # reshape the state vector
@@ -371,16 +430,18 @@ class UkfFmu():
         :param datetime.datetime t_old: the start time for the simulation that computes the propagations
         :param datetime.datetime t: the final time for the simulation that computes the propagations
 
-        :return: a tuple that contains the projected states (only the estimated ones + estimated parameters), \
-        the projected outputs (only the measured ones), the full projected states (both estimated and not), \
-        the full projected outputs (either measured or not).
+        :return: a tuple that contains 
+          * the projected states (only the estimated ones + estimated parameters), \
+          * the projected outputs (only the measured ones), \
+          * the full projected states (both estimated and not), \
+          * the full projected outputs (either measured or not).
         
         :rtype: tuple
         
         **Note:**
         If for any reason the results of the simulation pool is an empty dictionary,
         the method tries again to run the simulations up to the maximum number
-        of simulations allowed MAX_RUN. y default MAX_RUN is equal to 3.
+        of simulations allowed ``MAX_RUN`. By default ``MAX_RUN`` is equal to 3.
                 
         """
         row, col = np.shape(x_A)
@@ -431,10 +492,10 @@ class UkfFmu():
         """
         This function averages the projection of the sigma points.
         The function can be used to compute the average of both the state vector or
-        the measured outputs. The weigths vetcor used is :math:`W_m`.
+        the measured outputs. The weigths vetcor used is :math:`\\mathbf{W}_m`.
         
-        :param np.ndarray x_proj: the vector to average :math:`x`
-        :return: the average of the vector computed as :math:`W_m^T x`
+        :param np.ndarray x_proj: the vector to average :math:`\\mathbf{x}`
+        :return: the average of the vector computed as :math:`\\mathbf{W}_m^T \\mathbf{x}`
         :rtype: numpy.ndarray
         
         """
@@ -494,12 +555,15 @@ class UkfFmu():
         """
         This method computes the state covariance matrix :math:`P` as
         
-        :math:`P_{i,j} = W_c_i (\\mathbb{x}_i - \\mathbb{x}_{avg})^2 + Q_{i,j}`
-
-        The method removes the not observed states from :math:`\\mathbb{x}` and computes
-        the covariance matrix :math:`\\mathbb{P}`, that has size :math:`N_{o+p} \\times N_{o+p}`.
-        Note that because the matrix :math:`Q` has size :math:`N_{o} \\times N_{o}` it is
-        expanded with the method :func:`__new_Q__`.
+        .. math::
+            
+            P^{(i,j)} = \\mathbf{W}_c^{(i)} (\\mathbf{x}^(i) - \\boldsymbol{\\mu})
+            (\\mathbf{x}^(j) - \\boldsymbol{\\mu})+ Q^{(i,j)}
+        
+        where :math:`\\boldsymbol{\\mu}` is the average of the vector :math:`\\mathbf{x}`
+        among the different sigma points.
+        The method removes the not observed states from :math:`\\mathbf{x}` and computes
+        the covariance matrix :math:`\\mathbf{P}`, that has size :math:`N_{o+p} \\times N_{o+p}`.
 
         :param numpy.array x: vector that conatins the full state of the system (estimated, not estimated states, as well
           the estimated parameters), this vector can be seen as the propagated sigma points
@@ -525,8 +589,10 @@ class UkfFmu():
         This method computes the output covariance matrix :math:`C_Z`
         that is the covariance matrix of the outputs, corrected
         by the measurements covariance matrix :math:`R`.
-        
-        :math:`C_z_{i,j} = W_c_i (\\mathbb{z}_i - \\mathbb{z}_{avg})^2 + R_{i,j}`
+
+        .. math::     
+
+            C_{z_{i,j}} = W_{c_i} (\mathbf{z}_i - \mathbf{z}_{avg})^2 + R_{i,j}
 
         :param numpy.array z: vector containing the outputs
         :param numpy.array z_avg: vector containing the average of the outputs
@@ -550,6 +616,10 @@ class UkfFmu():
         This method computes the cross covariance matrix :math:`C_{xz}`
         between the states and outputs vectors.
         
+        .. math::     
+
+            C_{xz_{i,j}} = W_{c_i} (\mathbf{x}_i - \mathbf{x}_{avg}) (\mathbf{z}_i - \mathbf{z}_{avg})
+
         :param numpy.array x: vector that conatins the full state of the system (estimated, not estimated states, as well
           the estimated parameters), this vector can be seen as the propagated sigma points
         :param numpy.array x_avg: vector that contains the average of the propagated sigma points
@@ -577,6 +647,10 @@ class UkfFmu():
         This method computes the state-state cross covariance matrix :math:`C_{xx}`.
         The different states are the state before and after the propagation.
         
+        .. math::     
+
+            C_{xx_{i,j}} = W_{c_i} (\mathbf{x}_i - \mathbf{x}_{avg}) (\mathbf{x}_i^{new} - \mathbf{x}_{avg}^{new})
+
         :param numpy.array x_new: vector that contains the full state of the system (estimated, not estimated states, as well
           the estimated parameters), this vector can be seen as the propagated sigma points
         :param numpy.array x_new_avg: vector that contains the average of the propagated sigma points
@@ -599,8 +673,15 @@ class UkfFmu():
     def compute_C_x_x(self, x_new, x):
         """
         This method computes the state-state cross covariance matrix :math:`C_{xx}`
-        between the old state :math:`\\mathbb{x}` and the new state :math:`\\mathbb{x}_{new}`.
-        **Note:** This is method is used by the smoothing process.
+        between the old state :math:`\\mathbf{x}` and the new state :math:`\\mathbf{x}_{new}`.
+
+         .. math::     
+
+            C_{xx_{i,j}} = W_{c_i} (\mathbf{x}_i - \mathbf{x}_{avg}) (\mathbf{x}_i^{new} - \mathbf{x}_{avg}^{new})
+
+        **Note:** This is method is used by the smoothing process because during the smoothing
+        the averages are not directly available and thus :func:`compute_cov_x_x` can't be
+        used.
                 
         :param numpy.array x_new: vector that contains the full state of the system (estimated, not estimated states, as well
           the estimated parameters), this vector can be seen as the propagated sigma points
