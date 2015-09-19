@@ -404,14 +404,19 @@ class Test(unittest.TestCase):
         x0 = np.array([2.5])
         sigma_points = ukf_FMU.compute_sigma_points(x0, np.array([]), np.diag(np.ones(1)))
 
-        # Propagate the points by simulating from 0 to 12 seconds
+        # Propagate the points by simulating from 0 to 14.5 seconds
         t0 = pd.to_datetime(0.0, unit = "s", utc = True)
-        t1 = pd.to_datetime(12.0, unit = "s", utc = True)
+        t1 = pd.to_datetime(14.5, unit = "s", utc = True)
         X_proj, Z_proj, Xfull_proj, Zfull_proj = ukf_FMU.sigma_point_proj(sigma_points, t0, t1)
 
         # Verify that they started from different initial coditions and that they converged
         # at the same value after 12 seconds
         np.testing.assert_almost_equal(X_proj, 2.5*np.ones((3,1)), 3, "Verify that the solutions all converge to 2.5")
+
+        # Compute their average using the method provided by the object and verify its value
+        x_avg = ukf_FMU.average_proj(X_proj)
+
+        np.testing.assert_almost_equal(x_avg, np.array([[2.5]]), 4, "Average of the propagated points is not correct")
         
         return
     
