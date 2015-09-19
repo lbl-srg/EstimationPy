@@ -242,7 +242,78 @@ class Test(unittest.TestCase):
         
         np.testing.assert_almost_equal(P, np.dot(L.T, L), 8, \
                                        "Square root computed with basic Cholesky update is not correct")
+
+        return
+
+    def test_ukf_filter_first_order(self):
+        """
+        This method tests the ability of the filter to estimate the state
+        of the first order system.
+        """
+        # Initialize the first order model
+        self.set_first_order_model()
+
+        # Associate inputs and outputs
+        self.set_first_order_model_input_outputs()
+
+        # Define the variables to estimate
+        self.set_state_to_estimate()
+
+        # Initialize the simulator
+        self.m.initialize_simulator()
+
+        # Retry to instantiate, now with a proper model
+        ukf_FMU = UkfFmu(self.m)
+
+        # Start the filter
+        t0 = pd.to_datetime(0.0, unit = "s", utc = True)
+        t1 = pd.to_datetime(30.0, unit = "s", utc = True)
+        time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose = False)
+
+        # Convert the results to numpy array
+        time = time - time[0]
+        time = np.array(map(lambda x: x.total_seconds(), time))
+        x = np.array(x)
+        y = np.array(y)
+        sqrtP = np.array(sqrtP)
+        Sy = np.array(Sy)
+        y_full = np.squeeze(np.array(y_full))
         
+        # Path of the csv file containing the True data series
+        path_csv_simulation = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
+
+        # Compare the estimated states with the ones used to generate the data
+        df_sim = pd.read_csv(path_csv_simulation, index_col = 0)
+        time_sim = df_sim.index.values
+        
+        # Difference between state estimated and real state
+        x_sim = np.interp(time, time_sim, df_sim["system.x"])
+        err_state = np.abs(x_sim - x[:,0])
+
+        # Identify maximum error and the time when it occurs
+        max_error = np.max(err_state)
+        t_max_error = np.where(err_state == max_error)
+
+        # Make sure that the maximum error is less or equal than 0.5, and it happens at
+        # the first time instant t = 0
+        self.assertTrue(max_error <= 0.5, "The maximum error in the estimation has to be less than 0.5")
+        self.assertTrue(t_max_error[0][0] == 0.0 and len(t_max_error[0]) == 1,\
+                      "The maximum error is one and it is at t = 0")
+        
+        # Compute the mean absolute error
+        avg_error = np.mean(err_state)
+        self.assertTrue(avg_error < 0.06, "The average error should be less than 0.06")
+        
+        # Compute that the estimation +/- covariance contains the real state
+        x_plus_sigma = x[:,0] + sqrtP[:,0,0]
+        x_minus_sigma = x[:,0] - sqrtP[:,0,0]
+        self.assertTrue(len(np.where(x_sim < x_minus_sigma)[0]) == 0,\
+                        "The state estimation must contain the real state in its boundaries")
+        self.assertTrue(len(np.where(x_sim > x_plus_sigma)[0]) == 0,\
+                        "The state estimation must contain the real state in its boundaries")
+
+        return
+    
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

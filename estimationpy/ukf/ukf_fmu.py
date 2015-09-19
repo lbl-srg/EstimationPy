@@ -888,7 +888,7 @@ class UkfFmu():
         
         # the list of sigma points (each sigma point can be an array, containing the state variables)
         # x, pars, sqrtP, sqrtQ = None, sqrtR = None
-        Xs      = self.compute_sigma_points(x, pars, sqrtP, sqrtQ, sqrtR)
+        Xs      = self.compute_sigma_points(x, pars, sqrtP)
         
         if verbose:
             print "Sigma point Xs"
@@ -923,7 +923,7 @@ class UkfFmu():
         # redraw the sigma points, given the new covariance matrix
         x    = x_ave[0,0:self.n_state_obs]
         pars = x_ave[0,self.n_state_obs:]
-        Xs   = self.compute_sigma_points(x, pars, Snew, sqrtQ, sqrtR)
+        Xs   = self.compute_sigma_points(x, pars, Snew)
         
         # Merge the real full state and the new ones
         self.model.set_state(Xfull_ave[0])
@@ -1150,7 +1150,7 @@ class UkfFmu():
             pars = x_i[self.n_state_obs:]
             
             # define the sigma points
-            Xs_i      = self.compute_sigma_points(x, pars, S_i, sqrtQ, sqrtR)
+            Xs_i      = self.compute_sigma_points(x, pars, S_i)
             
             if verbose:
                     print "Sigma point Xs"
@@ -1263,7 +1263,7 @@ class UkfFmu():
             S_i = Ssmooth[i,:,:]
 
             # compute the sigma points
-            Xs_i        = self.compute_sigma_points(x_i,S_i)
+            Xs_i        = self.compute_sigma_points(x_i, S_i)
             
             if verbose:
                 print "Sigma points"
