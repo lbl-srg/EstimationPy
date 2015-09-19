@@ -44,6 +44,24 @@ class Test(unittest.TestCase):
         # Initialize the FMU model empty
         self.m = Model(filePath)
 
+        return
+
+    def set_valve_model(self):
+        """
+        This method is used in different tests and it
+        loads the model of the faulty valve.
+        """
+        # Define the path of the FMU file
+        if platform.architecture()[0]=="32bit":
+            filePath = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "FMUs", "ValveStuck.fmu")
+        else:
+            filePath = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "FMUs", "ValveStuck.fmu")
+        
+        # Initialize the FMU model empty
+        self.m = Model(filePath)
+
+        return
+
     def set_first_order_model_input_outputs(self):
         """
         This methos associates the input and the measured output of
@@ -65,7 +83,41 @@ class Test(unittest.TestCase):
         output.set_measured_output()
         output.set_covariance(2.0)
 
-    def set_state_to_estimate(self):
+        return
+
+    def set_valve_model_input_outputs(self):
+        """
+        This method associates the input and measured outputs of the
+        valve model from a CSV file.
+        """
+        # Path of the csv file containing the data series
+        csvPath = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "data", "NoisyData_ValveStuck.csv")
+
+        # Set the CSV file associated to the input, and its covariance
+        input = self.m.get_input_by_name("dp")
+        input.get_csv_reader().open_csv(csvPath)
+        input.get_csv_reader().set_selected_column("valveStuck.dp")
+        
+        # Set the CSV file associated to the input, and its covariance
+        input = self.m.get_input_by_name("cmd")
+        input.get_csv_reader().open_csv(csvPath)
+        input.get_csv_reader().set_selected_column("valveStuck.cmd")
+        
+        # Set the CSV file associated to the input, and its covariance
+        input = self.m.get_input_by_name("T_in")
+        input.get_csv_reader().open_csv(csvPath)
+        input.get_csv_reader().set_selected_column("valveStuck.T_in")
+    
+        # Set the CSV file associated to the output, and its covariance
+        output = self.m.get_output_by_name("m_flow")
+        output.get_csv_reader().open_csv(csvPath)
+        output.get_csv_reader().set_selected_column("valveStuck.m_flow")
+        output.set_measured_output()
+        output.set_covariance(0.05)
+
+        return
+    
+    def set_state_to_estimate_first_order(self):
         """
         This method sets the state variable that needs to be estimated
         by the UKF. The state variable has also a constraints,
@@ -80,7 +132,44 @@ class Test(unittest.TestCase):
         var.set_covariance(0.5)
         var.set_min_value(0.0)
         var.set_constraint_low(True)
+
+        return
+
+    def set_state_and_param_to_estimate_valve(self):
+        """
+        This method sets the state variable that needs to be estimated
+        by the UKF and the smoother in the valve example. 
+        The state variable and the parameter have both constraints.
+        The valve position needs to be between [0,1] while the thermal drift
+        coefficient has to be between [-0.005, and 0.025].
+        """
+        # Select the variable to be estimated
+        self.m.add_variable(self.m.get_variable_object("command.y"))
         
+        # Set initial value of parameter, and its covariance and the limits (if any)
+        var = self.m.get_variables()[0]
+        var.set_initial_value(1.0)
+        var.set_covariance(0.05)
+        var.set_min_value(0.0)
+        var.set_constraint_low(True)
+        var.set_max_value(1.00)
+        var.set_constraint_high(True)
+        
+        #################################################################
+        # Select the parameter to be estimated
+        self.m.add_parameter(self.m.get_variable_object("lambda"))
+        
+        # Set initial value of parameter, and its covariance and the limits (if any)
+        var = self.m.get_parameters()[0]
+        var.set_initial_value(0.00)
+        var.set_covariance(0.0007)
+        var.set_min_value(-0.005)
+        var.set_constraint_low(True)
+        var.set_max_value(0.025)
+        var.set_constraint_high(True)
+
+        return
+    
     def test_instantiate_UKF(self):
         """
         This method verifies the baility to correctly instantiate an 
@@ -97,7 +186,7 @@ class Test(unittest.TestCase):
         # Associate inputs and outputs
         self.set_first_order_model_input_outputs()
         # Define the variables to estimate
-        self.set_state_to_estimate()
+        self.set_state_to_estimate_first_order()
 
         # Retry to instantiate, now with a proper model
         ukf_FMU = UkfFmu(self.m) 
@@ -153,7 +242,7 @@ class Test(unittest.TestCase):
         self.set_first_order_model_input_outputs()
 
         # Define the variables to estimate
-        self.set_state_to_estimate()
+        self.set_state_to_estimate_first_order()
 
         # Retry to instantiate, now with a proper model
         ukf_FMU = UkfFmu(self.m)
@@ -192,7 +281,7 @@ class Test(unittest.TestCase):
         self.set_first_order_model_input_outputs()
 
         # Define the variables to estimate
-        self.set_state_to_estimate()
+        self.set_state_to_estimate_first_order()
 
         # Retry to instantiate, now with a proper model
         ukf_FMU = UkfFmu(self.m)
@@ -257,7 +346,7 @@ class Test(unittest.TestCase):
         self.set_first_order_model_input_outputs()
 
         # Define the variables to estimate
-        self.set_state_to_estimate()
+        self.set_state_to_estimate_first_order()
 
         # Initialize the simulator
         self.m.initialize_simulator()
@@ -312,6 +401,103 @@ class Test(unittest.TestCase):
         self.assertTrue(len(np.where(x_sim > x_plus_sigma)[0]) == 0,\
                         "The state estimation must contain the real state in its boundaries")
 
+        return
+
+    def test_ukf_smoother_valve(self):
+        """
+        This method tests the state and parameter estimation on the valve example performed
+        with the UKF + Smoother.
+        """
+        # Initialize the first order model
+        self.set_valve_model()
+
+        # Associate inputs and outputs
+        self.set_valve_model_input_outputs()
+
+        # Define the variables to estimate
+        self.set_state_and_param_to_estimate_valve()
+
+        # Initialize the simulator
+        self.m.initialize_simulator()
+
+        # Set models parameters
+        use_cmd = self.m.get_variable_object("use_cmd")
+        self.m.set_real(use_cmd, 0.0)
+
+        lambd = self.m.get_variable_object("lambda")
+        self.m.set_real(lambd, 0.0)
+        
+        # Retry to instantiate, now with a proper model
+        ukf_FMU = UkfFmu(self.m)
+
+        # Start filter and smoother
+        t0 = pd.to_datetime(0.0, unit = "s", utc = True)
+        t1 = pd.to_datetime(360.0, unit = "s", utc = True)
+        time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = \
+        ukf_FMU.filter_and_smooth(start = t0, stop = t1, verbose = False)
+
+        # Convert the results to numpy array
+        time = time - time[0]
+        time = np.array(map(lambda x: x.total_seconds(), time))
+        x = np.array(x)
+        y = np.array(y)
+        sqrtP = np.array(sqrtP)
+        Sy = np.array(Sy)
+        y_full = np.squeeze(np.array(y_full))
+        xs = np.array(Xsmooth)
+        Ss = np.array(Ssmooth)
+        Ys = np.array(Yfull_smooth)
+        
+        # Path of the csv file containing the True data series generated by a simulation model
+        path_csv_simulation = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_ValveStuck.csv")
+
+        # Compare the estimated states with the ones used to generate the data
+        df_sim = pd.read_csv(path_csv_simulation, index_col = 0)
+        time_sim = df_sim.index.values
+
+        # Difference between state estimated and real state/parameters
+        opening_sim = np.interp(time, time_sim, df_sim["valveStuck.valve.opening"])
+        lambda_sim = np.interp(time, time_sim, df_sim["valveStuck.lambda"])
+        
+        err_opening = np.abs(opening_sim - x[:,0])
+        err_lambda = np.abs(lambda_sim - x[:,1])
+        err_opening_s = np.abs(opening_sim - xs[:,0])
+        err_lambda_s = np.abs(lambda_sim - xs[:,1])
+
+        # Compute the maximum errors for both filter and smoother
+        max_opening_error = np.max(err_opening)
+        max_opening_error_s = np.max(err_opening_s)
+        max_lambda_error = np.max(err_lambda)
+        max_lambda_error_s = np.max(err_lambda_s)
+
+        # Compute average error for both filter and smoother
+        avg_opening_error = np.mean(err_opening)
+        avg_opening_error_s = np.mean(err_opening_s)
+        avg_lambda_error = np.mean(err_lambda)
+        avg_lambda_error_s = np.mean(err_lambda_s)
+
+        # Compare performances of UKF and Smoother, verify that the smoother improves
+        # the estimation
+        self.assertTrue(max_opening_error >= max_opening_error_s,\
+                        "The max error in the estimation of the opening by the smoother is larger than the filter")
+        self.assertTrue(max_lambda_error >= max_lambda_error_s,\
+                        "The maxerror in the estimation of the drift coeff. by the smoother is larger than the filter")
+        self.assertTrue(avg_opening_error >= avg_opening_error_s,\
+                        "The avg error in the estimation of the opening by the smoother is larger than the filter")
+        self.assertTrue(avg_lambda_error >= avg_lambda_error_s,\
+                        "The avg error in the estimation of the drift coeff. by the smoother is larger than the filter")
+
+        # Verify that some absolute perfomances are guaranteed
+        self.assertTrue(0.08 > max_opening_error, "The maximum error of the UKF on the opening is too big")
+        self.assertTrue(0.065 > max_opening_error_s, "The maximum error of the Smoother on the opening is too big")
+        self.assertTrue(0.0117 > avg_opening_error, "The average error of the UKF on the opening is too big")
+        self.assertTrue(0.0088 > avg_opening_error_s, "The average error of the Smoother on the opening is too big")
+
+        self.assertTrue(0.0101 > max_lambda_error, "The maximum error of the UKF on the drift coef. is too big")
+        self.assertTrue(0.0096 > max_lambda_error_s, "The maximum error of the Smoother on the drift coef. is too big")
+        self.assertTrue(0.0028 > avg_lambda_error, "The average error of the UKF on the drift coef. is too big")
+        self.assertTrue(0.00144 > avg_lambda_error_s, "The average error of the Smoother on the drift coef. is too big")
+        
         return
     
 if __name__ == "__main__":
