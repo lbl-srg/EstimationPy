@@ -551,45 +551,45 @@ class UkfFmu():
         Pnew = np.dot(np.dot(V.T, W), V) + Q
         return Pnew
         
-    def compute_cov_z(self, z, z_avg, R):
+    def compute_cov_y(self, y, y_avg, R):
         """
-        This method computes the output covariance matrix :math:`C_Z`
+        This method computes the output covariance matrix :math:`C_y`
         that is the covariance matrix of the outputs, corrected
         by the measurements covariance matrix :math:`R`.
 
         .. math::     
 
-            C_{z} = R + \\sum_{i=0}^{2n+1} w_c^{(i)} \\left (  \\mathbf{y}^{(i)} - \\hat{\\mathbf{y}} \\right )  \
+            C_{y} = R + \\sum_{i=0}^{2n+1} w_c^{(i)} \\left (  \\mathbf{y}^{(i)} - \\hat{\\mathbf{y}} \\right )  \
             \\left ( \\mathbf{y}^{(i)} - \\hat{\\mathbf{y}} \\right )^T
         
         where :math:`\\hat{\\mathbf{y}}` is the average
         of the vector :math:`\\mathbf{y}` over all the sigma points :math:`i`.
 
-        :param numpy.array z: vector containing the measured outputs
-        :param numpy.array z_avg: vector containing the average of the mesaured outputs
+        :param numpy.array y: vector containing the measured outputs
+        :param numpy.array y_avg: vector containing the average of the mesaured outputs
         :param numpy.ndarray R: measurements covariance matrix
-        :returns: output covariance matrix :math:`C_z`
+        :returns: output covariance matrix :math:`C_y`
         :rtype: numpy.ndarray
                 
         """
         W = np.diag(self.W_c[:,0]).reshape(self.n_points, self.n_points)
 
-        V =  np.zeros(z.shape)
+        V =  np.zeros(y.shape)
         for j in range(self.n_points):
-            V[j,:]   = z[j,:] - z_avg[0]
+            V[j,:]   = y[j,:] - y_avg[0]
         
-        covZ = np.dot(np.dot(V.T,W),V) + R
+        covY = np.dot(np.dot(V.T,W),V) + R
         
-        return covZ
+        return covY
     
-    def compute_cov_x_z(self, x, x_avg, z, z_avg):
+    def compute_cov_x_y(self, x, x_avg, y, y_avg):
         """
-        This method computes the cross covariance matrix :math:`C_{xz}`
+        This method computes the cross covariance matrix :math:`C_{xy}`
         between the states and measured outputs vectors.
         
         .. math::     
             
-            C_{xz} = \\sum_{i=0}^{2n+1} w_c^{(i)} \\left ( \\mathbf{x}_{new}^{(i)} - \\boldsymbol{\\mu}_{new} \\right )  \
+            C_{xy} = \\sum_{i=0}^{2n+1} w_c^{(i)} \\left ( \\mathbf{x}_{new}^{(i)} - \\boldsymbol{\\mu}_{new} \\right )  \
             \\left ( \\mathbf{y}^{(i)} - \\hat{\\mathbf{y}} \\right )^T
         
 
@@ -600,24 +600,24 @@ class UkfFmu():
         :param numpy.array x: vector that conatins the estimated states of the system as well
           the estimated parameters. This vector can be seen as the propagated sigma points.
         :param numpy.array x_avg: vector that contains the average of the propagated sigma points
-        :param numpy.array z: vector containing the measured outputs
-        :param numpy.array z_avg: vector containing the average of the measured outputs
+        :param numpy.array y: vector containing the measured outputs
+        :param numpy.array y_avg: vector containing the average of the measured outputs
         
-        :returns: state-outputs covariance matrix :math:`C_{xz}`
+        :returns: state-outputs covariance matrix :math:`C_{xy}`
         :rtype: numpy.ndarray
                 
         """
-        W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
+        W = np.diag(self.W_c[:,0]).reshape(self.n_points, self.n_points)
             
         Vx = x - x_avg
         
-        Vz = np.zeros(z.shape)
+        Vy = np.zeros(y.shape)
         for j in range(self.n_points):
-            Vz[j,:]   = z[j,:] - z_avg[0]
+            Vy[j,:]   = y[j,:] - y_avg[0]
     
-        covXZ = np.dot(np.dot(Vx.T,W),Vz)
+        covXY = np.dot(np.dot(Vx.T,W),Vy)
         
-        return covXZ
+        return covXY
     
     def compute_cov_x_x(self, x_new, x_new_avg, x, x_avg):
         """
@@ -743,13 +743,13 @@ class UkfFmu():
         
         return L
         
-    def compute_S_y(self, z_proj, z_ave, sqrt_R):
+    def compute_S_y(self, y_proj, y_ave, sqrt_R):
         """
         This method computes the squared root covariance matrix using the QR decomposition
         combined with a Cholesky update.
         
-        :param numpy.array z_proj: projected full state vector
-        :param numpy.array z_avg: average of the full state vector
+        :param numpy.array y_proj: projected measured output vector
+        :param numpy.array y_avg: average of the measured output vector
         :param numpy.ndarray sqrt_R: square root process covariance matrix
         
         :return: the square root of the updated output covariance matrix
@@ -763,8 +763,8 @@ class UkfFmu():
         # create matrix A that contains the error between the sigma points outputs and the average
         A     = np.array([[]])
         i     = 0
-        for z in z_proj:
-            error = signs[i]*weights[i]*(z - z_ave)
+        for y in y_proj:
+            error = signs[i]*weights[i]*(y - y_ave)
             if i == 1:
                 A = error.T
             elif i > 1:
@@ -778,8 +778,8 @@ class UkfFmu():
         q, L = np.linalg.qr(A.T)
 
         # Execute the Cholesky update
-        z = signs[0]*weights[0]*(z_proj[0,] - z_ave)
-        L = self.chol_update(L, z.T, self.W_c[:,0])
+        y = signs[0]*weights[0]*(y_proj[0,] - y_ave)
+        L = self.chol_update(L, y.T, self.W_c[:,0])
         
         return L
     
@@ -938,7 +938,7 @@ class UkfFmu():
             print "Sy =",Sy
         
         # compute the cross covariance matrix
-        CovXZ = self.compute_cov_x_z(X_proj, x_ave, Z_proj, Zave)
+        CovXZ = self.compute_cov_x_y(X_proj, x_ave, Z_proj, Zave)
         
         if verbose:
             print "State output covariance matrix"
