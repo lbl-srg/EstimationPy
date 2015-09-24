@@ -193,8 +193,8 @@ Notation
 ++++++++
 
 The superscript :math:`^{(i)}` indicates that the quantity is related to the i-th sigma point,
-:math:`w_m^{(i)}` and :math:`w_c^{(i)}` are the weights associated to the i-th 
-sigma point, :math:`n` is the dimension of the state vector :math:`\mathbf{x}(\cdot)`, and
+:math:`w_m^{(i)}` and :math:`w_c^{(i)}` are the weights associated to the :math:`i-th` 
+sigma point, :math:`N` is the dimension of the state vector :math:`\mathbf{x}(\cdot)`, and
 :math:`[\cdot]_i` is an operator that if applied to a matrix :math:`A` returns its :math:`i-th` column. 
 Vectors are indicated with bold characters.
 
