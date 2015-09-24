@@ -189,6 +189,15 @@ Note that augmenting the state variables leads to a nonlinear state equation eve
 :math:`F(\cdot, \cdot, \cdot, \cdot)` is a linear function.
 Therefore, for parameter estimation, a nonlinear filtering and smoothing technique is required.
 
+Notation
+++++++++
+
+The superscript :math:`^{(i)}` indicates that the quantity is related to the i-th sigma point,
+:math:`w_m^{(i)}` and :math:`w_c^{(i)}` are the weights associated to the i-th 
+sigma point, :math:`n` is the dimension of the state vector :math:`\mathbf{x}(\cdot)`, and
+:math:`[\cdot]_i` is an operator that if applied to a matrix :math:`A` returns its :math:`i-th` column. 
+Vectors are indicated with bold characters.
+
 .. automodule:: estimationpy.ukf.ukf_fmu
     :members:
     :special-members:
