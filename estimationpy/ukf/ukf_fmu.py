@@ -1061,13 +1061,13 @@ class UkfFmu():
         x     = [np.hstack((self.model.get_state_observed_values(), self.model.get_parameter_values()))]
         x_full= [self.model.get_state()]
 
-        if not sqrt_P:
+        if sqrt_P == None:
             sqrt_P = self.model.get_cov_matrix_state_pars()
         sqrt_Ps = [sqrt_P]
         
-        if not sqrt_Q:
+        if sqrt_Q == None:
             sqrt_Q = self.model.get_cov_matrix_state_pars()
-        if not sqrt_R:
+        if sqrt_R == None:
             sqrt_R = self.model.get_cov_matrix_outputs()
 
         y     = [measuredOuts[0,1:]]
