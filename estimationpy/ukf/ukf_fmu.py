@@ -4,6 +4,9 @@ import multiprocessing
 
 from estimationpy.fmu_utils.fmu_pool import FmuPool
 
+import logging
+logger = logging.getLogger(__name__)
+
 class UkfFmu():
     """
     This class represents an Unscented Kalman Filter (UKF) that can be used for the 
@@ -54,6 +57,7 @@ class UkfFmu():
           parameters to estimate is invalid.
 
         """
+        logger.info("Instantiate UkfFmu object")
         
         # Set the model
         self.model = model
@@ -994,7 +998,7 @@ class UkfFmu():
         
         return (X_corr[0], S_corr, Zave, Sy, Zfull_ave, Xfull_ave[0])        
     
-    def filter(self, start, stop, verbose = False, for_smoothing = False):
+    def filter(self, start, stop, sqrt_P = None, sqrt_Q = None, sqrt_R = None, verbose = False, for_smoothing = False):
         """
         This method starts the filtering process. The filtering process
         is a loop of multiple calls of the basic method :func:`ukf_step`.
@@ -1003,6 +1007,17 @@ class UkfFmu():
           filtering period
         :param datetime.datetime stop: time stamp that identifies the end of the
           filtering period
+        :param numpy.ndarray sqrt_P: a matrix that can be used to initialize the square root 
+          of the augmented state covariance matrix. If equal to None, the method uses
+          a diagonal matrix that contains the standard deviation of each states and parameters.
+        :param numpy.ndarray sqrt_Q: a matrix that is used to represent the process noise.
+          This matrix is in square root form and is kept constant while the algorithm
+          is executed. If equal to None, the method uses
+          a diagonal matrix that contains the standard deviation of each states and parameters.
+        :param numpy.ndarray sqrt_R: a matrix that is used to represent the measurement noise.
+          This matrix is in square root form and is kept constant while the algorithm runs.
+          If equal to None, the method uses a diagonal matrix that contains the standard deviation
+          of the measured outputs as elements.
         :param bool verbose: Boolean flag that indicates the level of verbosity required
           when logging. Set to True only in debug mode.
         :param bool for_smoothing: Boolean flag that indicates if the data computed by this method
@@ -1045,12 +1060,19 @@ class UkfFmu():
         # Initial conditions and other values
         x     = [np.hstack((self.model.get_state_observed_values(), self.model.get_parameter_values()))]
         x_full= [self.model.get_state()]
-        sqrtP = [self.model.get_cov_matrix_state_pars()]
-        sqrtQ = self.model.get_cov_matrix_state_pars()
-        sqrtR = self.model.get_cov_matrix_outputs()
+
+        if not sqrt_P:
+            sqrt_P = self.model.get_cov_matrix_state_pars()
+        sqrt_Ps = [sqrt_P]
+        
+        if not sqrt_Q:
+            sqrt_Q = self.model.get_cov_matrix_state_pars()
+        if not sqrt_R:
+            sqrt_R = self.model.get_cov_matrix_outputs()
+
         y     = [measuredOuts[0,1:]]
         y_full= [measuredOuts[0,1:]]
-        Sy    = [sqrtR]
+        Sy    = [sqrt_R]
         
         for i in range(ix_start+1, ix_stop):
             t_old = time[i-1]
@@ -1059,19 +1081,19 @@ class UkfFmu():
             
             # Execute a filtering step
             try:
-                X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1-ix_start], sqrtP[i-1-ix_start], sqrtQ, sqrtR, t_old, t, z, verbose=verbose)
+                X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1-ix_start], sqrt_Ps[i-1-ix_start], sqrt_Q, sqrt_R, t_old, t, z, verbose=verbose)
             except Exception, e:
                 print "Exception while running UKF step from {0} to {1}".format(t_old, t)
                 print str(e)
                 print "The state X is"
                 print x[i-1-ix_start]
                 print "The sqrtP matrix is"
-                print sqrtP[i-1-ix_start]
+                print sqrt_Ps[i-1-ix_start]
                 raise Exception("Problem while performing a UKF step")
                 
             # Add data to the list    
             x.append(X_corr)
-            sqrtP.append(sP)
+            sqrt_Ps.append(sP)
             y.append(Zave)
             y_full.append(Zfull_ave)
             Sy.append(S_y)
@@ -1081,9 +1103,9 @@ class UkfFmu():
         y_full[0] = y_full[1]
         
         if for_smoothing:
-            return time[ix_start:ix_stop], x, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR
+            return time[ix_start:ix_stop], x, sqrt_Ps, y, Sy, y_full, x_full, sqrt_Q, sqrt_R
         else:
-            return time[ix_start:ix_stop], x, sqrtP, y, Sy, y_full
+            return time[ix_start:ix_stop], x, sqrt_Ps, y, Sy, y_full
     
     def filter_and_smooth(self, start, stop, verbose=False):
         """
