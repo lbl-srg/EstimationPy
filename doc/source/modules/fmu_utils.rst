@@ -7,6 +7,7 @@ Utilities
 .. toctree::
    :maxdepth: 2
 
+   fmu_utils/estimationpy_logging
    fmu_utils/csv_reader
    fmu_utils/estimation_variable
    fmu_utils/in_out_var

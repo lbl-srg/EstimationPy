@@ -12,6 +12,11 @@ import pandas as pd
 from estimationpy.fmu_utils.in_out_var import InOutVar
 from estimationpy.fmu_utils.csv_reader import CsvReader
 
+import logging
+from estimationpy.fmu_utils import estimationpy_logging
+estimationpy_logging.configure_logger(log_level = logging.DEBUG, log_level_console = logging.INFO, log_level_file = logging.DEBUG)
+
+
 class Test(unittest.TestCase):
     """
     This class contains unit tests for checking the behavior of the class

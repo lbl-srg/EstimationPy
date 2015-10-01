@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import multiprocessing
@@ -49,7 +50,7 @@ class UkfFmu():
           when the simulations are run. Make sure this value is equal to 1 if the filtering or smoothing
           are executed as part of a Celery task. By default this value is equal to the number of 
           available processors minus one.
-        
+                
         :raises ValueError: The method raises an exception if the model associated to the filter
           does not have state or parameters to be estimated.
         :raises Exception: The method raises an exception if there are not measured outputs, the 
@@ -368,7 +369,7 @@ class UkfFmu():
         except ValueError:
             msg = "The vector of state variables has a wrong size"
             msg += "{0} instead of {1}".format(x.shape, self.n_state_obs)
-            print msg
+            logger.exception(msg)
             raise ValueError(msg)
         
         try:
@@ -378,7 +379,7 @@ class UkfFmu():
         except ValueError:
             msg = "The vector of parameters has a wrong size"
             msg += "{0} instead of {1}".format(pars.shape, self.n_pars)
-            print msg
+            logger.exception(msg)
             raise ValueError(msg)
             
         # initialize the matrix of sigma points
@@ -424,7 +425,7 @@ class UkfFmu():
                 msg = "Is not possible to generate the sigma points..."
                 msg +="\nthe dimensions of the sqrtP matrix and the state and parameter vectors are not compatible"
                 msg +="\n {0} and {1}".format(sqrtP.shape, Xs.shape)
-                print msg
+                logger.exception(msg)
                 raise ValueError(msg)
             
             # Introduce constraints on points
@@ -833,7 +834,7 @@ class UkfFmu():
         else:
             return Lc
     
-    def ukf_step(self, x, sqrtP, sqrtQ, sqrtR, t_old, t, z = None, verbose = False):
+    def ukf_step(self, x, sqrtP, sqrtQ, sqrtR, t_old, t, z = None):
         """
         This method implements the basic step that constitutes the UKF algorithm.
         The main steps are two:
@@ -849,8 +850,6 @@ class UkfFmu():
         :param datetime.datetime t: final time for runnign the simulation
         :param numpy.array z: measured outputs at time ``t``. If not provided the method retieves
           the data automatically by calling the method :func:`estimationpy.fmu_utils.model.Model.get_measured_data_ouputs`.
-        :param boolean verbose: this boolean flag defines the level of logging required, set the flag to True only
-          in debug mode.
 
         :return: a tuple with the following variables
         
@@ -863,8 +862,7 @@ class UkfFmu():
         
         :rtype: tuple
         """
-        if verbose:
-            print "Start UKF step"
+        logger.debug("Start UKF startup from {0} to {1}".format(t_old, t))
         
         # Get the parameters and the states to observe
         pars = x[self.n_state_obs:]
@@ -873,36 +871,25 @@ class UkfFmu():
         # the list of sigma points (each sigma point can be an array, containing the state variables)
         # x, pars, sqrtP, sqrtQ = None, sqrtR = None
         Xs      = self.compute_sigma_points(x, pars, sqrtP)
-        
-        if verbose:
-            print "Sigma point Xs"
-            print Xs
+
+        logger.debug("Sigma point Xs = {0}".format(Xs))
     
         # compute the projected (state) points (each sigma points is propagated through the state transition function)
         X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigma_point_proj(Xs,t_old,t)
-        
-        if verbose:
-            print "Projected sigma points"
-            print X_proj
+
+        logger.debug("Projected sigma point Xs_proj = {0}".format(X_proj))
     
         # compute the average
         x_ave = self.average_proj(X_proj)
         Xfull_ave = self.average_proj(Xfull_proj)
-        
-        if verbose:
-            print "Averaged projected sigma points"
-            print x_ave
-        
-        if verbose:
-            print "Averaged projected full state"
-            print Xfull_ave
+
+        logger.debug("Averaged peojected sigma points is x_ave = {0}".format(x_ave))
+        logger.debug("Averaged peojected full state is Xfull_ave = {0}".format(Xfull_ave))
         
         # compute the new squared covariance matrix S
         Snew = self.compute_S(X_proj,x_ave,sqrtQ)
-        
-        if verbose:
-            print "New squared S matrix"
-            print Snew
+
+        logger.debug("New squares S matrix is = {0}".format(Snew))
         
         # redraw the sigma points, given the new covariance matrix
         x    = x_ave[0,0:self.n_state_obs]
@@ -911,42 +898,31 @@ class UkfFmu():
         
         # Merge the real full state and the new ones
         self.model.set_state(Xfull_ave[0])
-        
-        if verbose:
-            print "New sigma points"
-            print Xs
+
+        logger.debug("New sigma point is = {0}".format(Xs))
 
         # compute the projected (outputs) points (each sigma points is propagated through the output function, this should not require a simulation,
         # just the evaluation of a function since the output can be directly computed if the state vector and inputs are known )
         X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigma_point_proj(Xs,t,t)
-        
-        if verbose:
-            print "Output projection of new sigma points"
-            print Z_proj
-            print "State re-projection"
-            print X_proj
 
+        logger.debug("Output projection of new sigm apoint is Z_proj = {0}".format(Z_proj))
+        logger.debug("State re-projection is X_proj = {0}".format(X_proj))
+        
         # compute the average output
         Zave = self.average_proj(Z_proj)
         Zfull_ave = self.average_proj(Zfull_proj)
-        
-        if verbose:
-            print "Averaged output projection of new sigma points"
-            print "Yav =",Zave
+
+        logger.debug("Averaged output projection of new sigma points is Zave = {0}".format(Zave))
 
         # compute the innovation covariance (relative to the output)
         Sy = self.compute_S_y(Z_proj,Zave,sqrtR)
-        
-        if verbose:
-            print "Output squared covariance matrix"
-            print "Sy =",Sy
+
+        logger.debug("Output squared covariance matrix is Sy = {0}".format(Sy))           
         
         # compute the cross covariance matrix
         CovXZ = self.compute_cov_x_y(X_proj, x_ave, Z_proj, Zave)
-        
-        if verbose:
-            print "State output covariance matrix"
-            print "Cxy =",CovXZ
+
+        logger.debug("State output covariance matrix is Cxy = {0}".format(CovXZ))
     
         # Data assimilation step
         # The information obtained in the prediction step are corrected with the information
@@ -959,37 +935,28 @@ class UkfFmu():
         # Read the output value
         if z == None:
             z = self.model.get_measured_data_ouputs(t)
-        
-        if verbose:
-            print "Measured Output data to be compared against simulations"
-            print "Z=",z
-            print "Z - Yav =",z.reshape(self.n_outputs,1)-Zave.T
-            print "K=",K
+
+        logger.debug("Measured output data to be compared agains simulations Z = {0}".format(z))
+        logger.debug("Error Z - Zave = {0}".format(z.reshape(self.n_outputs,1)-Zave.T))
+        logger.debug("Gain K = {0}".format(K))
         
         # State correction using the measurements
         X_corr = x_ave + np.dot(K,z.reshape(self.n_outputs,1)-Zave.T).T
         
         # If constraints are active, they are imposed in order to avoid the corrected value to fall outside
         X_corr[0,:] = self.constrained_state(X_corr[0,:])
-        
-        if verbose:
-            print "New state corrected"
-            print X_corr
+
+        logger.debug("New state corrected X_corr = {0}".format(X_corr) )
         
         # The covariance matrix is corrected too
         U      = np.dot(K,Sy)
-        
-        if verbose:
-            print "U is"
-            print U
-            print "Snew"
-            print Snew
+
+        logger.debug("Matrix U = {0}".format(U))
+        logger.debug("Updated covariance matrix Snew = {0}".format(Snew))
         
         S_corr = self.chol_update(Snew,U,-1*np.ones(self.n_state))
-        
-        if verbose:
-            print "New Covariance matrix corrected"
-            print S_corr
+
+        logger.debug("New covariance matrix corrected is S_corr = {0}".format(S_corr))
         
         # Apply the corrections to the model and then returns
         # Set observed states and parameters
@@ -998,7 +965,7 @@ class UkfFmu():
         
         return (X_corr[0], S_corr, Zave, Sy, Zfull_ave, Xfull_ave[0])        
     
-    def filter(self, start, stop, sqrt_P = None, sqrt_Q = None, sqrt_R = None, verbose = False, for_smoothing = False):
+    def filter(self, start, stop, sqrt_P = None, sqrt_Q = None, sqrt_R = None, for_smoothing = False):
         """
         This method starts the filtering process. The filtering process
         is a loop of multiple calls of the basic method :func:`ukf_step`.
@@ -1018,8 +985,6 @@ class UkfFmu():
           This matrix is in square root form and is kept constant while the algorithm runs.
           If equal to None, the method uses a diagonal matrix that contains the standard deviation
           of the measured outputs as elements.
-        :param bool verbose: Boolean flag that indicates the level of verbosity required
-          when logging. Set to True only in debug mode.
         :param bool for_smoothing: Boolean flag that indicates if the data computed by this method
           will be used by a smoother. If True, the function returns more data so the smoother
           can use them.
@@ -1048,6 +1013,8 @@ class UkfFmu():
         :raises Exception: The method raises an exception if there are problem during the filtering process,
           e.g., numerical problems regarding the estimation.
         """
+        logger.info("*** Start filtering process...")
+        
         # Read the output measured data
         measuredOuts = self.model.get_measured_output_data_series()
         
@@ -1081,14 +1048,12 @@ class UkfFmu():
             
             # Execute a filtering step
             try:
-                X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1-ix_start], sqrt_Ps[i-1-ix_start], sqrt_Q, sqrt_R, t_old, t, z, verbose=verbose)
+                X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1-ix_start], sqrt_Ps[i-1-ix_start], sqrt_Q, sqrt_R, t_old, t, z)
             except Exception, e:
-                print "Exception while running UKF step from {0} to {1}".format(t_old, t)
-                print str(e)
-                print "The state X is"
-                print x[i-1-ix_start]
-                print "The sqrtP matrix is"
-                print sqrt_Ps[i-1-ix_start]
+                logger.exception("Exception while running UKF step from {0} to {1}".format(t_old, t))
+                logger.exception(str(e))
+                logger.exception("The state is X = {0}".format(x[i-1-ix_start]))
+                logger.exception("The sqrtP matrix is".format(sqrt_Ps[i-1-ix_start]))
                 raise Exception("Problem while performing a UKF step")
                 
             # Add data to the list    
@@ -1107,19 +1072,16 @@ class UkfFmu():
         else:
             return time[ix_start:ix_stop], x, sqrt_Ps, y, Sy, y_full
     
-    def filter_and_smooth(self, start, stop, verbose=False):
+    def filter_and_smooth(self, start, stop):
         """
         This method executes the filter and then the smoothing of the data
         """
         # Run the filter
-        time, X, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR = self.filter(start, stop, verbose = False, for_smoothing = True)
+        time, X, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR = self.filter(start, stop, for_smoothing = True)
+
+        logger.info("*** Start smoothing process...")
         
-        print "=============================="
-        print "== Starting the Smoother  ===="
-        print "=============================="
-        
-        # get the number of time steps        
-        #s = np.reshape(time,(-1,1)).shape
+        # Get the number of time steps        
         s = time.shape
         nTimeStep = s[0]
         
@@ -1153,63 +1115,45 @@ class UkfFmu():
             
             # define the sigma points
             Xs_i      = self.compute_sigma_points(x, pars, S_i)
-            
-            if verbose:
-                    print "Sigma point Xs"
-                    print Xs_i
+
+            logger.debug("Sigma point is Xs = {0}".format(Xs_i))
             
             # mean of the sigma points
             Xs_i_ave    = x_i
-            
-            if verbose:
-                print "Mean of the sigma points"
-                print Xs_i_ave
-                print "Simulate from",time[i],"to",time[i+1]
+
+            logger.debug("Mean value of the sigma point is Xs_i_ave = {0}".format(Xs_i_ave))
+            logger.debug("Simulate from {0} to {1}".format(time[i], time[i+1]))
                 
             # compute the projected (state) points (each sigma points is propagated through the state transition function)
             X_plus_1, Z_plus_1, Xfull_plus_1, Zfull_plus_1 = self.sigma_point_proj(Xs_i, time[i], time[i+1])
-            
-            if verbose:
-                print "Propagated sigma points"
-                print X_plus_1
+
+            logger.debug("Propagated sigma points X_plus_1 = {0}".format(X_plus_1))
             
             # average of the sigma points
             x_ave_plus_1 = self.average_proj(X_plus_1)
-            
-            if verbose:
-                print "Averaged propagated sigma points"
-                print x_ave_plus_1
+
+            logger.debug("Averaged propagated sigma points x_ave_plus_1 = {0}".format(x_ave_plus_1))
             
             # compute the new covariance matrix
             Snew = self.compute_S(X_plus_1, x_ave_plus_1, sqrtQ)
-            
-            if verbose:
-                print "Former S matrix used to draw the points"
-                print S_i
-                print "New Squared covaraince matrix"
-                print Snew
+
+            logger.debug("Former S matrix is = {0}".format(S_i))
+            logger.debug("New matrix is Snew = {0}".format(Snew))
             
             # compute the cross covariance matrix of the two states
             # (new state already corrected, coming from the "future", and the new just computed through the projection)
             Cxx  = self.compute_cov_x_x(X_plus_1, x_ave_plus_1, Xs_i, Xs_i_ave)
-            
-            if verbose:
-                print "Cross state-state covariance matrix"
-                print Cxx
+
+            logger.debug("Cross state-state covariance Cxx = {0}".format(Cxx))
             
             # gain for the back propagation
             firstDivision = np.linalg.lstsq(Snew.T, Cxx.T)[0]
             D             = np.linalg.lstsq(Snew, firstDivision)[0]
-            #D             = D.T
             
             correction = np.dot(np.matrix(Xsmooth[i+1]) - x_ave_plus_1, D)
-            if verbose:
-                print "Old state"
-                print X[i]
-                print "Error:"
-                print Xsmooth[i+1] - x_ave_plus_1
-                print "Correction:"
-                print correction
+            logger.debug("Old state is X = {0}".format(X[i]))
+            logger.debug("Error is err = {0}".format(Xsmooth[i+1] - x_ave_plus_1))
+            logger.debug("Correction = {0}".format(correction))
             
             # correction (i.e. smoothing, of the state estimation and covariance matrix)
             Xsmooth[i]  = X[i] + np.squeeze(np.array(correction[0,:]))
@@ -1222,121 +1166,16 @@ class UkfFmu():
             
             V          = np.dot(D.T, Ssmooth[i+1] - Snew)
             Ssmooth[i] = self.chol_update(sqrtP[i], V, -1*np.ones(self.n_state_obs + self.n_pars))
-            
-            if verbose:
-                print "New smoothed state"
-                print Xsmooth[i]
-                print "Ssmooth"
-                print "difference",sqrtP[i]-Ssmooth[i]
-                
-                raw_input("?")
+
+            logger.debug("New smoothed state Xsmooth = {0}".format(Xsmooth[i]))
+            logger.debug("Ssmooth difference is = {0}".format(sqrtP[i] - Ssmooth[i]))
         
         # correct the shape of the last element that has not been smoothed
         Yfull_smooth[-1] = Yfull_smooth[-1][0]
         
         # Return the results of the filtering and smoothing
         return time, X, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth
-            
-    def smooth(self,time,Xhat,S,sqrtQ,U,m,verbose=False):
-        """
-        This methods contains all the steps that have to be performed by the UKF Smoother.
-        """
-        # initialize the smoothed states and covariance matrix
-        # the initial value of the smoothed state estimation are equal to the filtered ones
-        Xsmooth = Xhat.copy()
-        Ssmooth = S.copy()
-        
-        # get the number of time steps        
-        s = np.reshape(time,(-1,1)).shape
-        nTimeStep = s[0]
-
-        # iterating starting from the end and back
-        # i : nTimeStep-2 -> 0
-        #
-        # From point i with an estimation x_ave[i], and S[i]
-        # new sigma points are created and propagated, the result is a 
-        # new vector of states X[i+1] (one for each sigma point)
-        #
-        # NOTE that at time i+1 there is available a corrected estimation of the state Xcorr[i+1]
-        # thus the difference between these two states is back-propagated to the state at time i
-        for i in range(nTimeStep-2,-1,-1):
-            # actual state estimation and covariance matrix
-            x_i = Xsmooth[i,:]
-            S_i = Ssmooth[i,:,:]
-
-            # compute the sigma points
-            Xs_i        = self.compute_sigma_points(x_i, S_i)
-            
-            if verbose:
-                print "Sigma points"
-                print Xs_i
-            
-            # mean of the sigma points
-            Xs_i_ave    = self.average_proj(Xs_i)
-            
-            if verbose:
-                print "Mean of the sigma points"
-                print Xs_i_ave
-            
-            # propagate the sigma points
-            x_plus_1    = self.sigma_point_proj(m,Xs_i,U[i],U[i+1],time[i],time[i+1])
-            
-            if verbose:
-                print "Propagated sigma points"
-                print x_plus_1
-            
-            # average of the sigma points
-            x_ave_plus_1 = self.average_proj(x_plus_1)
-            
-            if verbose:
-                print "Averaged propagated sigma points"
-                print x_ave_plus_1
-            
-            # compute the new covariance matrix
-            Snew = self.compute_S(x_plus_1,x_ave_plus_1,sqrtQ)
-            
-            if verbose:
-                print "New Squared covaraince matrix"
-                print Snew
-            
-            # compute the cross covariance matrix of the two states
-            # (new state already corrected, coming from the "future", and the new just computed through the projection)
-            Cxx  = self.compute_C_x_x(x_plus_1,x_ave_plus_1,Xs_i,Xs_i_ave)
-            
-            if verbose:
-                print "Cross state-state covariance matrix"
-                print Cxx
-            
-            # gain for the back propagation
-            firstDivision = np.linalg.lstsq(Snew.T, Cxx.T)[0]
-            D             = np.linalg.lstsq(Snew, firstDivision)[0]
-            D             = D.T
-            
-            if verbose:
-                print "Old state"
-                print Xhat[i,:]
-                print "Error:"
-                print Xsmooth[i+1,0:self.n_state_obs] - x_ave_plus_1[0,0:self.n_state_obs]
-                print "Correction:"
-                print np.dot(D, Xsmooth[i+1,0:self.n_state_obs] - x_ave_plus_1[0,0:self.n_state_obs])
-                
-            # correction (i.e. smoothing, of the state estimation and covariance matrix)
-            Xsmooth[i,self.n_state_obs:]   = Xhat[i,self.n_state_obs:]
-            Xsmooth[i,0:self.n_state_obs]  = Xhat[i,0:self.n_state_obs] + np.dot(D, Xsmooth[i+1,0:self.n_state_obs] - x_ave_plus_1[0,0:self.n_state_obs])
-            
-            # How to introduce constrained estimation
-            Xsmooth[i,0:self.n_state_obs]  = self.constrained_state(Xsmooth[i,0:self.n_state_obs])
-            
-            if verbose:
-                print "New smoothed state"
-                print Xsmooth[i,:]
-                raw_input("?")
-            
-            V              = np.dot(D,Ssmooth[i+1,:,:] - Snew)
-            Ssmooth[i,:,:] = self.chol_update(S[i,:,:],V,-1*np.ones(self.n_state_obs))
-            
-        return (Xsmooth, Ssmooth)
-
+    
     @staticmethod
     def find_closest_matches(start, stop, time):
         """

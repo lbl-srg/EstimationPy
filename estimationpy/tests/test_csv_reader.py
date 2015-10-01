@@ -10,6 +10,11 @@ import pandas as pd
 
 from estimationpy.fmu_utils import csv_reader
 
+import logging
+from estimationpy.fmu_utils import estimationpy_logging
+estimationpy_logging.configure_logger(log_level = logging.DEBUG, log_level_console = logging.INFO, log_level_file = logging.DEBUG)
+
+
 class Test(unittest.TestCase):
 
     def setUp(self):

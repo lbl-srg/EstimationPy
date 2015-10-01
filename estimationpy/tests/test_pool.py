@@ -15,6 +15,11 @@ from datetime import datetime
 from estimationpy.fmu_utils import model
 from estimationpy.fmu_utils import fmu_pool
 
+import logging
+from estimationpy.fmu_utils import estimationpy_logging
+estimationpy_logging.configure_logger(log_level = logging.DEBUG, log_level_console = logging.INFO, log_level_file = logging.DEBUG)
+
+
 class Test(unittest.TestCase):
 
 

@@ -13,6 +13,10 @@ import pandas as pd
 from estimationpy.ukf.ukf_fmu import UkfFmu
 from estimationpy.fmu_utils.model import Model
 
+import logging
+from estimationpy.fmu_utils import estimationpy_logging
+estimationpy_logging.configure_logger(log_level = logging.DEBUG, log_level_console = logging.INFO, log_level_file = logging.DEBUG)
+
 dir_path = os.path.dirname(__file__)
 
 class Test(unittest.TestCase):
@@ -443,7 +447,7 @@ class Test(unittest.TestCase):
         # Start the filter
         t0 = pd.to_datetime(0.0, unit = "s", utc = True)
         t1 = pd.to_datetime(30.0, unit = "s", utc = True)
-        time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose = False)
+        time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1)
 
         # Convert the results to numpy array
         time = time - time[0]
@@ -520,7 +524,7 @@ class Test(unittest.TestCase):
         t0 = pd.to_datetime(0.0, unit = "s", utc = True)
         t1 = pd.to_datetime(360.0, unit = "s", utc = True)
         time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = \
-        ukf_FMU.filter_and_smooth(start = t0, stop = t1, verbose = False)
+        ukf_FMU.filter_and_smooth(start = t0, stop = t1)
 
         # Convert the results to numpy array
         time = time - time[0]
