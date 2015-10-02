@@ -51,7 +51,7 @@ def configure_logger(log_level = logging.DEBUG, log_level_console = logging.ERRO
         version = 1,
         formatters = {
             'f': {'format':
-                  '%(asctime)s | %(name)-12s | %(levelname)-8s | %(module)s | %(funcName)s | %(lineno)d | %(message)s'}
+                  '%(asctime)s | %(name)-30s | %(levelname)-8s | %(funcName)s | %(lineno)d | %(message)s'}
         },
         handlers = {
             'console': {

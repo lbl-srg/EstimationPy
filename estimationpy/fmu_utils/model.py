@@ -14,6 +14,9 @@ from estimationpy.fmu_utils.estimation_variable import EstimationVariable
 
 import estimationpy.fmu_utils.strings as fmu_util_strings
 
+import logging
+logger = logging.getLogger(__name__)
+
 class Model():
     """
     The class :class:`Model` represents an extension of an FMU model.
@@ -115,13 +118,13 @@ class Model():
 
         """
         if self.is_parameter_present(obj):
-            print "Parameter: ", obj, " not added, already present"
+            logger.warn("Parameter: {0} not added, already present".format(obj))
             return False
         else:
             # the object is not yet part of the list, add it            
             par = EstimationVariable(obj, self)
             self.parameters.append(par)
-            print "Added parameter: ",obj," (",par,")"
+            logger.info("Added parameter: {0} ({1})".format(obj, par))
             
             return True
     
@@ -142,14 +145,14 @@ class Model():
 
         """
         if self.is_variable_present(obj):
-            print "Variable: ", obj, " not added, already present"
+            logger.warn("Variable: {0} not added, already present".format(obj))
             return False
         else:
             # the object is not yet part of the list, add it
             # but before embed it into an EstimationVariable class
             var = EstimationVariable(obj, self)
             self.variables.append(var)
-            print "Added variable: ",obj," (",var,")"
+            logger.info("Added variable: {0} ({1})".format(obj, var))
             return True
     
     def check_input_data(self, align = True):
@@ -226,10 +229,11 @@ class Model():
             # Interpolate using the same datetimeIndex
             for inp in dataList:
                 inp.get_data_series().reindex(new_index).interpolate(method='linear')
-                
+
+            logger.error("Problems while matching the data series")
             return False
         else:
-            print "\tMatch between data series - OK"
+            logger.info("Match between data series is OK")
             return True
 
     def get_constr_obs_states_high(self):
@@ -704,21 +708,21 @@ class Model():
         
         try:
             # Take the data type associated to the variable
-            Type  = self.fmu.get_variable_data_type(variableInfo.name)
+            t  = self.fmu.get_variable_data_type(variableInfo.name)
             
             # According to the data type read, select one of these methods to get the information
-            if Type == pyfmi.fmi.FMI_REAL:
+            if t == pyfmi.fmi.FMI_REAL:
                 value = self.fmu.get_real( variableInfo.value_reference )
-            elif Type == pyfmi.fmi.FMI_INTEGER:
+            elif t == pyfmi.fmi.FMI_INTEGER:
                 value = self.fmu.get_integer( variableInfo.value_reference )
-            elif Type == pyfmi.fmi.FMI_BOOLEAN:
+            elif t == pyfmi.fmi.FMI_BOOLEAN:
                 value = self.fmu.get_boolean( variableInfo.value_reference )
-            elif Type == pyfmi.fmi.FMI_ENUMERATION:
+            elif t == pyfmi.fmi.FMI_ENUMERATION:
                 value = self.fmu.get_int( variableInfo.value_reference )
-            elif Type == pyfmi.fmi.FMI_STRING:
+            elif t == pyfmi.fmi.FMI_STRING:
                 value = self.fmu.get_string( variableInfo.value_reference )
             else:
-                print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
+                logger.error("FMU-EXCEPTION, The type {0} is not known".format(t))
                 value = 0.0
  
             # TODO: check the min and max value if the variables are not real or integers
@@ -728,14 +732,14 @@ class Model():
             try:
                 start = self.fmu.get_variable_start(variableInfo.name)
             except pyfmi.fmi.FMUException:
-                print "Default start value defined as 0.0"
+                logger.warn("Default start value defined as 0.0 for variable {0}".format(variableInfo.name))
                 start = 0.0
             
             return (type, value, start, Min, Max)
         
         except pyfmi.fmi.FMUException:
                 # if the real value is not present for this parameter/variable
-                print "OnSelChanged::FMU-EXCEPTION :: No real value to read for this variable"
+                logger.error("FMU-EXCEPTION, No real value to read for variable {0}".format(variableInfo.name))
                 return (None, None, None, None, None)
     
     def get_variable_info(self, variableInfo):
@@ -746,26 +750,26 @@ class Model():
         
         try:
             # Take the data type associated to the variable
-            Type  = self.fmu.get_variable_data_type(variableInfo.name)
+            t  = self.fmu.get_variable_data_type(variableInfo.name)
             
             # According to the data type read, select one of these methods to get the information
-            if Type == pyfmi.fmi.FMI_REAL:
+            if t == pyfmi.fmi.FMI_REAL:
                 value = self.fmu.get_real( variableInfo.value_reference )
                 strType = "Real"
-            elif Type == pyfmi.fmi.FMI_INTEGER:
+            elif t == pyfmi.fmi.FMI_INTEGER:
                 value = self.fmu.get_integer( variableInfo.value_reference )
                 strType = "Integer"
-            elif Type == pyfmi.fmi.FMI_BOOLEAN:
+            elif t == pyfmi.fmi.FMI_BOOLEAN:
                 value = self.fmu.get_boolean( variableInfo.value_reference )
                 strType = "Boolean"
-            elif Type == pyfmi.fmi.FMI_ENUMERATION:
+            elif t == pyfmi.fmi.FMI_ENUMERATION:
                 value = self.fmu.get_int( variableInfo.value_reference )
                 strType = "Enum"
-            elif Type == pyfmi.fmi.FMI_STRING:
+            elif t == pyfmi.fmi.FMI_STRING:
                 value = self.fmu.get_string( variableInfo.value_reference )
                 strType = "String"
             else:
-                print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
+                logger.error("FMU-EXCEPTION, The type {0} is not known".format(t))
                 value = [""]
                 strType = "Unknown"
  
@@ -792,7 +796,7 @@ class Model():
         
         except pyfmi.fmi.FMUException:
                 # if the real value is not present for this parameter/variable
-                print "OnSelChanged::FMU-EXCEPTION :: No real value to read for this variable"
+                logger.error("FMU-EXCEPTION, No real value to read for variable {0}".format(variableInfo.name))
                 return ("", "", "", "", "")
     
     def get_variable_names(self):
@@ -814,14 +818,13 @@ class Model():
                 try:
                     return self.fmu.get_model_variables()[name]
                 except Exception:
-                    print "The variable or parameter: "+str(name)+" is not available in the list:"
-                    print self.fmu.get_model_variables().keys()
+                    logger.error("The variable or parameter: {0} is not available in the list: {1}".format(name, self.fmu.get_model_variables().keys()))
                     return None
             else:
-                print "The FMU model has not yet been set. Impossible return the variable "+str(name)
+                logger.error("The FMU model has not yet been set. Impossible return the variable {0}".format(name))
                 return None
         else:
-            print "Impossible to look for the name because it is None or empty"
+            logger.error("Impossible to look for the name because it is None or empty")
             return None
     
     def initialize_simulator(self, startTime = None):
@@ -926,7 +929,7 @@ class Model():
             return True
         
         except ValueError:
-            print "First simulation for initialize the model failed"
+            logger.error("First simulation for initialize the model failed")
             return False
     
     def is_parameter_present(self, obj):
@@ -937,7 +940,7 @@ class Model():
         for p in self.parameters:
             if p.value_reference == val_ref:
                 # there is already a parameter in the list with the same value_reference
-                print "There is already a parameter in the list with the same value reference: "+str(val_ref)
+                logger.error("There is already a parameter in the list with the same value reference: {0}".format(val_ref))
                 return True
         return False
     
@@ -949,7 +952,7 @@ class Model():
         for v in self.variables:
             if v.value_reference == val_ref:
                 # there is already a variable in the list with the same value_reference
-                print "There is already a variable in the list with the same value reference: "+str(val_ref)
+                logger.error("There is already a variable in the list with the same value reference: {0}".format(val_ref))
                 return True
         return False
     
@@ -964,13 +967,13 @@ class Model():
             LoadedInputs = LoadedInputs and inp.read_data_series()
         
         if not LoadedInputs:
-            print "An error occurred while loading the inputs"
+            logger.error("An error occurred while loading the inputs")
         else:
             # A check on the input data series should be performed: Are the initial times, final times and number of point
             # aligned? If not perform an interpolation to align them is done. The boolean flag align deals with this.
-            print "Check the input data series..."
+            logger.info("Check the input data series...")
             if not self.check_input_data(align):
-                print "Re-Check the input data series..."
+                logger.info("Re-Check the input data series...")
                 return self.check_input_data(align)
             
         return LoadedInputs
@@ -987,7 +990,7 @@ class Model():
                 LoadedOutputs = LoadedOutputs and o.read_data_series()
         
         if not LoadedOutputs:
-            print "An error occurred while loading the outputs"
+            logger.error("An error occurred while loading the outputs")
         
         return LoadedOutputs
     
@@ -995,8 +998,8 @@ class Model():
         """
         This function reinitializes the FMU associated to the model
         """
-        print "Previous FMU was: ",self.fmu
-        print "Reinitialized model with: ",fmuFile
+        logger.info("Previous FMU was: {0}".format(self.fmu))
+        logger.info("Reinitialized model with: {0}".format(fmuFile))
         if self.fmu != None:
             self.fmu = None
         self.__init__(fmuFile, result_handler, solver, atol, rtol, verbose)
@@ -1087,7 +1090,7 @@ class Model():
             self.__set_outputs__()
             
         else:
-            print "WARNING: The fmu has already been assigned to this model! Check your code!"
+            logger.warn("The FMU has already been assigned to this model")
         
     def __set_inputs__(self):
         """
@@ -1181,7 +1184,7 @@ class Model():
         Set a real variable in the FMU model, given the PyFmi variable description
         """
         self.fmu.set_real(var.value_reference, value)
-        return
+        
     
     def set_state_selected(self, vector):
         """
@@ -1336,16 +1339,17 @@ class Model():
                 res = self.fmu.simulate(start_time = start_time_sec, input = input_object, final_time = final_time_sec, options = self.opts)
                 simulated = True
             except ValueError:
-                print "Simulation of the model failed, try again"
+                logger.debug("Simulation of the model from {0} to {1} failed, try again".format(start_time_sec, final_time_sec))
                 i += 1
             except Exception, e:
-                print str(e)
-                print "Simulation of the model failed between {0} and {1}, try again".format(start_time, final_time)
+                logger.warn("Execption during simulation: {0}".format(str(e)))
+                logger.warn("Simulation of the model failed between {0} and {1}, try again".format(start_time, final_time))
                 i += 1 
         
         # Check if the simulation has been done, if not through an exception
         if not simulated:
-            print self.fmu.get_log()
+            logger.error("Not possible to simulate the model, more than {0} unsuccessful tries".format(self.SIMULATION_TRIES))
+            logger.error("Error log from PyFMI: {0}".format(self.fmu.get_log()))
             raise Exception
         
         # Obtain the results
