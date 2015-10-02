@@ -124,7 +124,8 @@ class Model():
             # the object is not yet part of the list, add it            
             par = EstimationVariable(obj, self)
             self.parameters.append(par)
-            logger.info("Added parameter: {0} ({1})".format(obj, par))
+            logger.info("Added parameter: {0}".format(par.get_fmi_var().name))
+            logger.debug("(... continue) Added parameter: {0} ({1})".format(obj, par))
             
             return True
     
@@ -152,7 +153,8 @@ class Model():
             # but before embed it into an EstimationVariable class
             var = EstimationVariable(obj, self)
             self.variables.append(var)
-            logger.info("Added variable: {0} ({1})".format(obj, var))
+            logger.info("Added variable: {0}".format(var.get_fmi_var().name))
+            logger.debug("(... continue) Added variable: {0} ({1})".format(obj, var))
             return True
     
     def check_input_data(self, align = True):

@@ -64,16 +64,16 @@ class EstimationVariable(object):
         self.causality = fmi_var.causality
         self.description = fmi_var.description
         self.name = fmi_var.name
-        self.type = fmi_var.type
+        self.type_var = fmi_var.type
         self.value_reference = fmi_var.value_reference
         self.variability = fmi_var.variability
         
         # Take the start, min and max value of this variable
-        type, value, start, min, max = fmu.get_variable_info_numeric(fmi_var)
+        t, value, start, min, max = fmu.get_variable_info_numeric(fmi_var)
         
         # TODO: it can be either value[0] or start. Not yet sure about the difference...
         try:
-            if value[0]!= start:
+            if value != None and value[0]!= start:
                 logger.info("Start value is different from value read")
                 logger.info("Value read  = {0}".format(value[0]))
                 logger.info("Start value = {0}".format(start))
@@ -106,7 +106,7 @@ class EstimationVariable(object):
         :rtype: bool
         
         """
-        t = self.type
+        t = self.type_var
         if t == pyfmi.fmi.FMI_REAL:
             fmu.set_real(self.value_reference, self.initValue)
         elif t == pyfmi.fmi.FMI_INTEGER:
@@ -121,6 +121,16 @@ class EstimationVariable(object):
             logger.error("FMU-EXCEPTION, The FMI variable of type {0} is not known".format(t))
             return False
         return True
+
+    def get_fmi_var(self):
+        """
+        This method returns the underlying FMI variable object that is managed
+        by the instance of this class.
+        
+        :return: a reference to the underlying FMI variable object
+        :rtype: pyfmi.fmi.ScalarVariable
+        """
+        return self.fmi_var
     
     def read_value_in_fmu(self, fmu):
         """
@@ -136,7 +146,7 @@ class EstimationVariable(object):
         :rtype: float, None
         
         """
-        t = self.type
+        t = self.type_var
         if t == pyfmi.fmi.FMI_REAL:
             val = fmu.get_real(self.value_reference)
         elif t == pyfmi.fmi.FMI_INTEGER:
@@ -166,7 +176,7 @@ class EstimationVariable(object):
         """
         description = "\nName: "+str(self.name)
         description += "\nV_REF: "+str(self.value_reference)
-        description += "\nType: "+str(self.type)
+        description += "\nType: "+str(self.type_var)
         description += "\nInit Value = "+str(self.initValue)
         description += "\nCovariance = "+str(self.cov)
         description += "\nConstraints = ("
