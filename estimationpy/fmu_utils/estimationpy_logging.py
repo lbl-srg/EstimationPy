@@ -32,14 +32,25 @@ def configure_logger(log_level = logging.DEBUG, log_level_console = logging.ERRO
     
     The priority for the messages is
     
-    1. CRITICAL
-    2. ERROR
-    3. WARNING
-    4. INFO
-    5. DEBUG
     
-    Please note that when you define a package logging level ``log_level = ERROR`` you implicitly
-    prevent the any type of log message lower than ERROR to be displayed. 
+    +----------+---------+
+    | name     |  level  |
+    +==========+=========+
+    | CRITICAL |  50     |
+    +----------+---------+
+    | ERROR    |  40     |
+    +----------+---------+
+    | WARNING  |  30     |
+    +----------+---------+
+    | INFO     |  20     |
+    +----------+---------+
+    | DEBUG    |  10     |
+    +----------+---------+
+    
+    
+    Please note that when you define a package logging level ``log_level`` equal to ERROR you 
+    implicitly prevent any log message with level lower than ERROR to be displayed or saved
+    in the log file.
     
     :param int log_level: Logging level for the whole package
     :param int log_level_console: Logging level specific for the messages on the console
