@@ -20,6 +20,10 @@ from estimationpy.ukf.ukf_fmu import UkfFmu
 
 import matplotlib.dates as mdates
 
+import logging
+from estimationpy.fmu_utils import estimationpy_logging
+estimationpy_logging.configure_logger(log_level = logging.DEBUG, log_level_console = logging.INFO, log_level_file = logging.DEBUG)
+
 def main():
     """
     This example demonstrates how state and parameters can be simultaneously
@@ -104,7 +108,7 @@ def main():
     t0 = pd.to_datetime(0.0, unit = "s", utc = True)
     t1 = pd.to_datetime(360.0, unit = "s", utc = True)
     time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth = \
-        ukf_FMU.filter_and_smooth(start = t0, stop = t1, verbose = False)
+        ukf_FMU.filter_and_smooth(start = t0, stop = t1)
     
     # Plot the results
     showResults(time, x, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth, m)

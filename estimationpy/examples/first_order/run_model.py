@@ -9,6 +9,10 @@ import platform
 import matplotlib.pyplot as plt
 from estimationpy.fmu_utils.model import Model
 
+import logging
+from estimationpy.fmu_utils import estimationpy_logging
+estimationpy_logging.configure_logger(log_level = logging.DEBUG, log_level_console = logging.INFO, log_level_file = logging.DEBUG)
+
 def main():
     
     # Initialize the FMU model empty

@@ -13,6 +13,10 @@ from estimationpy.fmu_utils.model import Model
 
 import multiprocessing
 
+import logging
+from estimationpy.fmu_utils import estimationpy_logging
+estimationpy_logging.configure_logger(log_level = logging.DEBUG, log_level_console = logging.INFO, log_level_file = logging.DEBUG)
+
 def main(n_proc = multiprocessing.cpu_count()-1):
 
     # Initialize the FMU model empty
@@ -45,7 +49,7 @@ def main(n_proc = multiprocessing.cpu_count()-1):
     m.initialize_simulator()
 
     # Instantiate the pool
-    pool = FmuPool(m, processes = n_proc, debug = False)
+    pool = FmuPool(m, processes = n_proc)
 
     # define the vector of initial conditions for which the simulations
     # have to be performed.

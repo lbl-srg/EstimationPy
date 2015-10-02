@@ -14,6 +14,10 @@ from estimationpy.fmu_utils.model import Model
 from estimationpy.fmu_utils import csv_reader
 from estimationpy.ukf.ukf_fmu import UkfFmu
 
+import logging
+from estimationpy.fmu_utils import estimationpy_logging
+estimationpy_logging.configure_logger(log_level = logging.DEBUG, log_level_console = logging.INFO, log_level_file = logging.DEBUG)
+
 def main():
     
     # Assign an existing FMU to the model, depending on the platform identified
@@ -78,7 +82,7 @@ def main():
     # Start the filter
     t0 = pd.to_datetime(0.0, unit = "s", utc = True)
     t1 = pd.to_datetime(30.0, unit = "s", utc = True)
-    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1, verbose=False)
+    time, x, sqrtP, y, Sy, y_full = ukf_FMU.filter(start = t0, stop = t1)
     
     # Path of the csv file containing the True data series
     csvTrue = os.path.join(dir_path, "..", "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
