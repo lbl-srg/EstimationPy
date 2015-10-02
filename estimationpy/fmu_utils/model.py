@@ -39,13 +39,13 @@ class Model():
     
     """
     
-    def __init__(self, fmuFile = None, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, verbose = None, offset = None):
+    def __init__(self, fmu_file = None, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, verbose = None, offset = None):
         """
         
         Constructor method that initializes an object of type **Model** that can be used for simulation
         purposes or within an estimation algorithm.
         
-        :param string fmuFile: String representing the path of an FMU model.
+        :param string fmu_file: String representing the path of an FMU model.
         :param string result_handler: String that specifies how pyfmi should handle the results of 
           the simulations of the FMU model. See :mod:`estimationpy.fmu_utils.strings` for available options.
         :param string solver: String that specifies the solver used by pyfmi to simulate 
@@ -61,7 +61,7 @@ class Model():
         
         # Reference to the FMU, that will be loaded using pyfmi
         self.fmu = None
-        self.fmuFile = fmuFile
+        self.fmu_file = fmu_file
         # List of parameters
         self.parameters = []
         # List of state variables
@@ -97,8 +97,8 @@ class Model():
         self.stateValueReferences = []
         
         # See what can be done in catching the exception/propagating it
-        if fmuFile != None:
-            self.__set_fmu__(fmuFile, result_handler, solver, atol, rtol, verbose)
+        if fmu_file != None:
+            self.__set_fmu__(fmu_file, result_handler, solver, atol, rtol, verbose)
         return
     
     def add_parameter(self, obj):
@@ -386,7 +386,7 @@ class Model():
         :return: String representing the path of the FMU file.
         :rtype: string
         """
-        return self.fmuFile
+        return self.fmu_file
     
     def get_fmu_name(self):
         """
@@ -438,24 +438,16 @@ class Model():
         for inVar in self.inputs:
             # inVar is of type InOutVar and the object that it contains is a PyFMI variable
             inputNames.append(inVar.get_object().name)
-        return inputNames
-    
-    def get_input_readers(self, t):
-        """
-        This method returns a list of functions that read the input for a given time
-        """
-        # TODO
-        outputs = []
-        for inVar in self.inputs:
-            # inVar is of type InOutVar and the object that it contains is a PyFMI variable
-            outputs.append(inVar.read_from_data_series(t))
-        return outputs
-    
+        return inputNames    
     
     def get_measured_outputs_values(self):
         """
-        This method return a vector that contains the values of the observed state variables of the model
-        That are listed in self.variables
+        This method return a vector that contains the values of the observed state variables of the model.
+        The observed outputs are listed in the object variable ``self.outputs`` and are identified by the
+        flag ``measured = True``.
+
+        :return: A numpy array containing the values of the measured outputs.
+        :rtype: numpy.array
         """
         obsOut = numpy.zeros(self.get_num_measured_outputs())
         i = 0
@@ -467,10 +459,15 @@ class Model():
     
     def get_measured_data_ouputs(self, t):
         """
-        This method returns the measured data value of the observed outputs at a given time
-        instant t, that is a datetime object/string part of the datetimeIndex of the pandas.Series
+        The method reads the values of the measured outputs at a given time that is 
+        specified by the parameter ``t``.
+        The parameter ``t`` is a datetime object that is part of the indexes os the
+        pandas.Series associated to the outputs.
+
+        :param datetime.datetime t: time index at which reading the measured output data.
+        :return: an array containing the values of the measured outputs at date and time t.
+        :rtype: numpy.ndarray
         """
-        # TODO: Done
         obsOut = numpy.zeros(shape=(1, self.get_num_measured_outputs()))
         i = 0
         for o in self.outputs:
@@ -481,9 +478,14 @@ class Model():
     
     def get_measured_output_data_series(self):
         """
-        This method returns the data series associated to each measured output
+        This method returns a matrix that contains the data values of the measured
+        outputs of the model. The matrix contains the data in columns. The first column
+        is the time, while the remaining columns are the values of the measured outputs.
+        
+        :return: a matrix containing the measured outputs and the time at which these values
+          are defined.
+        :rtype: numpy.ndarray
         """
-        # TODO: Done
         # Get all the data series from the CSV files (for every input of the model)
         outDataSeries = []
         for o in self.outputs:
@@ -514,19 +516,31 @@ class Model():
     
     def get_num_inputs(self):
         """
-        This method returns the total number of input variables of the FMU model
+        This method returns the total number of input variables of the FMU 
+        associated to this model.
+        
+        :return: the number of inputs
+        :rtype: int
         """
         return len(self.inputs)
     
     def get_num_outputs(self):
         """
-        This method returns the total number of output variables of the FMU model
+        This method returns the total number of output variables of the FMU 
+        associated to this model.
+        
+        :return: the number of outputs
+        :rtype: int
         """
         return len(self.outputs)
     
     def get_num_measured_outputs(self):
         """
-        This method returns the number of measured output variables of the FMU model
+        This method returns the total number of measured output variables of the FMU 
+        associated to this model.
+        
+        :return: the number of measured outputs
+        :rtype: int
         """
         i = 0
         for o in self.outputs:
@@ -536,40 +550,64 @@ class Model():
     
     def get_num_parameters(self):
         """
-        This method returns the number of parameters of the FMU model to be estimated or identified
+        This method returns the number of parameters of the FMU model that will be 
+        estimated or identified.
+        
+        :return: number of parameters to estimate
+        :rtype: int
         """
         return len(self.parameters)
     
     def get_num_variables(self):
         """
-        This method returns the number of variables of the FMU model to be estimated or identified
+        This method returns the number of state variables of the FMU model that will be 
+        estimated or identified.
+        
+        :return: number of states to estimate
+        :rtype: int
         """
         return len(self.variables)
     
     def get_num_states(self):
         """
-        This method returns the total number of states variables of the FMU model
+        This method returns the total number of states variables of the FMU 
+        associated to this model.
+        
+        :return: the total number of states
+        :rtype: int
         """
         return self.N_STATES
     
     def get_outputs(self):
         """
-        Return the list of output variables associated to the FMU that have been selected
+        Return the list of output variables associated to the FMU.
+        
+        :return: a list of output variables associated to the model.
+        :rtype: List(estimationpy.fmu_utils.in_out_var.InOutVar)
         """
         return self.outputs
     
     def get_output_by_name(self, name):
         """
-        This method returns the output contained in the list of outputs that has a name equal to 'name'
+        This method returns the output variable identified by the
+        parameter ``name``. If there is no variable with the same
+        name, the method returns None.
+
+        :return: The output variable identified by the parameter ``name``
+        :rtype: estimationpy.fmu_utils.in_out_var.InOutVar, None
         """
         for var in self.outputs:
             if var.get_object().name == name:
                 return var
+        logger.exception("Output variable with name {0} not found".format(name))
         return None
     
     def get_output_names(self):
         """
-        This method returns a list of names for each output
+        This method returns a list of names of the outputs of the model.
+        
+        :return: a list containing the names of the outputs
+        :rtype: List(String)
         """
         outputNames = []
         for outVar in self.outputs:
@@ -579,7 +617,12 @@ class Model():
     
     def get_outputs_values(self):
         """
-        This method return a vector that contains the values of the outputs of the model
+        This method return a vector that contains the values of the outputs as read 
+        in the FMU associated to this model. The method uses
+        :func:`estimationpy.fmu_utils.in_out_var.InOutvar.read_value_in_fmu`.
+        
+        :return: an array containing the values of the outputs as read in the FMU model.
+        :rtype: numpy.ndarray
         """
         obsOut = numpy.zeros(self.get_num_outputs())
         i = 0
@@ -590,13 +633,22 @@ class Model():
     
     def get_parameters(self):
         """
-        Return the list of parameters contained by the FMU that have been selected
+        Return the list of parameters of the model that have been selected.
+        The selection of a parameter happens with the method
+        :func:`add_parameter`.
+        
+        :return: a list of parameters that are selected
+        :rtype: List(estimationpy.fmu_utils.estimation_variable.EstimationVariable)
         """
         return self.parameters
     
     def get_parameters_min(self):
         """
-        This method return a vector that contains the values of the min value possible for the estimated parameters
+        This method return an array that contains the minimum values that the selected parameters
+        can assume.
+        
+        :return: an array with the min values the parameters can assume.
+        :rtype: numpy.array
         """
         minValues = numpy.zeros(self.get_num_parameters())
         i = 0
@@ -607,7 +659,11 @@ class Model():
     
     def get_parameters_max(self):
         """
-        This method return a vector that contains the values of the max value possible for the estimated parameters
+        This method return an array that contains the maximum values that the estimated parameters
+        can assume.
+        
+        :return: an array with the max values the parameters can assume.
+        :rtype: numpy.array
         """
         maxValues = numpy.zeros(self.get_num_parameters())
         i = 0
@@ -618,7 +674,11 @@ class Model():
     
     def get_parameter_names(self):
         """
-        This method returns a list of names for each state variables observed
+        This method returns a list containing the names of the parameters selected
+        in this model that will be estimated.
+        
+        :return: a list containing the names of the selected parameters.
+        :rtype: List
         """
         parNames = []
         for par in self.variables:
@@ -628,8 +688,12 @@ class Model():
     
     def get_parameter_values(self):
         """
-        This method return a vector that contains the values of the observed state variables of the model
-        That are listed in self.variables
+        This method return a vector that contains the values of the parametrs as read 
+        in the FMU associated to this model. The method uses
+        :func:`estimationpy.fmu_utils.estimation_variable.EstimationVariable.read_value_in_fmu`.
+        
+        :return: an array containing the values of the parameters selected as read in the FMU model.
+        :rtype: numpy.ndarray
         """
         obsPars = numpy.zeros(self.get_num_parameters())
         i = 0
@@ -640,32 +704,61 @@ class Model():
     
     def get_properties(self):
         """
-        This method returns a tuple containing the properties of the FMU
+        This method returns a tuple containing the properties of the FMU associated to this model.
+        
+        :return: A tuple with the following information
+        
+          - name of the FMU,
+          - author of the FMU,
+          - description of the FMU,
+          - type of the FMU (e.g., Model Exchange),
+          - version of the FMU,
+          - GUID of the FMU,
+          - tool used to generate it,
+          - number of states of the FMU
+
+        :rtype: tuple
         """
         return (self.name, self.author, self.description, self.fmu_type, self.version, self.guid, self.tool, self.numStates)
     
     def get_real(self, var):
         """
-        Get a real variable in the FMU model, given the PyFmi variable description
+        Get a real variable specified by the PyFmiVariable from the FMU.
+        
+        :param pyfmiVariable var: FMI variable for which reading the value.
+        :return: the value of the variable
+        :rtype: float
         """
         return self.fmu.get_real(var.value_reference)[0]
     
     def get_simulation_options(self):
         """
-        This method returns the simulation options of the simulator
+        This method returns the simulation options of the simulator.
+        
+        :return: a dictionary that contains the option for the simulator and the solver.
+        :rtype: dict
         """
         return self.opts
     
     def get_state(self):
         """
-        This method return a vector that contains the values of the entire state variables of the model
+        This method returns an array that contains the values of the entire state variables of the model.
+        The methos uses the underlying method ``_get_continuous_states`` provided by 
+        PyFMI.
+        
+        :return: array containing the state vector
+        :rtype: numpy.array
         """
         return self.fmu._get_continuous_states()
     
     def get_state_observed_values(self):
         """
-        This method return a vector that contains the values of the observed state variables of the model
-        That are listed in self.variables
+        This method returns an array that contains the values of the observed state variables of the model.
+        The observed states are listed in ``self.variables``. The order in which they appear is the
+        same they were added using the method :func:``add_variable``.
+        
+        :return: array containing the observed states in the order they were declared.
+        ;rtype: numpy.array
         """
         obsState = numpy.zeros(self.get_num_variables())
         i = 0
@@ -676,7 +769,10 @@ class Model():
     
     def get_state_observed_min(self):
         """
-        This method return a vector that contains the values of the min value possible for the observed states
+        This method return an array that contains the minimum values that the observed states can assume.
+        
+        :return: an array with the min values the observed states can assume.
+        :rtype: numpy.array
         """
         minValues = numpy.zeros(self.get_num_variables())
         i = 0
@@ -687,7 +783,10 @@ class Model():
     
     def get_state_observed_max(self):
         """
-        This method return a vector that contains the values of the max value possible for the observed states
+        This method return an array that contains the maximum values that the observed states can assume.
+        
+        :return: an array with the max values the observed states can assume.
+        :rtype: numpy.array
         """
         maxValues = numpy.zeros(self.get_num_variables())
         i = 0
@@ -698,7 +797,12 @@ class Model():
         
     def get_variables(self):
         """
-        Return the list of state variables contained by the FMU that have been selected
+        Return the list of observed state variables of the FMU associated to the model.
+        The selection of an observed state is done by the method :func:``add_variable`.
+
+        :return: list of observed states in the same order they were added with the method
+          :func:`add_variable`.
+        :rtype: List(estimationpy.fmu_utils.estimation_variable.EstimationVariable)
         """
         return self.variables
     
@@ -910,14 +1014,14 @@ class Model():
             # thus we have 2 points
             
             # Create the input objects for the simulation that initializes
-            Input = numpy.hstack((start_input, start_input))
-            Input = Input.reshape(2,-1)
+            input_u = numpy.hstack((start_input, start_input))
+            input_u = input_u.reshape(2,-1)
             
             time = pd.DatetimeIndex([start_time, start_time])
             
             # Run the simulation, remember that
             # time has to be a dateteTimeIndex and Input has to be a numpy.matrix
-            self.simulate(time = time, Input = Input)
+            self.simulate(time = time, input = input_u)
             self.opts["initialize"] = False
             
             # Initialize the selected variables and parameters to the values indicated 
@@ -996,15 +1100,15 @@ class Model():
         
         return LoadedOutputs
     
-    def re_init(self, fmuFile, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, verbose=None):
+    def re_init(self, fmu_file, result_handler = None, solver = None, atol = 1e-6, rtol = 1e-4, verbose=None):
         """
         This function reinitializes the FMU associated to the model
         """
         logger.info("Previous FMU was: {0}".format(self.fmu))
-        logger.info("Reinitialized model with: {0}".format(fmuFile))
+        logger.info("Reinitialized model with: {0}".format(fmu_file))
         if self.fmu != None:
             self.fmu = None
-        self.__init__(fmuFile, result_handler, solver, atol, rtol, verbose)
+        self.__init__(fmu_file, result_handler, solver, atol, rtol, verbose)
     
     def remove_parameter(self, obj):
         """
@@ -1046,20 +1150,41 @@ class Model():
     
     def unload_fmu(self):
         """
-        This method unload the FMU model and it deallocate the resources associated to it.
-        This is necessary is an other FMU model needs to be loaded.
+        This method unloads the FMU by deallocating the resources associated to it 
+        from the memory.
+        This is necessary if an other FMU model needs to be loaded.
         """
         del(self.fmu)
     
-    def __set_fmu__(self, fmuFile, result_handler, solver, atol, rtol, verbose):
+    def __set_fmu__(self, fmu_file, result_handler, solver, atol, rtol, verbose):
         """
-        This method associate an FMU to a model, if not yet assigned
+        This method associate an FMU to a model. If the model has already an FMU
+        associated to it the method does not complete the assigment.
+        The method provides a convenient way to set multiple of the details
+        that are needed to run simulation and handle the FMU in the context 
+        os estimationpy:
+
+        1. loading the FMU from a file
+        2. get the default options for the simulation and modify them if necessary
+        3. identify the number os states and their value references
+        4. identify properties of the FMU
+        5. identify the inputs and outputs of the FMU
+        
+        See :mod:`estimationpy.fmu_utils.strings` for more information about the
+        options.
+        
+        :param string fmu_file: path that identifies the FMU to be loaded
+        :param string result_handler: type of handler for managing the results
+        :param string solver: name of the solver used for the time integration
+        :param float atol: absolute tolerance of the solver
+        :param float rtol: relative tolerance of the solver
+        :param string verbose: verbosity level used by the ODE solver used by PyFMI
         """
         if self.fmu == None:
             
             #TODO:
             # See what can be done in catching the exception/propagating it
-            self.fmu = pyfmi.load_fmu(fmuFile)
+            self.fmu = pyfmi.load_fmu(fmu_file)
                 
             # Get the options for the simulation
             self.opts = self.fmu.simulate_options()
@@ -1093,21 +1218,26 @@ class Model():
             
         else:
             logger.warn("The FMU has already been assigned to this model")
-        
-    def __set_inputs__(self):
-        """
-        This function sets the input variables of a model
-        """
-        self.__set_in_out_var__(None, 0)
     
     def __set_in_out_var__(self, variability, causality):
         """
-        "Input"
-            causality = 0
-            variability = None
-        "Outputs"
-            causality = 1
-            variability = None
+        This method identifies a subset of the variables that belong to the FMU depending
+        on their charateristics, namely the causality and variability.
+        The variables are identified in the following way
+        
+        +===============+===========+=============+
+        | Variable type | causality | variability |
+        +===============+===========+=============+
+        |    input      |    0      |     None    |
+        +===============+===========+=============+
+        |    output     |    1      |     None    |
+        +===============+===========+=============+
+        
+        Once the variables are identified, they're added to the list of inputs and outputs
+        of this model.
+
+        :param int variability: integer that identifies the variability of a variable in the FMU.
+        :param int causality: integer that identifies the causality of a variable in the FMU.
         """
         # Take the variable of the FMU that have the specified variability and causality
         # the result is a dictionary which has as key the name of the variable with the dot notation
@@ -1129,24 +1259,48 @@ class Model():
                 # output
                 self.outputs.append(var)
 
+    def __set_inputs__(self):
+        """
+        This function scan the FMU and identifies the input variables of the model.
+        The method uses :func:`__set_in_out_var__`.
+        After this method is called, the model will have a list of :cls:`estimationpy.fmu_utils.in_out_var.InOutVar`
+        objects associated to its inputs.
+        """
+        self.__set_in_out_var__(None, 0)
+        
     def __set_outputs__(self):
         """
-        This function sets the output variables of a model
+        This function scan the FMU and identifies the output variables of the model.
+        The method uses :func:`__set_in_out_var__`.
+        After this method is called, the model will have a list of :cls:`estimationpy.fmu_utils.in_out_var.InOutVar`
+        objects associated to its oututs.
         """
         self.__set_in_out_var__(None, 1)
     
-    def set_result_file(self, fileName):
+    def set_result_file(self, file_name):
         """
-        This method modifies the name of the file that stores the simulation results
+        This method modifies the name of the file that stores the simulation results.
+        
+        :param string file_name: name of the file that will store the simulation results.
         """
-        if fileName!= None:
-            self.opts["result_file_name"] = fileName
+        if file_name!= None:
+            self.opts["result_file_name"] = file_name
         else:
             self.opts["result_file_name"] = ""
     
     def set_simulation_options(self, result_handler, solver, atol, rtol, verbose):
         """
-        This method set the options of the simulator
+        This method sets the options for the simulator used by PyFMI.
+        
+        :param string result_handler: result handler that manages the data produced by the FMU.
+          The optiona can be to store data on files, memory, or in a custom way.
+        :param string solver: dolver used to integrate the ODE represented by the FMU
+        :param float atol: absolute tolerance of the solver
+        :param float rtol: relative tolerance of the numerical solver
+        :param string verbose: string that represents the verbosity level used by the numerical solver
+
+        See :mod:`estimationpy.fmu_utils.strings` for more information about the options
+        that are available.
         """
         # The result handling can be one of
         # "file", "memory", "custom" (in the latter case a result handler has to be specified)
@@ -1175,63 +1329,125 @@ class Model():
             for s in fmu_util_strings.SOLVER_NAMES_OPTIONS:   
                 self.opts[s][fmu_util_strings.SOLVER_OPTION_RTOL_STRING] = rtol
         
-    def set_state(self, stateVector):
+    def set_state(self, states_vector):
         """
-        This method sets the entire state variables vector of the model
+        This method sets the value of a real variable in the FMU associated to the model.
+        
+        :param numpy.array states_vector: a numpy array containing the values for all the
+          state variables of the FMU associated to the model.
+        
         """
-        self.fmu._set_continuous_states(stateVector)
+        self.fmu._set_continuous_states(states_vector)
     
     def set_real(self, var, value):
         """
-        Set a real variable in the FMU model, given the PyFmi variable description
+        This method sets the value of a real variable in the FMU associated to the model.
+        
+        :param pyfmi.FMIVariable var: FMi variable that is part of the FMU for which the
+          value has to be set
+        :param float value: real value to assign to the variable ``var`` in the FMU.
+        
         """
         self.fmu.set_real(var.value_reference, value)
         
     
-    def set_state_selected(self, vector):
+    def set_state_selected(self, v):
         """
-        This method sets the state variable contained in the list self.variables
-        to the values passed by the vector
+        This method sets the values of the states to be estimated that are part
+        of the list ``self.variables``.
+
+        :param list, np.array s: iterable and oredered sequence of state values to assign
+        :return: flag that indicates the success of the operation
+        :rtype: bool
         """
-        if len(vector) == len(self.variables):
+        if len(v) == len(self.variables):
             # The vector have compatible dimensions
             i = 0
-            for v in self.variables:
-                self.fmu.set_real(v.value_reference, vector[i])
+            for var in self.variables:
+                self.fmu.set_real(var.value_reference, v[i])
                 i += 1
             return True
         else:
             # the vectors are not compatibles
+            logger.error("The vector containing the states to set is not compatible with the number of states selected")
+            logger.error("{0} vs {1}".format(len(v), len(self.variables)))
             return False
     
-    def set_parameters_selected(self, vector):
+    def set_parameters_selected(self, p):
         """
-        This method sets the parameters contained in the list self.parameters
-        to the values passed by the vector
+        This method sets the values of the parameters to be estimated that are part
+        of the list ``self.parameters``.
+
+        :param list, np.array p: iterable and oredered sequence of parameter values to assign
+        :return: flag that indicates the success of the operation
+        :rtype: bool
         """
-        if len(vector) == len(self.parameters):
+        if len(p) == len(self.parameters):
             # The vector have compatible dimensions
             i = 0
-            for p in self.parameters:
-                self.fmu.set_real(p.value_reference, vector[i])
+            for par in self.parameters:
+                self.fmu.set_real(par.value_reference, p[i])
                 i += 1
             return True
         else:
             # the vectors are not compatibles
+            logger.error("The vector containing the parameters to set is not compatible with the number of parameters selected")
+            logger.error("{0} vs {1}".format(len(p), len(self.parameters)))
             return False
     
-    def simulate(self, start_time = None, final_time = None, time = pd.DatetimeIndex([]), Input = None, complete_res = False):
+    def simulate(self, start_time = None, final_time = None, time = pd.DatetimeIndex([]), input = None, complete_res = False):
         """
-        This method simulates the model from the start_time to the final_time, using a given set of simulation
-        options. Since it may happen that a simulation fails without apparent reason (!!), it is better to 
-        simulate again the model if an error occurs. After N_TRIES it stops::
+        This method simulates the model from the start time to the final time. The simulation is handled
+        by PyFMI and its options can be specified with :func:`set_simulation_options`.
+        The method performs the following steps:
+
+        1. Loads all the pandas.Series associated to the inputs variables,
+        2. reads all the values associated to the inputs within the period\
+          specified by the start and final times,
+        3. converts datetime objects into seconds,
+        4. creates the input data matrix required by PyFMI,
+        5. loads the simulation options,
+        6. runs the simulation,
+        7. process and aggregates the results
+
+        The inputs can be either read from the pandas.Series associated to the InOutVar objects
+        associated to the inputs of the model, or directly specified by the parameter ``input``.
+        In such a case, the input data matrix follows the following structure::
         
             input = [[u1(T0), u2(T0), ...,uM(T0)],
                      [u1(T1), u2(T1), ...,uM(T1)],
                      ...
                      [u1(Tend), u2(Tend), ...,uM(Tend)]]
+        
+        To summarize one can either implicitly use the data associated to the input variables
+        and thus specify the parameters ``start_time`` and ``final_time``, otherwise one can
+        specify the parameter ``time`` and the input matrix ``input``.
+        If none of them are specified the method reads the time index associated to the 
+        input variables and identifies the longest period over which all input variables
+        are defined.
+        
+        **NOTE**
+        Since it may happen that a simulation fails without apparent reasons, it is better to 
+        simulate the model again before actual an error. The number of tries is specified by the
+        propertiy ``self.SIMULATION_TRIES``.
+        
+        :param datetime.datetime start_time: start date and time of the simulation period.
+        :param datetime.datetime final_time: end date and time of the simulation period.
+        :param pandas.DatetimeIndex time: date and time index that can be used in conjunction with the 
+          parameter ``input``.
+        :param numpy.ndarray input: matrix that contains the inputs for the model stacked in columns.
+        :param bool complete_res: this flag indicates in which format the results should be arranged.
+          
+          - If ``complete_res == True``, then the method returns all the results as provided by PyFMI.
+          - Otherwise it only returns the data that belong to the following categories: state variables,\
+            observed state variables, estimated parameters, measured outputs, and outputs.
+        
+        :return: returns a tuple containing as first element the time instants where the solution of the 
+          differential equations are computed by the time integrator. The elements of the time
+          vector are datetime objects. The second element is a dictionary containing the results.
+          The number of results available depends depends on the value of the parameter ``complete_res``.
+        :rtype: tuple
         """
-        # TODO
         
         # Number of input variables needed by the model
         Ninputs = len(self.inputs)
@@ -1239,9 +1455,7 @@ class Model():
         # Check if the parameter time has been provided
         if len(time) == 0:
             # Take the time series: the first because now they are all the same
-            for inp in self.inputs:
-                time = inp.get_data_series().index
-                break
+            time = self.inputs[0].get_data_series().index
         else:
             # Check that the type of the time vector is of type pd.DatetimeIndex
             if not isinstance(time, pd.DatetimeIndex):
@@ -1304,7 +1518,7 @@ class Model():
         # Reshape to be consistent
         time_sec  = time_sec.reshape(-1, 1)
         
-        if Input == None:
+        if input == None:
             # Take all the data series
             inputMatrix = numpy.matrix(numpy.zeros((Npoints, Ninputs)))
             
@@ -1318,9 +1532,9 @@ class Model():
             
         else:
             # Reshape to be consistent
-            Input = Input.reshape(-1, Ninputs)
+            input = input.reshape(-1, Ninputs)
             # Define the input trajectory
-            V = numpy.hstack((time_sec, Input))
+            V = numpy.hstack((time_sec, input))
         
         # The input trajectory must be an array, otherwise pyfmi does not work
         u_traj  = numpy.array(V)
@@ -1328,10 +1542,6 @@ class Model():
         # Create input object
         names = self.get_input_names()
         input_object = (names, u_traj)
-        
-        # TODO
-        # Associate functions rather than a matrix that contains all the values
-        # input_object = (names, self.get_input_readers)
         
         # Start the simulation
         simulated = False
@@ -1396,10 +1606,25 @@ class Model():
     
     def __str__(self):
         """
-        Built-in function to print description of the object
+        This method overrides the default __str__ method for this class
+        and creates a string representation for it.
+        
+        :return: string representation of the object that contains the following information
+        
+          - FMU file path,
+          - name of the FMU,
+          - Author of the FMU,
+          - Description of the FMU,
+          - Type of the FMU,
+          - Version of the FMU,
+          - GUID of the FMU,
+          - Tool used to generate the FMU,
+          - Total number of state variables
+
+        :rtype: string
         """
         string = "\nFMU based Model:"
-        string += "\n-File: "+str(self.fmuFile)
+        string += "\n-File: "+str(self.fmu_file)
         string += "\n-Name: "+self.name
         string += "\n-Author: "+self.author
         string += "\n-Description: "+ self.description
@@ -1412,7 +1637,12 @@ class Model():
     
     def toggle_parameter(self, obj):
         """
-        If the parameter is already present it is removed, otherwise it is added
+        This method checks if a parameter
+        has been added to the list of parameters to estimate.
+        In case it's part of the list, the parameter is removed, otherwise it is
+        added.
+        
+        **NOTE** This method can be useful when coupled with a GUI. 
         """
         if self.is_parameter_present(obj):
             self.remove_parameter(obj)
@@ -1421,7 +1651,12 @@ class Model():
     
     def toggle_variable(self, obj):
         """
-        If the variable is already present it is removed, otherwise it is added
+        This method checks if a state variable
+        has been added to the list of variable to estimate (i.e., an observed state).
+        In case it's part of the list, the variable is removed, otherwise it is
+        added.
+
+        **NOTE** This method can be useful when coupled with a GUI. 
         """
         if self.is_variable_present(obj):
             self.remove_variable(obj)
