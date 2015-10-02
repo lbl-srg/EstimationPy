@@ -54,7 +54,7 @@ class Test(unittest.TestCase):
         pass
     
     def test_measured_output(self):
-        """f
+        """
         This function tests the method that set and read if 
         an output variable is measured or not
         """
@@ -70,7 +70,7 @@ class Test(unittest.TestCase):
         This function tests the method SetCovariance
         """
         cov = -1.0
-        self.assertFalse(self.io_var.set_covariance(cov), "The covariance cannot be set to a negative value")
+        self.assertRaises(ValueError, self.io_var.set_covariance, cov)
         self.assertNotEqual(cov, self.io_var.get_covariance(), "The covariance shouldn't be set to the negative value")
         
         cov = 2.4

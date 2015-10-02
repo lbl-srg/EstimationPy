@@ -1,7 +1,7 @@
 '''
 Created on Nov 6, 2013
 
-@author: marco
+@author: Marco Bonvini
 '''
 import numpy
 import pandas as pd
@@ -9,6 +9,9 @@ import pandas as pd
 from estimationpy.fmu_utils.csv_reader import CsvReader
 from estimationpy.fmu_utils import strings
 import pyfmi
+
+import logging
+logger = logging.getLogger(__name__)
 
 class InOutVar():
     """
@@ -77,19 +80,20 @@ class InOutVar():
         :rtype: float, None
         
         """
-        type = self.pyfmi_var.type
-        if type == pyfmi.fmi.FMI_REAL:
+        t = self.pyfmi_var.type
+        if t == pyfmi.fmi.FMI_REAL:
             val = fmu.get_real(self.pyfmi_var.value_reference)
-        elif type == pyfmi.fmi.FMI_INTEGER:
+        elif t == pyfmi.fmi.FMI_INTEGER:
             val = fmu.get_integer(self.pyfmi_var.value_reference)
-        elif type == pyfmi.fmi.FMI_BOOLEAN:
+        elif t == pyfmi.fmi.FMI_BOOLEAN:
             val = fmu.get_boolean(self.pyfmi_var.value_reference)
-        elif type == pyfmi.fmi.FMI_ENUMERATION:
+        elif t == pyfmi.fmi.FMI_ENUMERATION:
             val = fmu.get_int(self.pyfmi_var.value_reference)
-        elif type == pyfmi.fmi.FMI_STRING:
+        elif t == pyfmi.fmi.FMI_STRING:
             val = fmu.get_string(self.pyfmi_var.value_reference)
         else:
-            print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
+            msg = "FMU-EXCEPTION, The type {0} is not known".format(t)
+            logger.error(msg)
             return None
         return val[0]
     
@@ -132,8 +136,9 @@ class InOutVar():
             self.cov = cov
             return True
         else:
-            print "The covariance must be positive"
-            return False
+            msg = "The covariance must be positive"
+            logger.error(msg)
+            raise ValueError(msg)
     
     def get_covariance(self):
         """
@@ -264,7 +269,7 @@ class InOutVar():
         else:
             raise TypeError("The object passed to the method InOutVar.SetDataSeries() is not of type pandas.Series ")
         
-    def read_from_data_series(self, ix, verbose = False):
+    def read_from_data_series(self, ix):
         """
         This method reads and return the value associated to the input/output variable
         at the time specified by the parameter ``ix``. The parameter ``ix`` needs
@@ -274,8 +279,6 @@ class InOutVar():
         compute the value.
         
         :param ix: the time stamp for which providing the value.
-        :param bool verbose: boolean parameter that prints verbose log messages during
-          the interpolation process. Use only for debugging/diagnostic purposes.
 
         :return: the value that is read from the pandas.Series associated to the variable.
           if the index is out of range the method returns False.
@@ -310,15 +313,13 @@ class InOutVar():
             indexes = numpy.concatenate((numpy.arange(index,N), numpy.arange(index+1)))
             
             # Start the iteration
-            if verbose:
-                print "\n========="
-                print "Indexes = ",indexes
+            logger.debug("Indexes = {0}".format(indexes))
+            
             for i in range(N):
                 
                 j = indexes[i]
-                
-                if verbose:
-                    print "j=",j
+
+                logger.debug("j = {0}".format(j))
                 
                 # Get the time values (of type Timestamp)
                 T_a = self.dataSeries.index[indexes[i]]
@@ -330,9 +331,9 @@ class InOutVar():
                 T_0 = min(T_a, T_b)
                 T_1 = max(T_a, T_b)
                 
-                if verbose:
-                    print "Time ",ix," and [",T_0,",",T_1,"]"
-                
+                msg = "Time {0} and [{1}, {2}]".format(ix, T_0, T_1)
+                logger.debug(msg)
+                    
                 # Measure the difference in seconds between the desired index
                 # and the two points 
                 t_0 = (ix - T_0).total_seconds()
@@ -355,8 +356,8 @@ class InOutVar():
                 index_1 = indexes[i]
                 index_0 = indexes[i-1]
             
-            if verbose:
-                print "Picked values are",self.dataSeries.values[index_0]," : ", self.dataSeries.values[index_1]
+            msg = "Picked values are {0} : {1}".format(self.dataSeries.values[index_0], self.dataSeries.values[index_1])
+            logger.debug(msg)
             
             # Get distances in seconds to compute the linear interpolation
             deltaT = (self.dataSeries.index[index_1] - self.dataSeries.index[index_0]).total_seconds()

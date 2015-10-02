@@ -11,6 +11,9 @@ from threading import Thread
 
 import estimationpy.fmu_utils.strings as fmu_util_strings
 
+import logging
+logger = logging.getLogger(__name__)
+
 class P(Process):
     """
     This class represents a process running a single simulation of an FMU
@@ -27,11 +30,10 @@ class P(Process):
     * ``result_queue``, a queue of type :class:`multiprocesing.Queue` where all the results of \
       the simulations are stored and can be retrieved after the simulations are terminated,
     * ``index``, an integer that is used to sort the results data by the class that manages a pool of processes,
-    * ``debug``, a boolean flag that enables the debug mode when running the simulations.
     
     """
 
-    def __init__(self, model, x0, pars, startTime, stopTime, results_queue, index, debug = False):
+    def __init__(self, model, x0, pars, startTime, stopTime, results_queue, index):
         """
         Constructor of the class initialing the process that runs the simulation.
         
@@ -44,8 +46,7 @@ class P(Process):
         :param multiprocesing.Queue result_queue: the queue that stores the results of the simulation,
         :param int index: the index used to save data in the queue, this is used to identify who generated the
           results during the post processing phase.
-        :param bool debug: boolean parameter that specifies if the debug logger is active or not.
-        
+                
         """
         super(P, self).__init__()
         self.model = model
@@ -55,8 +56,7 @@ class P(Process):
         self.stopTime = stopTime
         self.queue = results_queue
         self.index = index
-        self.debug = debug
-        
+                
     def run(self):
         """
         Method that is called when the :func:`start` method of this class is invoked.
@@ -72,20 +72,15 @@ class P(Process):
         :return: False, is there are problem during the simulation, None otherwise.
         
         """
-        if self.debug:
-            print "*"*40
-            print "Start simulation"
-            print "In process (in pid=%d)...\n" % os.getpid()
+        logger.debug("Start simulation in process with PID = {0}".format(os.getpid()))
         
         # Assign the initial conditions to the states selected
         self.model.set_state_selected(self.x0)
-        if self.debug:
-            print "Initial condition = "+str(self.model.get_State_observed_values())
+        logger.debug("Initial condition is {0}".format(self.model.get_state_observed_values()))
             
         # Assign the values to the parameters selected
         self.model.set_parameters_selected(self.pars)
-        if self.debug:
-            print "Parameters = "+str(self.model.get_parameters_values())
+        logger.debug("Parameter vector is {0}".format(self.model.get_parameter_values()))
         
         # Check if the options of the model contains the option for writing results to files
         opts = self.model.get_simulation_options()
@@ -104,8 +99,7 @@ class P(Process):
         try:
             results = self.model.simulate(start_time = self.startTime, final_time = self.stopTime)
         except Exception, e:
-            print str(e)
-            print "Problems during simulation"
+            logger.error("Problem while running simulation: {0}".format(str(e)))
             results = False
             
         # Put the results in a queue as
@@ -152,14 +146,12 @@ class FmuPool():
     
     """
     
-    def __init__(self, model, processes = multiprocessing.cpu_count()-1, debug = False):
+    def __init__(self, model, processes = multiprocessing.cpu_count()-1):
         """
         Constructor that initializes the pool of processes that runs the simulations.
         
         :param estimationpy.fmu_utils.model.Model model: The model to simulate
         :param int processes: the number of processes allocated for the job
-        :param bool debug: boolean flag that indicates whether the level of logging
-          is for debugging or not. If True a file called ``debugFile.log`` is created.
           
         **NOTE**
           If the parameter ``processes`` is less or equal to 1, by default the number of 
@@ -170,17 +162,12 @@ class FmuPool():
           process.
         """
         self.model = model
-        self.debug = debug
 
-        # Set debug flag
-        if debug:
-            self.f = open('debugFile.log','w')
-        
         # Define the number of processes to be used
         if processes >= 1:
             self.N_MAX_PROCESS = processes
         else:
-            print "The number of processes specified in a Pool must be >=1"
+            logger.warn("The number of processes specified in a Pool must be >=1")
             self.N_MAX_PROCESS = 1
 
     def run(self, values, start = None, stop = None):
@@ -227,7 +214,7 @@ class FmuPool():
             # Initialize a process that will perform the simulation
             x0 = v["state"]
             pars = v["parameters"]
-            p = P(self.model, x0, pars, start, stop, results_queue, j, self.debug)
+            p = P(self.model, x0, pars, start, stop, results_queue, j)
 
             # Append the process to the list
             processes.append(p)
@@ -273,14 +260,15 @@ class FmuPool():
                     processes[i].start()
                     
                 i += 1
-                if self.debug:
-                    self.f.write('Process '+str(processes[i-1].pid)+' Started ('+str(i)+'/'+str(N_SIMULATIONS)+') \n')
+
+                msg = 'Process {0} started ({1}/{2})'.format(processes[i-1].pid, i, N_SIMULATIONS)
+                logger.debug(msg)
             
                 # Check how many active processes have been run
                 n_active = len(multiprocessing.active_children())
-                if self.debug:
-                    self.f.write('N_process_active '+str(n_active)+'\n')
-                    self.f.write('Queue has size '+str(results_queue.qsize())+'\n')
+
+                logger.debug('N_process_active {0}'.format(n_active))
+                logger.debug('Queue has size {0}'.format(results_queue.qsize()))
         
             # Wait the end of the processes to run others otherwise to exit the loop
             # N.B. 'multiprocessing.active_children()' call a .join() to every children already terminated
@@ -294,25 +282,19 @@ class FmuPool():
 
         # Stop Measuring the time
         Tend = time.time()
-        
-        if self.debug:
-            # print the time spent for the simulations
-            print "\n"+"="*52
-            print "Time spent for "+str(N_SIMULATIONS)+" simulations = "+str(Tend - T0)+" [s]"
-            print "="*52
 
-        if self.debug:
-            self.f.close()
-        
+        logger.debug("The time spent for running the {0} simulations is {1} [s]".format(N_SIMULATIONS, Tend - T0))
+
         # Create an empty list of results, and put the elements of the dictionary in order
         try:
             res = []
             for k in range(N_SIMULATIONS):
                 res.insert(k, results[k])
         except KeyError:
-            print "ERROR-- Problems while collecting the results generated by the pool of workers"
-            print "number of simulations run in the e pool is", N_SIMULATIONS
-            print "number of available results is", len(results)
+            msg = "Problems while collecting the results generated by the pool of workers"
+            msg+= "\nnumber of simulations run in the e pool is {0}".format(N_SIMULATIONS)
+            msg+= "\nnumber of available results is {0}".format(len(results))
+            logger.error(msg)
             res = {}
         
         # return the list of results

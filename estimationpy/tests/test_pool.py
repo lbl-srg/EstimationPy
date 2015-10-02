@@ -83,7 +83,7 @@ class Test(unittest.TestCase):
         m.initialize_simulator()
         
         # Instantiate the pool
-        pool = fmu_pool.FmuPool(m, debug = False)
+        pool = fmu_pool.FmuPool(m)
 
         # Define the vector of initial conditions for which the simulations
         # have to be performed.

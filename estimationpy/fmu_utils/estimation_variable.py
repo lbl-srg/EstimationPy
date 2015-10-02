@@ -4,6 +4,9 @@
 import numpy
 import pyfmi
 
+import logging
+logger = logging.getLogger(__name__)
+
 class EstimationVariable(object):
     '''
     This class represents a variable that is part of an estimation
@@ -71,14 +74,14 @@ class EstimationVariable(object):
         # TODO: it can be either value[0] or start. Not yet sure about the difference...
         try:
             if value[0]!= start:
-                print "Start value is different from value read"
-                print "Value read  =",value[0]
-                print "Start value =",start
+                logger.info("Start value is different from value read")
+                logger.info("Value read  = {0}".format(value[0]))
+                logger.info("Start value = {0}".format(start))
                 self.initValue = start
             else:
                 self.initValue = start
         except TypeError:
-            print "Missing start value (equal to None)"
+            logger.exception("Missing start value (equal to None)")
             self.initValue = start
         
         # Set the attributes of the object
@@ -93,7 +96,7 @@ class EstimationVariable(object):
         This method takes as argument an instance of type **FmuModel**
         and sets the initial value of the variable represented
         by this class to its initial value.
-        The method returns True if the value has been set corectly, False
+        The method returns True if the value has been set corectly, False
         otherwise.
         
         :param FmuModel fmu: an object representing an FMU model in PyFMI.
@@ -103,19 +106,19 @@ class EstimationVariable(object):
         :rtype: bool
         
         """
-        type = self.type
-        if type == pyfmi.fmi.FMI_REAL:
+        t = self.type
+        if t == pyfmi.fmi.FMI_REAL:
             fmu.set_real(self.value_reference, self.initValue)
-        elif type == pyfmi.fmi.FMI_INTEGER:
+        elif t == pyfmi.fmi.FMI_INTEGER:
             fmu.set_integer(self.value_reference, self.initValue)
-        elif type == pyfmi.fmi.FMI_BOOLEAN:
+        elif t == pyfmi.fmi.FMI_BOOLEAN:
             fmu.set_boolean(self.value_reference, self.initValue)
-        elif type == pyfmi.fmi.FMI_ENUMERATION:
+        elif t == pyfmi.fmi.FMI_ENUMERATION:
             fmu.set_int(self.value_reference, self.initValue)
-        elif type == pyfmi.fmi.FMI_STRING:
+        elif t == pyfmi.fmi.FMI_STRING:
             fmu.set_string(self.value_reference, self.initValue)
         else:
-            print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
+            logger.error("FMU-EXCEPTION, The FMI variable of type {0} is not known".format(t))
             return False
         return True
     
@@ -133,19 +136,20 @@ class EstimationVariable(object):
         :rtype: float, None
         
         """
-        type = self.type
-        if type == pyfmi.fmi.FMI_REAL:
+        t = self.type
+        if t == pyfmi.fmi.FMI_REAL:
             val = fmu.get_real(self.value_reference)
-        elif type == pyfmi.fmi.FMI_INTEGER:
+        elif t == pyfmi.fmi.FMI_INTEGER:
             val = fmu.get_integer(self.value_reference)
-        elif type == pyfmi.fmi.FMI_BOOLEAN:
+        elif t == pyfmi.fmi.FMI_BOOLEAN:
             val = fmu.get_boolean(self.value_reference)
-        elif type == pyfmi.fmi.FMI_ENUMERATION:
+        elif t == pyfmi.fmi.FMI_ENUMERATION:
             val = fmu.get_int(self.value_reference)
-        elif type == pyfmi.fmi.FMI_STRING:
+        elif t == pyfmi.fmi.FMI_STRING:
             val = fmu.get_string(self.value_reference)
         else:
-            print "OnSelChanged::FMU-EXCEPTION :: The type is not known"
+            msg = "FMU-EXCEPTION, The type {0} is not known".format(t)
+            logger.error(msg)
             return None
         return val[0]
     
@@ -221,9 +225,9 @@ class EstimationVariable(object):
             self.cov = cov
             return True
         else:
-            print "The covariance must be positive"
-            self.cov = cov
-            return False
+            msg = "The covariance must be positive"
+            logger.error(msg)
+            raise ValueError(msg)
         
     def get_covariance(self):
         """

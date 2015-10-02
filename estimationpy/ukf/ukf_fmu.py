@@ -64,7 +64,7 @@ class UkfFmu():
         self.model = model
         
         # Instantiate the pool that will run the simulation in parallel
-        self.pool = FmuPool(self.model, processes = n_proc, debug = False)
+        self.pool = FmuPool(self.model, processes = n_proc)
         
         # Set the number of states variables (total and observed), parameters estimated and outputs
         self.n_state = self.model.get_num_states()
@@ -1074,7 +1074,33 @@ class UkfFmu():
     
     def filter_and_smooth(self, start, stop):
         """
-        This method executes the filter and then the smoothing of the data
+        This method executes the filtering and smoothing of the data.
+        
+        :param datetime.datetime start: start date and time of the filtering + smoothing process.
+        :param datetime.datetime stop: end date and time of the filtering + smoothing process.
+        
+        time, X, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth
+
+        :return: the method returns a tuple containinig
+        
+          * time vector containing the instants at which the filter + smoother
+            estimated the states and/or parameters,
+          * the estimated states and parameters computed by the UKF,
+          * the square root of the covariance matrix of the estimated states and parameters computed by the UKF,
+          * the measured outputs computed by the UKF,
+          * the square root of the covariance matrix of the outputs computed by the UKF,
+          * the full outputs of the model computed by the UKF
+          * the estimated states and parameters computed by the smoother,
+          * the square root of the covariance matrix of the estimated states and parameters computed by the smoother,
+          * the full outputs of the model computed by the smoother,
+        
+          **Note:** please note that every vector and matrix returned by this method is a list that
+          contains the vector/matrices for each time stamp of the filtering process.
+        
+        :rtype: tuple
+        
+        :raises Exception: The method raises an exception if there are problem during the filtering or smoothing process,
+          e.g., numerical problems regarding the estimation.
         """
         # Run the filter
         time, X, sqrtP, y, Sy, y_full, x_full, sqrtQ, sqrtR = self.filter(start, stop, for_smoothing = True)

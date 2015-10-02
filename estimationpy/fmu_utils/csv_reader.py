@@ -8,6 +8,9 @@ import pandas as pd
 
 from estimationpy.fmu_utils import strings
 
+import logging
+logger = logging.getLogger(__name__)
+
 class CsvReader():
     """
     
@@ -122,13 +125,13 @@ class CsvReader():
             return df
         
         except IOError, e:
-            print "The file %s does not exist, impossible to open " % self.filename
-            print e
+            msg = "The file {0} does not exist, impossible to open ".format(self.filename)
+            logger.error(msg)
             return pd.DataFrame()
         
         except ValueError, e:
-            print "The file %s has problem with the time index " % self.filename
-            print e
+            msg = "The file {0} has problem with the time index ".format(self.filename)
+            logger.error(msg)
             return pd.DataFrame()
      
     def open_csv(self, filename):
@@ -161,7 +164,8 @@ class CsvReader():
         
         # If the data frame is empty there were problems while loading the file
         if len(df.index) == 0:
-            print "ERROR:: The csv file "+filename+" is not correct, please check it..."
+            msg = "ERROR:: The csv file {0} is not correct, please check it...".format(filename)
+            logger.error(msg)
             return False
         
         # Get the column names and then delete the data frame
@@ -170,7 +174,8 @@ class CsvReader():
             del(df)
             return True
         except csv.Error:
-            print "ERROR:: The csv file "+filename+" is not correct, please check it..."
+            msg = "ERROR:: The csv file {0} is not correct, please check it...".format(filename)
+            logger.error(msg)
             del(df)
             return False
     
@@ -209,7 +214,8 @@ class CsvReader():
             self.columnSelected = columnName
             return True
         else:
-            print "ERROR:: The column selected",str(columnName),"is not part of the columns names list",str(self.columnNames)
+            msg = "ERROR:: The column selected {0} is not part of the columns names list {1}".format(columnName, self.columnNames)
+            logger.error(msg)
             return False
             
     def get_selected_column(self):
@@ -232,13 +238,15 @@ class CsvReader():
         
         :return: None
         """
-        print "CsvReader Dialect informations:"
-        print "* Delimiter: "+str(self.dialect.delimiter)
-        print "* Double quote char: "+str(self.dialect.doublequote)
-        print "* Escape char: "+str(self.dialect.escapechar)
-        print "* Skip initial space: "+str(self.dialect.skipinitialspace)
-        print "* Quoting char: "+str(self.dialect.quoting)
-        print "* Line terminator: "+str(self.dialect.lineterminator)
+        msg = "CsvReader Dialect informations:\n"
+        msg +="* Delimiter: {0}\n".format(self.dialect.delimiter)
+        msg +="* Double quote char: {0}\n".format(self.dialect.doublequote)
+        msg +="* Escape char: {0}\n".format(self.dialect.escapechar)
+        msg +="* Skip initial space: {0}\n".format(self.dialect.skipinitialspace)
+        msg +="* Quoting char: {0}\n".format(self.dialect.quoting)
+        msg +="* Line terminator: {0}\n".format(self.dialect.lineterminator)
+        logger.debug(msg)
+        print msg
         
     def get_data_series(self):
         """
@@ -268,7 +276,8 @@ class CsvReader():
             
             # If the data frame is empty there were problems while loading the file
             if len(df.index) == 0:
-                print "ERROR:: The csv file "+self.filename+" is not correct, please check it..."
+                msg = "ERROR:: The csv file {0} is not correct, please check it...".format(self.filename)
+                logger.error(msg)
                 return dataSeries
             
             # Check if the column name is set
@@ -283,13 +292,16 @@ class CsvReader():
                     return dataSeries  
                     
                 else:
-                    print "The column selected must be present in the csv file!"
-                    print "Column selected: ", self.columnSelected
-                    print "Columns available: ", self.columnNames
+                    msg = "The column selected must be present in the csv file!"
+                    msg+= "\nColumn selected: {0}".format(self.columnSelected)
+                    msg+= "\nColumns available: {0}".format(self.columnNames)
+                    logger.error(msg)
                     return dataSeries
             else:
-                print "Select a column for the csv file!"
+                msg = "Select a column for the csv file!"
+                logger.error(msg)
                 return dataSeries
         else:
-            print "Select a file for the CSV before trying to read it!"
+            msg = "Select a file for the CSV before trying to read it!"
+            logger.error(msg)
             return dataSeries
