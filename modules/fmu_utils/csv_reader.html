@@ -1,0 +1,478 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>CsvReader &mdash; EstimationPy 0.1a documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/EstimationPy_logo.ico"/>
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="EstimationPy 0.1a documentation" href="../../index.html"/>
+        <link rel="up" title="Utilities" href="../fmu_utils.html"/>
+        <link rel="next" title="EstimationVariable" href="estimation_variable.html"/>
+        <link rel="prev" title="Logging" href="estimationpy_logging.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> EstimationPy
+          
+
+          
+            
+            <img src="../../_static/EstimationPy_logo_small.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../fmu_utils.html">Utilities</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="estimationpy_logging.html">Logging</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">CsvReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="estimation_variable.html">EstimationVariable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="in_out_var.html">InOutVar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fmu_pool.html">FmuPool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings.html">Constant strings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ukf.html">Unscented Kalman Filter and Smoother</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../applications.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequenty Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications and articles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legal.html">Copyright notice</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">EstimationPy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../fmu_utils.html">Utilities</a> &raquo;</li>
+      
+    <li>CsvReader</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/modules/fmu_utils/csv_reader.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-estimationpy.fmu_utils.csv_reader">
+<span id="csvreader"></span><h1>CsvReader<a class="headerlink" href="#module-estimationpy.fmu_utils.csv_reader" title="Permalink to this headline">¶</a></h1>
+<p>&#64;author: Marco Bonvini</p>
+<dl class="class">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader">
+<em class="property">class </em><code class="descclassname">estimationpy.fmu_utils.csv_reader.</code><code class="descname">CsvReader</code><span class="sig-paren">(</span><em>filename=''</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class provides functionalities that can be used to provide input to an
+FMU model or to a state/parameter estimation algorithm through CSV files.</p>
+<p>An object of class <a class="reference internal" href="#estimationpy.fmu_utils.csv_reader.CsvReader" title="estimationpy.fmu_utils.csv_reader.CsvReader"><code class="xref py py-class docutils literal"><span class="pre">CsvReader</span></code></a> manages CSV file that have the
+following format:</p>
+<div class="highlight-python"><div class="highlight"><pre>time, x, y, zeta, kappa hat, T [k]
+0.0, 3.4, 23.0, 22, 5, 77.5
+0.1, 3.4, 23.0, 22, 5, 77.3
+0.2, 3.4, 23.0, 22, 5, 76.8
+0.3, 3.4, 23.0, 22, 5, 34.4
+0.4, 3.4, 23.0, 22, 5, 72.22
+0.5, 3.4, 23.0, 22, 5, 71.9
+0.6, 3.4, 23.0, 22, 5, 70.9
+</pre></div>
+</div>
+<p>The first row is mandatory and is the header of the corresponding table created
+when importing the CSV file. The remaining rows contain data that are separated by
+commas.</p>
+<p>The first column is time associated to the data series.
+This column will be used as index to create a pandas DataFrame.
+Since the first column is used as index, its name won&#8217;t be available among
+the column names associated tot the DataFrame.</p>
+<dl class="docutils">
+<dt><strong>NOTE:</strong></dt>
+<dd>The method assumes the first column of the CSV file is time, measured in seconds,
+and UTC referenced.</dd>
+</dl>
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>filename=''</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor for the class <a class="reference internal" href="#estimationpy.fmu_utils.csv_reader.CsvReader" title="estimationpy.fmu_utils.csv_reader.CsvReader"><code class="xref py py-class docutils literal"><span class="pre">CsvReader</span></code></a>.
+The method initializes the type of dialect used to interpet the CSV file,
+the list containing the names of the columns, and which columns
+are selected.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) &#8211; The path that defines the CSV file to open.
+The argument is optinal because it can be specified later.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.__open_csv__">
+<code class="descname">__open_csv__</code><span class="sig-paren">(</span><em>csv_file</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.__open_csv__" title="Permalink to this definition">¶</a></dt>
+<dd><p>This private method is used to open a CSV file given a path name specified by the
+parameter <code class="docutils literal"><span class="pre">csv_file</span></code>.
+The method uses the function <code class="docutils literal"><span class="pre">pandas.io.parsers.read_csv</span></code> to open
+the file.</p>
+<dl class="docutils">
+<dt><strong>NOTE:</strong></dt>
+<dd>The method assumes the first column of the CSV file is time, measured in seconds,
+and UTC referenced.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filename</strong> (<em>str</em>) &#8211; The path that defines the CSV file to open.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The DataFrame object containing the data of the CSV file.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">pandas.DataFrame</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>IOError</strong> &#8211; The method raises an <code class="docutils literal"><span class="pre">IOErrror</span></code> if the file specified by the argument
+<code class="docutils literal"><span class="pre">csv_file</span></code> does not exist.</li>
+<li><strong>ValueError</strong> &#8211; The method raises an <code class="docutils literal"><span class="pre">ValueError</span></code> if the file specified by the argument
+<code class="docutils literal"><span class="pre">csv_file</span></code> can&#8217;t be succesfully indexed.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns a string representation of the
+instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a String representation of the instance.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.get_column_names">
+<code class="descname">get_column_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.get_column_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns a list containing the names of the columns contained in the csv file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a List containing the names of the columns in the CSV file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list(str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.get_data_series">
+<code class="descname">get_data_series</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.get_data_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns a pandas Series object that contains the data 
+read from the CSV file at the column selected with the method <a class="reference internal" href="#estimationpy.fmu_utils.csv_reader.CsvReader.set_selected_column" title="estimationpy.fmu_utils.csv_reader.CsvReader.set_selected_column"><code class="xref py py-func docutils literal"><span class="pre">set_selected_column()</span></code></a>.</p>
+<p>Before calling this method make sure:</p>
+<ol class="arabic simple">
+<li>the path of the CSV file has been specified,</li>
+<li>the name of the column to selected has been specified.</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A Series object representing the time series data contained in the selected column.
+In case the file is not specified, or the column is not specified, the method
+returns an empty Series.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pandas.Series</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.get_file_name">
+<code class="descname">get_file_name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.get_file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the filename of the CSV file associated to this object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a String representing the path of the CSV file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.get_selected_column">
+<code class="descname">get_selected_column</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.get_selected_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the name of the column selected.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Name of the column selected. If no columns are selected the
+method returns an empty string.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.open_csv">
+<code class="descname">open_csv</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.open_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method open a CSV file given a path name specified by the
+parameter <code class="docutils literal"><span class="pre">filename</span></code>.
+The method uses the underlying method <a class="reference internal" href="#estimationpy.fmu_utils.csv_reader.CsvReader.__open_csv__" title="estimationpy.fmu_utils.csv_reader.CsvReader.__open_csv__"><code class="xref py py-func docutils literal"><span class="pre">__open_csv__()</span></code></a> to open
+the file.</p>
+<dl class="docutils">
+<dt><strong>NOTE:</strong></dt>
+<dd>The method assumes the first column of the CSV file is time, measured in seconds,
+and UTC referenced.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filename</strong> (<em>str</em>) &#8211; The path that defines the CSV file to open.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True is the CSV is loaded and is not empty, False otherwise.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">bool</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>IOError</strong> &#8211; The method raises an <code class="docutils literal"><span class="pre">IOErrror</span></code> if the file specified by the argument
+<code class="docutils literal"><span class="pre">csv_file</span></code> does not exist.</li>
+<li><strong>ValueError</strong> &#8211; The method raises an <code class="docutils literal"><span class="pre">ValueError</span></code> if the file specified by the argument
+<code class="docutils literal"><span class="pre">csv_file</span></code> can&#8217;t be succesfully indexed.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.print_dialect_information">
+<code class="descname">print_dialect_information</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.print_dialect_information" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method print the information about the dialect used by the Csv Reader.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.csv_reader.CsvReader.set_selected_column">
+<code class="descname">set_selected_column</code><span class="sig-paren">(</span><em>columnName</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.csv_reader.CsvReader.set_selected_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method allows to specify which of the columns in the CSV file is selected.
+Once a column is selecetd, it&#8217;s possible to get the corresponding <code class="docutils literal"><span class="pre">pandas.Series</span></code>
+with the method <a class="reference internal" href="#estimationpy.fmu_utils.csv_reader.CsvReader.get_data_series" title="estimationpy.fmu_utils.csv_reader.CsvReader.get_data_series"><code class="xref py py-func docutils literal"><span class="pre">get_data_series()</span></code></a> .</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>columnName</strong> (<em>str</em>) &#8211; The name of the column to be selected.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the name is successfully selected, False otherwise (e.g., if
+the name is not present in the available column names).</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="estimation_variable.html" class="btn btn-neutral float-right" title="EstimationVariable" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="estimationpy_logging.html" class="btn btn-neutral" title="Logging" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright EstimationPy, Copyright (c) 2015, The Regents of the University of California, through Lawrence Berkeley National Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy). All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

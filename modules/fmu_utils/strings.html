@@ -1,0 +1,415 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Constant strings &mdash; EstimationPy 0.1a documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/EstimationPy_logo.ico"/>
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="EstimationPy 0.1a documentation" href="../../index.html"/>
+        <link rel="up" title="Utilities" href="../fmu_utils.html"/>
+        <link rel="next" title="Unscented Kalman Filter and Smoother" href="../ukf.html"/>
+        <link rel="prev" title="FmuPool" href="fmu_pool.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> EstimationPy
+          
+
+          
+            
+            <img src="../../_static/EstimationPy_logo_small.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../fmu_utils.html">Utilities</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="estimationpy_logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="csv_reader.html">CsvReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="estimation_variable.html">EstimationVariable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="in_out_var.html">InOutVar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fmu_pool.html">FmuPool</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Constant strings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ukf.html">Unscented Kalman Filter and Smoother</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../applications.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequenty Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications and articles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legal.html">Copyright notice</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">EstimationPy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../fmu_utils.html">Utilities</a> &raquo;</li>
+      
+    <li>Constant strings</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/modules/fmu_utils/strings.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-estimationpy.fmu_utils.strings">
+<span id="constant-strings"></span><h1>Constant strings<a class="headerlink" href="#module-estimationpy.fmu_utils.strings" title="Permalink to this headline">¶</a></h1>
+<p>&#64;author: Marco Bonvini</p>
+<p>This module defines constant that can be conveniently
+reached from the other modules.</p>
+<p>Examples of constants that are defined are</p>
+<ul class="simple">
+<li>strings used to define the main categories of PyFMI variables that can be managed,</li>
+<li>strings used to identify data and time in dictionaries that store results
+of simulations,</li>
+<li>the solvers supported by PyFMI (LSODAR, RungeKutta34, RodasODE, etc.),</li>
+<li>the options for the solvers such as absolute and relative tolerances, and verbosity
+of the logger.</li>
+</ul>
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.DATA_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">DATA_STRING</code><em class="property"> = 'data'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.DATA_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywork that identifies the data in a dictionary that collects multiple simulation results</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.INPUT_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">INPUT_STRING</code><em class="property"> = 'Inputs'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.INPUT_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies an input variable</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.OUTPUT_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">OUTPUT_STRING</code><em class="property"> = 'Outputs'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.OUTPUT_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies an output variable</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.PARAMETER_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">PARAMETER_STRING</code><em class="property"> = 'Parameters'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.PARAMETER_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies a parameter</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.RESULTS_ON_FILE_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">RESULTS_ON_FILE_STRING</code><em class="property"> = 'file'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.RESULTS_ON_FILE_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that specifies that simulation results computed by PyFMI should be handled with files</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.RESULTS_ON_HANDLER_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">RESULTS_ON_HANDLER_STRING</code><em class="property"> = 'custom'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.RESULTS_ON_HANDLER_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that specifies that simulation results computed by PyFMI should be handled in a custom way</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.RESULTS_ON_MEMORY_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">RESULTS_ON_MEMORY_STRING</code><em class="property"> = 'memory'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.RESULTS_ON_MEMORY_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that specifies that simulation results computed by PyFMI should be handled in memory</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SIMULATION_OPTION_RESHANDLING_LIST">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SIMULATION_OPTION_RESHANDLING_LIST</code><em class="property"> = ['memory', 'file', 'custom']</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SIMULATION_OPTION_RESHANDLING_LIST" title="Permalink to this definition">¶</a></dt>
+<dd><p>List containing the different types of result handling available</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SIMULATION_OPTION_RESHANDLING_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SIMULATION_OPTION_RESHANDLING_STRING</code><em class="property"> = 'result_handling'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SIMULATION_OPTION_RESHANDLING_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keyword that specifies how PyFMI should hanle simulation results</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVERS_NAMES">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVERS_NAMES</code><em class="property"> = ['LSODAR', 'RungeKutta34', 'ExplicitEuler', 'ExplicitEuler', 'RodasODE', 'Radau5ODE', 'CVode', 'Dopri5']</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVERS_NAMES" title="Permalink to this definition">¶</a></dt>
+<dd><p>List containing the names of the solvers available</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_CVODE_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_CVODE_STRING</code><em class="property"> = 'CVode'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_CVODE_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies the CV ODE solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_DOPRI_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_DOPRI_STRING</code><em class="property"> = 'Dopri5'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_DOPRI_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies the Dorman-Price solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_EXPLICITEULET_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_EXPLICITEULET_STRING</code><em class="property"> = 'ExplicitEuler'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_EXPLICITEULET_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies the explicit euler solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_LSODAR_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_LSODAR_STRING</code><em class="property"> = 'LSODAR'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_LSODAR_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies the LSODAR solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_NAMES_OPTIONS">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_NAMES_OPTIONS</code><em class="property"> = ['LSODAR_options', 'RungeKutta34_options', 'ExplicitEuler_options', 'ExplicitEuler_options', 'RodasODE_options', 'Radau5ODE_options', 'CVode_options', 'Dopri5_options']</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_NAMES_OPTIONS" title="Permalink to this definition">¶</a></dt>
+<dd><p>List containing the keywords identifying the options for a specific solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_OPTION_ATOL_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_OPTION_ATOL_STRING</code><em class="property"> = 'atol'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_OPTION_ATOL_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywork that identifies the absolute tolerance of a solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_OPTION_RTOL_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_OPTION_RTOL_STRING</code><em class="property"> = 'rtol'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_OPTION_RTOL_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywork that identifies the relative tolerance of a solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_OPTION_VERBOSITY_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_OPTION_VERBOSITY_STRING</code><em class="property"> = 'verbosity'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_OPTION_VERBOSITY_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keyword that identify the verbosity used by the solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_RADAU_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_RADAU_STRING</code><em class="property"> = 'Radau5ODE'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_RADAU_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies the Radau 5th order ODE solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_RODASODE_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_RODASODE_STRING</code><em class="property"> = 'RodasODE'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_RODASODE_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies the Rodas ODE solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_RUNGEKUTTA34_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_RUNGEKUTTA34_STRING</code><em class="property"> = 'RungeKutta34'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_RUNGEKUTTA34_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies the Runge Kutta 3-4 explicit solver</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_LEVELS">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_VERBOSITY_LEVELS</code><em class="property"> = [50, 40, 30, 20, 10]</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_LEVELS" title="Permalink to this definition">¶</a></dt>
+<dd><p>List with verbosity levels from quiet to scream</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_LOUD">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_VERBOSITY_LOUD</code><em class="property"> = 20</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_LOUD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value that identifies the verbosity to be loud</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_NORMAL">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_VERBOSITY_NORMAL</code><em class="property"> = 30</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_NORMAL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value that identifies the verbosity to be normal</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_QUIET">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_VERBOSITY_QUIET</code><em class="property"> = 50</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_QUIET" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value that identifies the verbosity to be quiet</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_SCREAM">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_VERBOSITY_SCREAM</code><em class="property"> = 10</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_SCREAM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value that identifies the verbosity to be scream</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_WHISPER">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">SOLVER_VERBOSITY_WHISPER</code><em class="property"> = 40</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.SOLVER_VERBOSITY_WHISPER" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value that identifies the verbosity to be whisper</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.TIME_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">TIME_STRING</code><em class="property"> = 'time'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.TIME_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keywork that identifies time in a dictionary that collects multiple simulation results</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="estimationpy.fmu_utils.strings.VARIABLE_STRING">
+<code class="descclassname">estimationpy.fmu_utils.strings.</code><code class="descname">VARIABLE_STRING</code><em class="property"> = 'Variables'</em><a class="headerlink" href="#estimationpy.fmu_utils.strings.VARIABLE_STRING" title="Permalink to this definition">¶</a></dt>
+<dd><p>String that identifies a generic variable</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../ukf.html" class="btn btn-neutral float-right" title="Unscented Kalman Filter and Smoother" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="fmu_pool.html" class="btn btn-neutral" title="FmuPool" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright EstimationPy, Copyright (c) 2015, The Regents of the University of California, through Lawrence Berkeley National Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy). All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

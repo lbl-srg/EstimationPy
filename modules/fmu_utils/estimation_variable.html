@@ -1,0 +1,562 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>EstimationVariable &mdash; EstimationPy 0.1a documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/EstimationPy_logo.ico"/>
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="EstimationPy 0.1a documentation" href="../../index.html"/>
+        <link rel="up" title="Utilities" href="../fmu_utils.html"/>
+        <link rel="next" title="InOutVar" href="in_out_var.html"/>
+        <link rel="prev" title="CsvReader" href="csv_reader.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> EstimationPy
+          
+
+          
+            
+            <img src="../../_static/EstimationPy_logo_small.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../fmu_utils.html">Utilities</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="estimationpy_logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="csv_reader.html">CsvReader</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">EstimationVariable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="in_out_var.html">InOutVar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fmu_pool.html">FmuPool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings.html">Constant strings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ukf.html">Unscented Kalman Filter and Smoother</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../applications.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequenty Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications and articles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legal.html">Copyright notice</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">EstimationPy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../fmu_utils.html">Utilities</a> &raquo;</li>
+      
+    <li>EstimationVariable</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/modules/fmu_utils/estimation_variable.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-estimationpy.fmu_utils.estimation_variable">
+<span id="estimationvariable"></span><h1>EstimationVariable<a class="headerlink" href="#module-estimationpy.fmu_utils.estimation_variable" title="Permalink to this headline">¶</a></h1>
+<p>&#64;author: Marco Bonvini</p>
+<dl class="class">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable">
+<em class="property">class </em><code class="descclassname">estimationpy.fmu_utils.estimation_variable.</code><code class="descname">EstimationVariable</code><span class="sig-paren">(</span><em>fmi_var</em>, <em>fmu</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class represents a variable that is part of an estimation
+problem, and it can be either a state variable or a parameter.</p>
+<p>An in stance of class <a class="reference internal" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable" title="estimationpy.fmu_utils.estimation_variable.EstimationVariable"><code class="xref py py-class docutils literal"><span class="pre">EstimationVariable</span></code></a> has multiple
+attributes and properties that are used during the estimation process.
+The most relevant attributes are</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">minValue</span></code> is the minimum value a variable can assume and is
+specified in the model description file of the FMU. For example for a
+temperature measured in Kelvin, the <code class="docutils literal"><span class="pre">minValue</span></code> is 0.0.</li>
+<li><code class="docutils literal"><span class="pre">maxValue</span></code> is the minimum value a variable can assume and is
+specified in the model description file of the FMU. For example for a
+real number that represents a percentage the <code class="docutils literal"><span class="pre">maxValue</span></code> can be either
+1.0 or 100.0.</li>
+<li><code class="docutils literal"><span class="pre">cov</span></code> is the covariance <span class="math">\(\sigma^2\)</span> associated to the variable or
+parameter estimated.</li>
+<li><code class="docutils literal"><span class="pre">initValue</span></code> is the initial value used at the beginning of the estimation
+algorithm.</li>
+<li><code class="docutils literal"><span class="pre">constraintLow</span></code> is the lower limit the variable can assume during the estimation
+algorithm. This value is usualy set to impose ad-hoc boundaries to the estimation
+algorithm that may be physically not possible or reasonable.</li>
+<li><code class="docutils literal"><span class="pre">constraintHigh</span></code> is the upper limit the variable can assume during the estimation
+algorithm. This value is usualy set to impose ad-hoc boundaries to the estimation
+algorithm that may be physically not possible or reasonable.</li>
+</ul>
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>fmi_var</em>, <em>fmu</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor of the class. This method takes as arguments
+an <strong>FmiVariable</strong> object and an <strong>FmuModel</strong> object and instantiates
+an <a class="reference internal" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable" title="estimationpy.fmu_utils.estimation_variable.EstimationVariable"><code class="xref py py-class docutils literal"><span class="pre">EstimationVariable</span></code></a> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fmi_var</strong> (<em>FmiVariable</em>) &#8211; an object representing a variable of an FMU model
+in PyFMI.</li>
+<li><strong>fmu</strong> (<em>FmuModel</em>) &#8211; an object representing an FMU model in PyFMI.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises TypeError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">the method raises a <code class="docutils literal"><span class="pre">TypeError</span></code> if the start value of the
+variable is either missing or equal to <code class="docutils literal"><span class="pre">None</span></code>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>&#64;todo: verify if <code class="docutils literal"><span class="pre">value[0]</span></code> can be different from the <code class="docutils literal"><span class="pre">start</span></code> value in a <code class="docutils literal"><span class="pre">FmiVariable</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.__weakref__">
+<code class="descname">__weakref__</code><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_constraint_high">
+<code class="descname">get_constraint_high</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_constraint_high" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the upper bound constraint value of the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the upper bound constraint of the variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_constraint_low">
+<code class="descname">get_constraint_low</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_constraint_low" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the lower bound constraint value of the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the lower bound constraint of the variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_covariance">
+<code class="descname">get_covariance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_covariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the covariance of the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the covariance of the variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_fmi_var">
+<code class="descname">get_fmi_var</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_fmi_var" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the underlying FMI variable object that is managed
+by the instance of this class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a reference to the underlying FMI variable object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pyfmi.fmi.ScalarVariable</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_initial_value">
+<code class="descname">get_initial_value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_initial_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns a <strong>numpy.array</strong> containing the initial value of
+the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a 1-dimensional numpy array of length equal to 1 containing the
+initial value of the <strong>EstimationVariable</strong>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">numpy.Array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_max_value">
+<code class="descname">get_max_value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_max_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the maximum value of the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the maximum value of the variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_min_value">
+<code class="descname">get_min_value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.get_min_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the minimum value of the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the minimum value of the variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.info">
+<code class="descname">info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method return a string that contains a formatted
+representation of the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">String rerpesentation of the variable being estimated
+and its attributes.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.modify_initial_value_in_fmu">
+<code class="descname">modify_initial_value_in_fmu</code><span class="sig-paren">(</span><em>fmu</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.modify_initial_value_in_fmu" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method takes as argument an instance of type <strong>FmuModel</strong>
+and sets the initial value of the variable represented
+by this class to its initial value.
+The method returns True if the value has been set corectly, False
+otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fmu</strong> (<em>FmuModel</em>) &#8211; an object representing an FMU model in PyFMI.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The outcome of the set operation, either True or False.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.read_value_in_fmu">
+<code class="descname">read_value_in_fmu</code><span class="sig-paren">(</span><em>fmu</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.read_value_in_fmu" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method reads the value of a variable/parameter 
+assumes in a specific FMU object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fmu</strong> (<em>FMuModel</em>) &#8211; an object representing an FMU model in PyFMI.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The value of the variable represented by an instance of this class.
+The method returns <cite>None</cite> is the type of the variable is not recognized as one
+of the available ones (Real, Integer, Boolean, Enumeration, String).</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float, None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_constraint_high">
+<code class="descname">set_constraint_high</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_constraint_high" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sets the upper bound constraint for the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>float</em>) &#8211; The upper bound constraint value for the variable.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_constraint_low">
+<code class="descname">set_constraint_low</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_constraint_low" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sets the upper bound constraint for the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>float</em>) &#8211; The upper bound constraint value for the variable.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_covariance">
+<code class="descname">set_covariance</code><span class="sig-paren">(</span><em>cov</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_covariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sets the covariance associated to
+an instance of the class <a class="reference internal" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable" title="estimationpy.fmu_utils.estimation_variable.EstimationVariable"><code class="xref py py-class docutils literal"><span class="pre">EstimationVariable</span></code></a> that is used
+by the state and parameter estimation algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cov</strong> (<em>float</em>) &#8211; The value to be used as initial value in the estimation
+algorithm. The value must be positive.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the value has been set corectly, False otherwise.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_initial_value">
+<code class="descname">set_initial_value</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_initial_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sets the initial value associated to
+an instance of the class <a class="reference internal" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable" title="estimationpy.fmu_utils.estimation_variable.EstimationVariable"><code class="xref py py-class docutils literal"><span class="pre">EstimationVariable</span></code></a> that is used
+by the state and parameter estimation algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>float</em>) &#8211; The value to be used as initial value in the estimation
+algorithm.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_max_value">
+<code class="descname">set_max_value</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_max_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sets the maximum value for the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>float</em>) &#8211; The maximum value for the variable.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_min_value">
+<code class="descname">set_min_value</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimation_variable.EstimationVariable.set_min_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sets the minimum value for the <strong>EstimationVariable</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>float</em>) &#8211; The minimum value for the variable.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="in_out_var.html" class="btn btn-neutral float-right" title="InOutVar" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="csv_reader.html" class="btn btn-neutral" title="CsvReader" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright EstimationPy, Copyright (c) 2015, The Regents of the University of California, through Lawrence Berkeley National Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy). All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
