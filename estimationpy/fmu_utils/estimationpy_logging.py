@@ -8,8 +8,39 @@ python interpreter is executed.
 The module provides a function that takes as argument the logging levels
 for both the console and the log file.
 
-If you wish you can create your own configuration for the loggers
-without using this function.
+If you want you can create your own configuration for the loggers
+without using this function. The following code snippet shows how 
+to create a logger that uses only the console and that shows messages
+down to the debug level::
+
+  import logging
+  from logging.config import dictConfig
+
+  logging_config = dict(
+        version = 1,
+        formatters = {
+            'f': {'format':
+                  '%(asctime)s | %(name)s | %(levelname)-8s | %(funcName)s | %(lineno)d | %(message)s'}
+        },
+        handlers = {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'f',
+                'level': logging.DEBUG
+            }
+        },
+        loggers = {
+            'estimationpy': {
+                'handlers': ['console'],
+                'level': logging.DEBUG
+            }
+        }
+    )
+    
+    # Configure the logger
+    dictConfig(logging_config)
+
+
 """
 import logging
 import os

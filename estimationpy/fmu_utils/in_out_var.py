@@ -1,6 +1,4 @@
 '''
-Created on Nov 6, 2013
-
 @author: Marco Bonvini
 '''
 import numpy

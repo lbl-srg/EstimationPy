@@ -1078,8 +1078,6 @@ class UkfFmu():
         
         :param datetime.datetime start: start date and time of the filtering + smoothing process.
         :param datetime.datetime stop: end date and time of the filtering + smoothing process.
-        
-        time, X, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth
 
         :return: the method returns a tuple containinig
         
