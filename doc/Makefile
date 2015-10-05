@@ -79,17 +79,17 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/UKFpython.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/EstimationPy.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/UKFpython.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/EstimationPy.qhc"
 
 devhelp:
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/UKFpython"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/UKFpython"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/EstimationPy"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/EstimationPy"
 	@echo "# devhelp"
 
 epub:
@@ -154,3 +154,7 @@ doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+buildandcommithtml: html
+
+    cd $(BUILDDIR)/html; git add . ; git commit -m "rebuilt docs"; git push origin gh-pages
