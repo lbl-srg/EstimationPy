@@ -156,5 +156,5 @@ doctest:
 	      "results in $(BUILDDIR)/doctest/output.txt."
 
 buildandcommithtml: html
-
-    cd $(BUILDDIR)/html; git add . ; git commit -m "rebuilt docs"; git push origin gh-pages
+	cd $(BUILDDIR)/html; git add . ; \
+	git commit -m "rebuilt docs"; git push origin gh-pages;
