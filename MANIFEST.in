@@ -1,6 +1,0 @@
-include LICENSE
-include README.rst
-include Makefile
-recursive-include estimationpy/tests/resources *
-recursive-include estimationpy/modelica *
-recursive-include docs *

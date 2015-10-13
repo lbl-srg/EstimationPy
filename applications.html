@@ -1,0 +1,324 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Applications &mdash; EstimationPy 0.1a documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/EstimationPy_logo.ico"/>
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="EstimationPy 0.1a documentation" href="index.html"/>
+        <link rel="next" title="Frequenty Asked Questions" href="faq.html"/>
+        <link rel="prev" title="Chiller" href="modules/examples/chiller.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> EstimationPy
+          
+
+          
+            
+            <img src="_static/EstimationPy_logo_small.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/fmu_utils.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/ukf.html">Unscented Kalman Filter and Smoother</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/examples.html">Examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Applications</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#fmi">FMI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-based-fault-detection">Model-based fault detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#footnotes">Footnotes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequenty Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">Publications and articles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="legal.html">Copyright notice</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">EstimationPy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Applications</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/applications.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="applications">
+<h1>Applications<a class="headerlink" href="#applications" title="Permalink to this headline">¶</a></h1>
+<p>This pages contains some information about the FMI standard and how it can
+be used in conjunction with <strong>EstimationPy</strong> to develop applications.</p>
+<div class="section" id="fmi">
+<h2>FMI<a class="headerlink" href="#fmi" title="Permalink to this headline">¶</a></h2>
+<p>The FMI standard is a tool-independent standard for the exchange of models and simulation programs.
+The development of the FMI was initiated by Daimler within the project
+<a class="reference external" href="https://itea3.org/project/modelisar.html">MODELISAR</a> ,
+a research project funded by the European Union that
+involved 29 partners from industry, simulation tool vendors, and academia. The goal of FMI was to
+support the exchange of simulation models between manufacturers and suppliers in the automotive
+sector. Manufacturers create cars that are made of different subsystems (such as wheels, engines,
+and control systems) that are provided by different suppliers and then integrated into an automobile.
+To test the performance of the overall system, the manufacturers needed to couple various simulation
+models provided by the suppliers of each component. This was difficult and expensive, and it allowed
+limited analysis. Today more than 40 simulation programs support the FMI standard.
+The standard is governed by a group of companies, institutes, and universities, and is organized
+through the Modelica Association.
+Under the umbrella of the International Energy Agency (IEA), Energy in Buildings and Communities
+Programme (EBC), a five-year project called Annex 60 started in 2012.
+Annex 60 <a class="reference external" href="http://www.iea-annex60.org">http://www.iea-annex60.org</a> is an international
+project, led by Lawrence Berkeley National Laboratory (LBNL) and by RWTH Aachen, Germany, titled
+“New generation computational tools for building and community energy systems based on the
+Modelica and Functional Mockup Interface standards.” In this project, 37 institutions from 16
+countries are working together to coordinate their efforts and demonstrate that technologies
+based on the FMI standard and the Modelica open modeling language can be successfully applied
+to the design and operation of buildings and of community energy systems.
+The use of the FMI standard in the context of control applications for buildings has been
+demonstrated by Nouidui et al., <a class="reference internal" href="#noudui2014" id="id1">[Noudui2014]</a>. They presented how to import FMI models into the
+NiagaraAX framework®, a platform that allows integration of different building automation
+systems. Also, the Building Control Virtual Test Bed <a class="reference internal" href="#wetter2011" id="id2">[Wetter2011]</a> allows the import of
+models compliant with the FMI standard. This allows FMI models to couple with
+BACnet-compatible building automation systems and with web services, either as a web
+server or as a client.</p>
+</div>
+<div class="section" id="model-based-fault-detection">
+<h2>Model-based fault detection<a class="headerlink" href="#model-based-fault-detection" title="Permalink to this headline">¶</a></h2>
+<p>This section presents the workflow for building Fault Detection and Diagnostic algorithms based on
+EstimationPy and the FMI standard. We emphasize that the workflow uses models that were developed
+during design, and thereby leverages the knowledge and experiences accrued while designing the system.
+By reusing models from the design, users reduce the time and expertise (and therefore, costs) required
+to set up, develop, and deploy an online FDD system.</p>
+<div class="figure">
+<img alt="_images/FddWithFMI.png" src="_images/FddWithFMI.png" />
+</div>
+<p>The above Figure shows the workflow. During the design phase, indicated by the green box, designers
+use their simulation program to design the building and its HVAC systems. The simulation program provides
+different libraries of models that users can use to design the systems. An example could be using the
+Modelica Buildings Library <a class="reference internal" href="#wetter2014" id="id3">[Wetter2014]</a> within a simulation program like Dymola <a class="footnote-reference" href="#id5" id="id4">[2]</a>.
+In the workflow, this phase does not require any additional effort if simulation models are used to
+predict the energy performances of the building and its HVAC systems.
+At the end of the design phase, if the results satisfy the design intent, the building is constructed,
+its HVAC system is commissioned, and the building is occupied. This is indicated in the brown box in
+Figure. An energy information system (EIS) records the performance of the building, and it becomes available
+to building and to energy managers. The availability of an EIS or any other software that collects and
+provides data from the building is an essential requirement for developing any FDD system.
+Some FDD systems use measurements collected by the EIS system to check whether the building and its HVAC is
+working as expected. The benefits are twofold: reducing the impact of the faults on the overall energy consumption
+of the building, and avoiding serious damage to the equipment. During operation the same models utilized
+in the design phase can be reused by FDD algorithm, the grey circle in Figure. This connection between the
+FDD algorithm and the simulation program is made possible by the FMI standard interface. Once the model is
+exported, the FDD algorithm uses it together with the data acquired by sensors and instrumentations
+located in the building to identify faults that increase building energy consumption.</p>
+</div>
+<div class="section" id="footnotes">
+<h2>Footnotes<a class="headerlink" href="#footnotes" title="Permalink to this headline">¶</a></h2>
+<table class="docutils footnote" frame="void" id="id5" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id4">[2]</a></td><td><a class="reference external" href="http://www.3ds.com/products-services/catia/capabilities/systems-engineering/modelica-systems-simulation/dymola">http://www.3ds.com/products-services/catia/capabilities/systems-engineering/modelica-systems-simulation/dymola</a></td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<table class="docutils citation" frame="void" id="noudui2014" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[Noudui2014]</a></td><td>Nouidui, T. S., Wetter, M. 2014.
+&#8220;Tool coupling for the design and operation of building energy and control systems based on the
+Functional Mockup Interface standard&#8221;
+10th International Modelica Conference, Lund, Sweden. March.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="wetter2011" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[Wetter2011]</a></td><td>Wetter M. 2011.
+&#8220;Co-simulation of building energy and control systems with the Building
+Controls Virtual Test Bed.&#8221;
+Journal of Building Performance Simulation 4(3):185–203.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="wetter2014" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[Wetter2014]</a></td><td>Wetter, M., Zuo, W., Nouidui, T. S., Pang, X. 2014.
+&#8220;Modelica buildings library&#8221;
+Journal of Building Performance Simulation 7(4):253–270</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="faq.html" class="btn btn-neutral float-right" title="Frequenty Asked Questions" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules/examples/chiller.html" class="btn btn-neutral" title="Chiller" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright EstimationPy, Copyright (c) 2015, The Regents of the University of California, through Lawrence Berkeley National Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy). All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1a',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

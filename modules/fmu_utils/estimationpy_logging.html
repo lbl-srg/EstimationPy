@@ -1,0 +1,329 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Logging &mdash; EstimationPy 0.1a documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/EstimationPy_logo.ico"/>
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="EstimationPy 0.1a documentation" href="../../index.html"/>
+        <link rel="up" title="Utilities" href="../fmu_utils.html"/>
+        <link rel="next" title="CsvReader" href="csv_reader.html"/>
+        <link rel="prev" title="Utilities" href="../fmu_utils.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> EstimationPy
+          
+
+          
+            
+            <img src="../../_static/EstimationPy_logo_small.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../fmu_utils.html">Utilities</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="csv_reader.html">CsvReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="estimation_variable.html">EstimationVariable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="in_out_var.html">InOutVar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fmu_pool.html">FmuPool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings.html">Constant strings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ukf.html">Unscented Kalman Filter and Smoother</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../applications.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequenty Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications and articles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legal.html">Copyright notice</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">EstimationPy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../fmu_utils.html">Utilities</a> &raquo;</li>
+      
+    <li>Logging</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/modules/fmu_utils/estimationpy_logging.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="logging">
+<span id="id1"></span><h1>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-estimationpy.fmu_utils.estimationpy_logging"></span><p>This module contains a function that can be used to define 
+the default properties of the logging mechanisms used by estimationpy.
+There are two default loggers that log to both console and a file called 
+<code class="docutils literal"><span class="pre">estimationpy.log</span></code> that will be generated in the local directory where the
+python interpreter is executed.</p>
+<p>The module provides a function that takes as argument the logging levels
+for both the console and the log file.</p>
+<p>If you want you can create your own configuration for the loggers
+without using this function. The following code snippet shows how 
+to create a logger that uses only the console and that shows messages
+down to the debug level:</p>
+<div class="highlight-python"><div class="highlight"><pre>import logging
+from logging.config import dictConfig
+
+logging_config = dict(
+      version = 1,
+      formatters = {
+          &#39;f&#39;: {&#39;format&#39;:
+                &#39;%(asctime)s | %(name)s | %(levelname)-8s | %(funcName)s | %(lineno)d | %(message)s&#39;}
+      },
+      handlers = {
+          &#39;console&#39;: {
+              &#39;class&#39;: &#39;logging.StreamHandler&#39;,
+              &#39;formatter&#39;: &#39;f&#39;,
+              &#39;level&#39;: logging.DEBUG
+          }
+      },
+      loggers = {
+          &#39;estimationpy&#39;: {
+              &#39;handlers&#39;: [&#39;console&#39;],
+              &#39;level&#39;: logging.DEBUG
+          }
+      }
+  )
+  
+  # Configure the logger
+  dictConfig(logging_config)
+</pre></div>
+</div>
+<dl class="function">
+<dt id="estimationpy.fmu_utils.estimationpy_logging.configure_logger">
+<code class="descclassname">estimationpy.fmu_utils.estimationpy_logging.</code><code class="descname">configure_logger</code><span class="sig-paren">(</span><em>log_level=10</em>, <em>log_level_console=40</em>, <em>log_level_file=30</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.estimationpy_logging.configure_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>The functions allows to configure some of the properties of the logging mechanism
+used by estimationpy. In particular the function allows to specify the log levels
+used by the different handlers implemented: one for the console and one on log files.</p>
+<p>The levels can be defined using integers from 0 to 50, but one should used the
+predefined levels provided by the standard logging module.
+By default the console logs in ERROR mode, the file logs in WARNING mode and the overall
+logger in ERROR mode.
+See  <a class="reference external" href="http://docs.python-guide.org/en/latest/writing/logging/">Python logging</a> 
+and <a class="reference external" href="https://docs.python.org/2/howto/logging.html">Logging HOWTO</a> for more 
+information about the logging module.</p>
+<p>The priority for the messages is</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="53%" />
+<col width="47%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">name</th>
+<th class="head">level</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>CRITICAL</td>
+<td>50</td>
+</tr>
+<tr class="row-odd"><td>ERROR</td>
+<td>40</td>
+</tr>
+<tr class="row-even"><td>WARNING</td>
+<td>30</td>
+</tr>
+<tr class="row-odd"><td>INFO</td>
+<td>20</td>
+</tr>
+<tr class="row-even"><td>DEBUG</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+<p>Please note that when you define a package logging level <code class="docutils literal"><span class="pre">log_level</span></code> equal to ERROR you 
+implicitly prevent any log message with level lower than ERROR to be displayed or saved
+in the log file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>log_level</strong> (<em>int</em>) &#8211; Logging level for the whole package</li>
+<li><strong>log_level_console</strong> (<em>int</em>) &#8211; Logging level specific for the messages on the console</li>
+<li><strong>log_level_file</strong> (<em>int</em>) &#8211; Logging level specific for the messages in the log file</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="csv_reader.html" class="btn btn-neutral float-right" title="CsvReader" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../fmu_utils.html" class="btn btn-neutral" title="Utilities" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright EstimationPy, Copyright (c) 2015, The Regents of the University of California, through Lawrence Berkeley National Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy). All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,400 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>FmuPool &mdash; EstimationPy 0.1a documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/EstimationPy_logo.ico"/>
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="EstimationPy 0.1a documentation" href="../../index.html"/>
+        <link rel="up" title="Utilities" href="../fmu_utils.html"/>
+        <link rel="next" title="Constant strings" href="strings.html"/>
+        <link rel="prev" title="Model" href="model.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> EstimationPy
+          
+
+          
+            
+            <img src="../../_static/EstimationPy_logo_small.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../fmu_utils.html">Utilities</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="estimationpy_logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="csv_reader.html">CsvReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="estimation_variable.html">EstimationVariable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="in_out_var.html">InOutVar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">FmuPool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings.html">Constant strings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ukf.html">Unscented Kalman Filter and Smoother</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../applications.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequenty Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications and articles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legal.html">Copyright notice</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">EstimationPy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../fmu_utils.html">Utilities</a> &raquo;</li>
+      
+    <li>FmuPool</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/modules/fmu_utils/fmu_pool.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-estimationpy.fmu_utils.fmu_pool">
+<span id="fmupool"></span><h1>FmuPool<a class="headerlink" href="#module-estimationpy.fmu_utils.fmu_pool" title="Permalink to this headline">¶</a></h1>
+<p>&#64;author: Marco Bonvini</p>
+<dl class="class">
+<dt id="estimationpy.fmu_utils.fmu_pool.FmuPool">
+<em class="property">class </em><code class="descclassname">estimationpy.fmu_utils.fmu_pool.</code><code class="descname">FmuPool</code><span class="sig-paren">(</span><em>model</em>, <em>processes=3</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.fmu_pool.FmuPool" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class manages a pool of processes that execute parallel simulation
+of an FMU model.</p>
+<p><strong>NOTE:</strong></p>
+<blockquote>
+<div>The processes running the simulations, executed in parallel if multiple processors are available,
+produce results that are stored in a queue. If the queue reaches its limit the execution will be
+blocked until the resources are freed.</div></blockquote>
+<dl class="method">
+<dt id="estimationpy.fmu_utils.fmu_pool.FmuPool.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>model</em>, <em>processes=3</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.fmu_pool.FmuPool.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor that initializes the pool of processes that runs the simulations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<a class="reference internal" href="model.html#estimationpy.fmu_utils.model.Model" title="estimationpy.fmu_utils.model.Model"><em>estimationpy.fmu_utils.model.Model</em></a>) &#8211; The model to simulate</li>
+<li><strong>processes</strong> (<em>int</em>) &#8211; the number of processes allocated for the job</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt><strong>NOTE</strong></dt>
+<dd>If the parameter <code class="docutils literal"><span class="pre">processes</span></code> is less or equal to 1, by default the number of 
+processes allocated is equal to one. Also, the implementation avoid to spawn a 
+new process in case <code class="docutils literal"><span class="pre">processes</span> <span class="pre">==</span> <span class="pre">1</span></code>. This improves the performances and
+solves an issue when the method <a class="reference internal" href="#estimationpy.fmu_utils.fmu_pool.FmuPool.run" title="estimationpy.fmu_utils.fmu_pool.FmuPool.run"><code class="xref py py-func docutils literal"><span class="pre">run()</span></code></a> is called from a Celery task.
+The problem is caused by the inability of a Celery task to create a new
+process.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.fmu_pool.FmuPool.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>values</em>, <em>start=None</em>, <em>stop=None</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.fmu_pool.FmuPool.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method performs the simulation of the model with multiple initial states or
+parameters using multiple processes in parallel.
+The parameter <code class="docutils literal"><span class="pre">values</span></code> is a list that contains the values that the states and parameters
+will assume in the multiple simulations.
+For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pars</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&quot;state&quot;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="s">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]},</span>
+        <span class="p">{</span><span class="s">&quot;state&quot;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span> <span class="s">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]},</span>
+        <span class="p">{</span><span class="s">&quot;state&quot;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span><span class="p">],</span> <span class="s">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">]},</span>
+        <span class="p">{</span><span class="s">&quot;state&quot;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1000</span><span class="p">],</span> <span class="s">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">]}]</span>
+</pre></div>
+</div>
+<p>indicates to run four simulations in parallel, and for each simulation the values of the initial
+states and parameters are the ones indicated by the dictionary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>values</strong> (<em>list</em>) &#8211; a list of dictionaries that contains the values of the initial states and
+parameters used in each of the simulations.</li>
+<li><strong>start</strong> (<em>datetime.datetime</em>) &#8211; the initial time for the simulation, if not specified the initial time
+of the data series associated to the inputs of the models is used</li>
+<li><strong>stop</strong> (<em>datetime.datetime</em>) &#8211; the final time for the simulation, if not specified the final time
+of the data series associated to the inputs of the models is used</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a dictionary that contains the results of each simulation. The results are indexed with integers that
+correspond to the positions of the elements in <code class="docutils literal"><span class="pre">pars</span></code>. For example <code class="docutils literal"><span class="pre">results[0]</span></code> contains the
+results of the simulation run with state and parameters specified by <code class="docutils literal"><span class="pre">pars[0][&quot;state&quot;]</span></code> and <code class="docutils literal"><span class="pre">pars[0][&quot;parameters&quot;]</span></code>.
+If a problem occurs when running the simulations, an empty dictionary is returned.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="estimationpy.fmu_utils.fmu_pool.P">
+<em class="property">class </em><code class="descclassname">estimationpy.fmu_utils.fmu_pool.</code><code class="descname">P</code><span class="sig-paren">(</span><em>model</em>, <em>x0</em>, <em>pars</em>, <em>startTime</em>, <em>stopTime</em>, <em>results_queue</em>, <em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.fmu_pool.P" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class represents a process running a single simulation of an FMU
+model. Multiple instances of this class can be executed simultaneously to
+run simulations in parallel on multiple processors.</p>
+<p>The class has the following attributes:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">model</span></code>, that is an instance of the class <a class="reference internal" href="model.html#estimationpy.fmu_utils.model.Model" title="estimationpy.fmu_utils.model.Model"><code class="xref py py-class docutils literal"><span class="pre">estimationpy.fmu_utils.model.Model</span></code></a>,</li>
+<li><code class="docutils literal"><span class="pre">x0</span></code>, the initial state of the model,</li>
+<li><code class="docutils literal"><span class="pre">pars</span></code>, the parameters to be modified before simulating the model,</li>
+<li><code class="docutils literal"><span class="pre">startTime</span></code>, the initial time of the simulation period,</li>
+<li><code class="docutils literal"><span class="pre">stopTime</span></code>, the end time of the simulation period,</li>
+<li><code class="docutils literal"><span class="pre">result_queue</span></code>, a queue of type <code class="xref py py-class docutils literal"><span class="pre">multiprocesing.Queue</span></code> where all the results of       the simulations are stored and can be retrieved after the simulations are terminated,</li>
+<li><code class="docutils literal"><span class="pre">index</span></code>, an integer that is used to sort the results data by the class that manages a pool of processes,</li>
+</ul>
+<dl class="method">
+<dt id="estimationpy.fmu_utils.fmu_pool.P.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>model</em>, <em>x0</em>, <em>pars</em>, <em>startTime</em>, <em>stopTime</em>, <em>results_queue</em>, <em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.fmu_pool.P.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor of the class initialing the process that runs the simulation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<a class="reference internal" href="model.html#estimationpy.fmu_utils.model.Model" title="estimationpy.fmu_utils.model.Model"><em>estimationpy.fmu_utils.model.Model</em></a>) &#8211; The model to simulate</li>
+<li><strong>numpy.array</strong> &#8211; the vector containing the initial state of the model</li>
+<li><strong>pars</strong> (<em>np.array</em>) &#8211; a list or an ordered iterable objects containing the values of the parameters
+that have to be estimated and are defined in the model.</li>
+<li><strong>startTime</strong> (<em>datetime.datetime</em>) &#8211; the initial time of the simulation period</li>
+<li><strong>stopTime</strong> (<em>datetime.datetime</em>) &#8211; the end time of the simulation period</li>
+<li><strong>result_queue</strong> (<em>multiprocesing.Queue</em>) &#8211; the queue that stores the results of the simulation,</li>
+<li><strong>index</strong> (<em>int</em>) &#8211; the index used to save data in the queue, this is used to identify who generated the
+results during the post processing phase.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.fmu_pool.P.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.fmu_pool.P.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that is called when the <code class="xref py py-func docutils literal"><span class="pre">start()</span></code> method of this class is invoked.
+The method executes the following steps:</p>
+<ol class="arabic simple">
+<li>Sets the values of the selected states,</li>
+<li>Sets the values of the parameters selected,</li>
+<li>Creates a folder that will contain the results of the simulation in case PyFMI is configured to write to the file system,</li>
+<li>Run the simulation by calling the method <a class="reference internal" href="model.html#estimationpy.fmu_utils.model.Model.simulate" title="estimationpy.fmu_utils.model.Model.simulate"><code class="xref py py-func docutils literal"><span class="pre">estimationpy.fmu_utils.model.Model.simulate()</span></code></a></li>
+<li>Saves the results in the queue using the specified index,</li>
+<li>Removes the folder containing the result data if they were written.</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">False, is there are problem during the simulation, None otherwise.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="estimationpy.fmu_utils.fmu_pool.threaded_function">
+<code class="descclassname">estimationpy.fmu_utils.fmu_pool.</code><code class="descname">threaded_function</code><span class="sig-paren">(</span><em>queue</em>, <em>results</em>, <em>N_RESULTS</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.fmu_pool.threaded_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a function executed in the main thread that reads the values in the queue, 
+and moves them to a dictionary. The function, and thus the thread, terminates when all the
+expected results have been read. The number of expected results is specified by the 
+parameter <code class="docutils literal"><span class="pre">N_RESULTS</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>queue</strong> (<em>multiprocesing.Queue</em>) &#8211; the queue containing the results generated by the processes.</li>
+<li><strong>results</strong> (<em>dict</em>) &#8211; reference to a dictionary where the results enqueued are moved.</li>
+<li><strong>N_RESULTS</strong> (<em>int</em>) &#8211; the number of results to dequeue and move to the dictionary.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="strings.html" class="btn btn-neutral float-right" title="Constant strings" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="model.html" class="btn btn-neutral" title="Model" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright EstimationPy, Copyright (c) 2015, The Regents of the University of California, through Lawrence Berkeley National Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy). All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

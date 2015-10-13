@@ -1,0 +1,525 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>InOutVar &mdash; EstimationPy 0.1a documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/EstimationPy_logo.ico"/>
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="EstimationPy 0.1a documentation" href="../../index.html"/>
+        <link rel="up" title="Utilities" href="../fmu_utils.html"/>
+        <link rel="next" title="Model" href="model.html"/>
+        <link rel="prev" title="EstimationVariable" href="estimation_variable.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> EstimationPy
+          
+
+          
+            
+            <img src="../../_static/EstimationPy_logo_small.png" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../fmu_utils.html">Utilities</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="estimationpy_logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="csv_reader.html">CsvReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="estimation_variable.html">EstimationVariable</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">InOutVar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fmu_pool.html">FmuPool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings.html">Constant strings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ukf.html">Unscented Kalman Filter and Smoother</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../applications.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequenty Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications and articles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../legal.html">Copyright notice</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">EstimationPy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../fmu_utils.html">Utilities</a> &raquo;</li>
+      
+    <li>InOutVar</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/modules/fmu_utils/in_out_var.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-estimationpy.fmu_utils.in_out_var">
+<span id="inoutvar"></span><h1>InOutVar<a class="headerlink" href="#module-estimationpy.fmu_utils.in_out_var" title="Permalink to this headline">¶</a></h1>
+<p>&#64;author: Marco Bonvini</p>
+<dl class="class">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar">
+<em class="property">class </em><code class="descclassname">estimationpy.fmu_utils.in_out_var.</code><code class="descname">InOutVar</code><span class="sig-paren">(</span><em>pyfmi_var=None</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class represents a generic input or output variable of a
+dynamic system.
+In case of state and parameter estimation both input and outputs 
+of a system have the characteristic of having measurements associated
+to them. These measurements, together with other informations that can
+quantify their unsertanty, are used by the estimation algorithm.</p>
+<p>This class can be seen as a wrapper around the class <strong>pyfmi.fmi.ScalarVariable</strong>
+with the addition of an object that represent a measurement time series.
+The time series can be directly defined as a pandas.Series object or with the
+convenience class <a class="reference internal" href="csv_reader.html#estimationpy.fmu_utils.csv_reader.CsvReader" title="estimationpy.fmu_utils.csv_reader.CsvReader"><code class="xref py py-class docutils literal"><span class="pre">estimationpy.fmu_utils.csv_reader.CsvReader</span></code></a>.</p>
+<p><strong>Note</strong></p>
+<blockquote>
+<div>When dealing with real systems not all the output measurements can be measured.
+For example a translational mechanic system can have as outputs the position of a mass, 
+it velocity, and its acceleration. However, in a real application one may only have 
+access to one of these measurements.
+The class uses a boolean flag to define whether an output is actually being measured and
+thus can be used by a state estimation algorithm.</div></blockquote>
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>pyfmi_var=None</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consttuctor for the class <a class="reference internal" href="#estimationpy.fmu_utils.in_out_var.InOutVar" title="estimationpy.fmu_utils.in_out_var.InOutVar"><code class="xref py py-class docutils literal"><span class="pre">InOutVar</span></code></a>. The constructor takes as input
+parameter an object of type <strong>pyfmi.fmi.ScalarVariable</strong> that contains the
+information about the variable.
+The method initializes an empty <strong>CsvReader</strong> object and an empty <strong>pandas.Series</strong>
+object that can be futher defined.
+The method also initializes the covariance <span class="math">\(\sigma^2\)</span> associated to this variable to be 1.0,
+and the flag <code class="docutils literal"><span class="pre">measOut</span> <span class="pre">=</span> <span class="pre">False</span></code>.</p>
+<p>The class provide, the CsvReader class associated to the input (that contains the data), 
+a dictionary called dataSeries = {&#8220;time&#8221;: [], &#8220;data&#8221;: []} that contains the two arrays that represent
+the data series (that are read from the csv file).</p>
+<p>The integer index is used when the data values are read using the function ReadFromDataSeries, while
+cov is the covariance associated to the data series.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pyfmi_var</strong> (<em>pyfmi.fmi.ScalarVariable</em>) &#8211; the pyfmi object representing a variable.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.get_covariance">
+<code class="descname">get_covariance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.get_covariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the covariance of the <strong>InOutVar</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the covariance of the variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.get_csv_reader">
+<code class="descname">get_csv_reader</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.get_csv_reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns a reference to the <strong>CsvReader</strong> object associated to the
+input/output variable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the reference to the <strong>CsvReader</strong> object.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="csv_reader.html#estimationpy.fmu_utils.csv_reader.CsvReader" title="estimationpy.fmu_utils.csv_reader.CsvReader">estimationpy.fmu_utils.csv_reader.CsvReader</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.get_data_series">
+<code class="descname">get_data_series</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.get_data_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the data series associated to this input/output variable.
+The dat aseries can be either specified by a CSV file by means of a
+<strong>Csvreader</strong> object, or directly from a <strong>pandas.Series</strong> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the pandas.Series associated to this variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pandas.Series</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.get_object">
+<code class="descname">get_object</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.get_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the object associated to the <strong>pyfmi.ScalarVariable</strong> associated to this input/output
+variable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the pyfmi variable object reference by this variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pyfmi.fmi.ScalarVariable</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.is_measured_output">
+<code class="descname">is_measured_output</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.is_measured_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns the value of the boolean flag that describe
+if the variable is a measured output.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a boolean value that indicates if this variable is a measured output.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.read_data_series">
+<code class="descname">read_data_series</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.read_data_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method reads the data series associated to this input/output variable.
+The method checks if the <strong>CsvReader</strong> object has a valid file name 
+associated to it. If not it looks if the data series has already been
+specified and is a not empty <strong>pandas.Series</strong>.
+The method returns True if the data is read, False otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the method is able to read the data from either the CsvReader obejct
+of the pandas.Series. False otherwise.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.read_from_data_series">
+<code class="descname">read_from_data_series</code><span class="sig-paren">(</span><em>ix</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.read_from_data_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method reads and return the value associated to the input/output variable
+at the time specified by the parameter <code class="docutils literal"><span class="pre">ix</span></code>. The parameter <code class="docutils literal"><span class="pre">ix</span></code> needs
+to be a vaid index that belongs to a <strong>pandas.tseries.index.DatetimeIndex</strong>.
+If the index <code class="docutils literal"><span class="pre">ix</span></code> is not one of the indexes of the pandas.Series the
+method performs a linear interpolation between the two closest values to 
+compute the value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ix</strong> &#8211; the time stamp for which providing the value.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the value that is read from the pandas.Series associated to the variable.
+if the index is out of range the method returns False.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float, bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.read_value_in_fmu">
+<code class="descname">read_value_in_fmu</code><span class="sig-paren">(</span><em>fmu</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.read_value_in_fmu" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method reads the value of a variable/parameter 
+assumes in a specific FMU object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fmu</strong> (<em>FmuModel</em>) &#8211; an object representing an FMU model in PyFMI.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The value of the variable represented by an instance of this class.
+The method returns <cite>None</cite> is the type of the variable is not recognized as one
+of the available ones (Real, Integer, Boolean, Enumeration, String).</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float, None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.set_covariance">
+<code class="descname">set_covariance</code><span class="sig-paren">(</span><em>cov</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.set_covariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sets the covariance associated to
+an instance of the class <a class="reference internal" href="#estimationpy.fmu_utils.in_out_var.InOutVar" title="estimationpy.fmu_utils.in_out_var.InOutVar"><code class="xref py py-class docutils literal"><span class="pre">InOutVar</span></code></a> that is used
+by the state and parameter estimation algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cov</strong> (<em>float</em>) &#8211; The value to be used as initial value in the estimation
+algorithm. The value must be positive.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the value has been set corectly, False otherwise.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.set_csv_reader">
+<code class="descname">set_csv_reader</code><span class="sig-paren">(</span><em>reader</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.set_csv_reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method associates an object of type <a class="reference internal" href="csv_reader.html#estimationpy.fmu_utils.csv_reader.CsvReader" title="estimationpy.fmu_utils.csv_reader.CsvReader"><code class="xref py py-class docutils literal"><span class="pre">estimationpy.fmu_utils.csv_reader.CsvReader</span></code></a> to this
+input/output variable. The <strong>CsvReder</strong> will be used to read data by the state and parameter estimation
+algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>reader</strong> (<a class="reference internal" href="csv_reader.html#estimationpy.fmu_utils.csv_reader.CsvReader" title="estimationpy.fmu_utils.csv_reader.CsvReader"><em>estimationpy.fmu_utils.csv_reader.CsvReader</em></a>) &#8211; The <strong>CsvReader</strong> object to associate to this variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises TypeError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">The method raises an exception if the type of the argument reader is not correct.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.set_data_series">
+<code class="descname">set_data_series</code><span class="sig-paren">(</span><em>series</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.set_data_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function sets a data series instead of reading it from the CSV file.
+The data series has to be a <strong>pandas.Series</strong> object that is indexed with
+a <strong>pandas.tseries.index.DatetimeIndex</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>series</strong> (<em>pandas.Series</em>) &#8211; the time series to be associated to this input/output
+variable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises TypeError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">The method raise an error if the parameter <code class="docutils literal"><span class="pre">series</span></code> is
+not of the right type or it&#8217;s a pandas.Series not indexed with a 
+<strong>pandas.tseries.index.DatetimeIndex</strong>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.set_measured_output">
+<code class="descname">set_measured_output</code><span class="sig-paren">(</span><em>flag=True</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.set_measured_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method set the flag that indicates if the variable represents a measured output.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>flag</strong> (<em>bool</em>) &#8211; flag that indicates whether this variable is a measured output
+or not.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="estimationpy.fmu_utils.in_out_var.InOutVar.set_object">
+<code class="descname">set_object</code><span class="sig-paren">(</span><em>pyfmi_var</em><span class="sig-paren">)</span><a class="headerlink" href="#estimationpy.fmu_utils.in_out_var.InOutVar.set_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method sets the variable associated to the object of class
+<strong>InOutVar</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pyfmi_var</strong> (<em>pyfmi.fmi.ScalarVariable</em>) &#8211; The variable associated to the input/output represented
+by the object.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises TypeError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">The method raises an exception if the parameter is not of the proper type.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="model.html" class="btn btn-neutral float-right" title="Model" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="estimation_variable.html" class="btn btn-neutral" title="EstimationVariable" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright EstimationPy, Copyright (c) 2015, The Regents of the University of California, through Lawrence Berkeley National Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy). All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
