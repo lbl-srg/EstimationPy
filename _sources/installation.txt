@@ -1,5 +1,3 @@
-.. _Installation:
-
 Installation
 ============
 
@@ -19,29 +17,5 @@ PyFMI can be either installed as a standalone package, or can be
 installed as part of the more comprehensive set of packages provided
 by `JModelica <http://www.jmodelica.org>`_.
 
-EstimationPy also relies on `Pandas <http://pandas.pydata.org>`_ to work
-with timeseries data.
-
-EstimationPy within Docker
-++++++++++++++++++++++++++
-
-What is Docker?!
-Docker is an open platform for building, shipping and running distributed
-applications. It gives programmers, development teams and operations engineers
-the common toolbox they need to take advantage of the distributed and
-networked nature of modern applications.
-
-With Docker you can create an environment (i.e., a virtual machine) in which
-using EstimationPy from either a Mac, Linux or Windows.
-
-For more information about docker visit the website https://docker.com .
-
-The **EstimationPy** repository contains a folder called ``dockers`` that includes all
-the elements to build a Docker image and running a Docker container
-with installed **EstimationPy** and all its dependencies.
-
-If you're interested in how you to manually install all the depencencies
-and setting up a linux environmentin ready for working with **EstimationPy**
-I suggest you to look ad the Dockerfile contained in the folder ``dockers``.
 
 
