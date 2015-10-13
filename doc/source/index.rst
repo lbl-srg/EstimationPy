@@ -35,6 +35,17 @@ EstimationPy contains a set of Modelica models that have been used
 by the examples and the unit tests. These models have
 already been exported as FMUs.
 
+Source code
++++++++++++
+
+The source code of EstimationPy and this documentation is available
+here https://github.com/lbl-srg/EstimationPy .
+This documentation is generated automatically and hosted
+on the branch **gh-pages** of the repository.
+
+See the section :ref:`Frequently-Asked-Questions` for instructions on how to build
+the docs.
+
 **Contents**
 
 .. toctree::
@@ -47,6 +58,7 @@ already been exported as FMUs.
   applications
   faq
   publications
+  contribute
   contributors
   license 
   legal
