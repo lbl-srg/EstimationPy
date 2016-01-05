@@ -1634,7 +1634,7 @@ class Model():
                 logger.debug("Simulation of the model from {0} to {1} failed, try again".format(start_time_sec, final_time_sec))
                 i += 1
             except Exception, e:
-                logger.warn("Execption during simulation: {0}".format(str(e)))
+                logger.warn("Exception during simulation: {0}".format(str(e)))
                 logger.warn("Simulation of the model failed between {0} and {1}, try again".format(start_time, final_time))
                 i += 1 
         

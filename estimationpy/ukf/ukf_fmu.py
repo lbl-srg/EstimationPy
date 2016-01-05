@@ -459,7 +459,7 @@ class UkfFmu():
         **Note:**
         If for any reason the results of the simulation pool is an empty dictionary,
         the method tries again to run the simulations up to the maximum number
-        of simulations allowed ``MAX_RUN``. By default ``MAX_RUN = 3``.
+        of simulations allowed ``MAX_RUN``. By default ``MAX_RUN = 2``.
                 
         """
         row, col = np.shape(x_A)
@@ -480,7 +480,7 @@ class UkfFmu():
 
         # Run simulations in parallel, if the results are not provided run again until the
         # maximum number of run is reached
-        MAX_RUN = 3
+        MAX_RUN = 2
         runs = 0
         poolResults = self.pool.run(values, start = t_old, stop = t)
         while poolResults == {} and runs < MAX_RUN:
@@ -1219,11 +1219,11 @@ class UkfFmu():
                 
         """
         import bisect
-        
+                
         # Check that start and stop times are within the acceptable time range
         if not (start >= time[0] and start <= time[-1]):
             raise IndexError("The start time has to be between the time range")
-        
+                
         if not (stop >= time[0] and stop <= time[-1]):
             raise IndexError("The stop time has to be between the time range")
         
