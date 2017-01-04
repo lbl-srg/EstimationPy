@@ -15,7 +15,8 @@ import estimationpy.fmu_utils.strings as fmu_util_strings
 import logging
 logger = logging.getLogger(__name__)
 
-class Model():
+
+class Model:
     """
     The class :class:`Model` represents an extension of an FMU model.
     The FMU model is meant to be used for simulation purposes only.
@@ -95,7 +96,7 @@ class Model():
         self.stateValueReferences = []
         
         # See what can be done in catching the exception/propagating it
-        if fmu_file != None:
+        if fmu_file is not None:
             self.__set_fmu__(fmu_file, result_handler, solver, atol, rtol, verbose)
     
     def add_parameter(self, obj):
@@ -154,7 +155,7 @@ class Model():
             logger.debug("(... continue) Added variable: {0} ({1})".format(obj, var))
             return True
     
-    def check_input_data(self, align = True):
+    def check_input_data(self, align=True):
         """
         This method checks if all the data series associated to the inputs
         variables of this model are ready to be used or not.
@@ -210,7 +211,7 @@ class Model():
                     Tmax = min(Tmax, dataSeries[i].index[-1])
         
         # Check if they match or not           
-        if match == False and align:
+        if match is False and align:
             
             # At the end of this loop we know
             # which data series has the bigger number of points and will
@@ -455,7 +456,7 @@ class Model():
                 i += 1
         return obsOut
     
-    def get_measured_data_ouputs(self, t):
+    def get_measured_data_ouputs(self, t):  # TODO: SPELLING
         """
         The method reads the values of the measured outputs at a given time that is 
         specified by the parameter ``t``.
@@ -473,7 +474,7 @@ class Model():
             if o.is_measured_output():
                 obsOut[0,i] = o.read_from_data_series(t)
                 i += 1
-        return  obsOut
+        return obsOut
     
     def get_measured_output_data_series(self):
         """
@@ -718,7 +719,7 @@ class Model():
 
         :rtype: tuple
         """
-        return (self.name, self.author, self.description, self.fmu_type, self.version, self.guid, self.tool, self.numStates)
+        return self.name, self.author, self.description, self.fmu_type, self.version, self.guid, self.tool, self.numStates
     
     def get_real(self, var):
         """
@@ -743,7 +744,7 @@ class Model():
     def get_state(self):
         """
         This method returns an array that contains the values of the entire state variables of the model.
-        The methos uses the underlying method ``_get_continuous_states`` provided by 
+        The methods uses the underlying method ``_get_continuous_states`` provided by
         PyFMI.
         
         :return: array containing the state vector
@@ -830,7 +831,7 @@ class Model():
         
         try:
             # Take the data type associated to the variable
-            t  = self.fmu.get_variable_data_type(variable_info.name)
+            t = self.fmu.get_variable_data_type(variable_info.name)
             
             # According to the data type read, select one of these methods to get the information
             if t == pyfmi.fmi.FMI_REAL:
@@ -848,8 +849,8 @@ class Model():
                 value = 0.0
  
             # TODO: check the min and max value if the variables are not real or integers
-            Min   = self.fmu.get_variable_min(variable_info.name)
-            Max   = self.fmu.get_variable_max(variable_info.name)
+            Min = self.fmu.get_variable_min(variable_info.name)
+            Max = self.fmu.get_variable_max(variable_info.name)
                 
             try:
                 start = self.fmu.get_variable_start(variable_info.name)
@@ -857,12 +858,12 @@ class Model():
                 logger.warn("Default start value defined as 0.0 for variable {0}".format(variable_info.name))
                 start = 0.0
             
-            return (type, value, start, Min, Max)
+            return type, value, start, Min, Max
         
         except pyfmi.fmi.FMUException:
                 # if the real value is not present for this parameter/variable
                 logger.error("FMU-EXCEPTION, No real value to read for variable {0}".format(variable_info.name))
-                return (None, None, None, None, None)
+                return None, None, None, None, None
     
     def get_variable_info(self, variable_info):
         """
@@ -896,8 +897,8 @@ class Model():
                 strType = "Unknown"
  
             # TODO: check the min and max value if the variables are not real or integers
-            Min   = self.fmu.get_variable_min(variable_info.name)
-            Max   = self.fmu.get_variable_max(variable_info.name)
+            Min = self.fmu.get_variable_min(variable_info.name)
+            Max = self.fmu.get_variable_max(variable_info.name)
                 
             try:
                 start = str(self.fmu.get_variable_start(variable_info.name))
@@ -914,12 +915,12 @@ class Model():
             if max > 1.0e+20:
                 strMax = "+Inf"
             
-            return (strType, strVal, start, strMin, strMax)
+            return strType, strVal, start, strMin, strMax
         
         except pyfmi.fmi.FMUException:
                 # if the real value is not present for this parameter/variable
                 logger.error("FMU-EXCEPTION, No real value to read for variable {0}".format(variable_info.name))
-                return ("", "", "", "", "")
+                return "", "", "", "", ""
     
     def get_variable_names(self):
         """
@@ -935,8 +936,8 @@ class Model():
         """
         This method returns a PyFMI variable given its name
         """
-        if name != None and name != "":
-            if self.fmu != None:
+        if name is not None and name != "":
+            if self.fmu is not None:
                 try:
                     return self.fmu.get_model_variables()[name]
                 except Exception:
@@ -949,7 +950,7 @@ class Model():
             logger.error("Impossible to look for the name because it is None or empty")
             return None
     
-    def initialize_simulator(self, startTime = None):
+    def initialize_simulator(self, startTime=None):
         """
         This method performs a simulation of length zero to initialize the model.
         The initialization is needed only once before running the first simulation. Simulations
@@ -987,7 +988,7 @@ class Model():
                 raise TypeError("The parameter startTime has to be of datetime.datetime type")
                 
             # Start time specified, start from the closest point
-            if startTime >= time[0] and startTime <= time[-1]:
+            if (startTime >= time[0]) and (startTime <= time[-1]):
                 index = 0
                 for t in time:
                     if t < startTime:
@@ -1038,13 +1039,13 @@ class Model():
             
             # Create the input objects for the simulation that initializes
             input_u = numpy.hstack((start_input, start_input))
-            input_u = input_u.reshape(2,-1)
+            input_u = input_u.reshape(2, -1)
             
             time = pd.DatetimeIndex([start_time, start_time])
             
             # Run the simulation, remember that
             # time has to be a dateteTimeIndex and Input has to be a numpy.matrix
-            self.simulate(time = time, input = input_u)
+            self.simulate(time=time, input=input_u)
             self.opts["initialize"] = False
             
             # Initialize the selected variables and parameters to the values indicated 
@@ -1156,7 +1157,7 @@ class Model():
         """
         logger.info("Previous FMU was: {0}".format(self.fmu))
         logger.info("Reinitialized model with: {0}".format(fmu_file))
-        if self.fmu != None:
+        if self.fmu is not None:
             self.fmu = None
         self.__init__(fmu_file, result_handler, solver, atol, rtol, verbose)
     
@@ -1222,7 +1223,7 @@ class Model():
 
         :rtype: None
         """
-        del(self.fmu)
+        del self.fmu
     
     def __set_fmu__(self, fmu_file, result_handler, solver, atol, rtol, verbose):
         """
@@ -1250,9 +1251,9 @@ class Model():
 
         :rtype: None
         """
-        if self.fmu == None:
+        if self.fmu is None:
             
-            #TODO:
+            # TODO:
             # See what can be done in catching the exception/propagating it
             self.fmu = pyfmi.load_fmu(fmu_file)
                 
@@ -1324,10 +1325,10 @@ class Model():
             var = InOutVar()
             var.set_object(dictVariables[k])
             
-            if variability == None and causality ==0:
+            if variability is None and causality ==0:
                 # input
                 self.inputs.append(var)
-            if variability == None and causality ==1:
+            if variability is None and causality ==1:
                 # output
                 self.outputs.append(var)
 
@@ -1340,7 +1341,7 @@ class Model():
 
         :rtype: None
         """
-        self.__set_in_out_var__(None, 0)
+        self.__set_in_out_var__(None, 0) # TODO: inspect None
         
     def __set_outputs__(self):
         """
@@ -1351,7 +1352,7 @@ class Model():
 
         :rtype: None
         """
-        self.__set_in_out_var__(None, 1)
+        self.__set_in_out_var__(None, 1) # TODO: inspect None
     
     def set_result_file(self, file_name):
         """
@@ -1361,7 +1362,7 @@ class Model():
 
         :rtype: None
         """
-        if file_name!= None:
+        if file_name is not None:
             self.opts["result_file_name"] = file_name
         else:
             self.opts["result_file_name"] = ""
@@ -1383,14 +1384,14 @@ class Model():
         # The result handling can be one of
         # "file", "memory", "custom" (in the latter case a result handler has to be specified)
         # By default they are on memory
-        if result_handler != None and result_handler in fmu_util_strings.SIMULATION_OPTION_RESHANDLING_LIST:
+        if result_handler is not None and result_handler in fmu_util_strings.SIMULATION_OPTION_RESHANDLING_LIST:
             self.opts[fmu_util_strings.SIMULATION_OPTION_RESHANDLING_STRING] = result_handler
         else:
             self.opts[fmu_util_strings.SIMULATION_OPTION_RESHANDLING_STRING] = fmu_util_strings.RESULTS_ON_MEMORY_STRING
         
         
         # Set solver verbose level
-        if verbose != None and  verbose in fmu_util_strings.SOLVER_VERBOSITY_LEVELS:
+        if verbose is not None and verbose in fmu_util_strings.SOLVER_VERBOSITY_LEVELS:
             for s in fmu_util_strings.SOLVER_NAMES_OPTIONS:   
                 self.opts[s][fmu_util_strings.SOLVER_OPTION_VERBOSITY_STRING] = verbose
         else:
@@ -1400,10 +1401,10 @@ class Model():
               
         # Set the absolute and relative tolerance of each solver, otherwise the default value
         # is left
-        if atol != None and atol > 0 and numpy.isreal(atol):
+        if atol is not None and atol > 0 and numpy.isreal(atol):
             for s in fmu_util_strings.SOLVER_NAMES_OPTIONS:   
                 self.opts[s][fmu_util_strings.SOLVER_OPTION_ATOL_STRING] = atol
-        if rtol != None and rtol > 0 and numpy.isreal(rtol):
+        if rtol is not None and rtol > 0 and numpy.isreal(rtol):
             for s in fmu_util_strings.SOLVER_NAMES_OPTIONS:   
                 self.opts[s][fmu_util_strings.SOLVER_OPTION_RTOL_STRING] = rtol
         
@@ -1542,14 +1543,14 @@ class Model():
                 raise TypeError("The parameter time has to be a vector of type pd.DatetimeIndex")
             
         # Define initial start time in seconds
-        if start_time == None:
+        if start_time is None:
             start_time = time[0]
         else:
             # Check that the type of start time is of type datetime
             if not isinstance(start_time, datetime.datetime):
                 raise TypeError("The parameter start_time is of type %s, it has to be of datetime.datetime type." % (str(start_time)))
             # Check if the start time is within the range
-            if not (start_time >= time[0] and start_time <= time[-1]):
+            if not (start_time >= time[0]) and (start_time <= time[-1]):
                 raise IndexError("The value selected as initialization start time is outside the time frame")
         
         # If the offset is defined, the start time in seconds needs to reference
@@ -1567,7 +1568,7 @@ class Model():
             if not isinstance(final_time, datetime.datetime):
                 raise TypeError("The parameter final_time is of type %s, it has to be of datetime.datetime type." % (str(start_time)))
             # Check if the final time is within the range
-            if not (final_time >= time[0] and final_time <= time[-1]):
+            if not (final_time >= time[0]) and (final_time <= time[-1]):
                 raise IndexError("The value selected as initialization start time is outside the time frame")
             # Check that the final time is after the start time
             if not (final_time >= start_time):
@@ -1581,7 +1582,6 @@ class Model():
         else:
             final_time_sec = (final_time - time[0]).total_seconds()
         
-            
         # Transforms to seconds with respect to the first element, again
         # if the offset is defined it needs to be used as reference
         Npoints = len(time)
@@ -1655,7 +1655,7 @@ class Model():
             t = pd.to_datetime(res[fmu_util_strings.TIME_STRING], unit="s", utc = True) + offset_res
         
         # Get the results, either all or just the selected ones
-        if complete_res == False:
+        if complete_res is False:
             # OUTPUTS
             output_names = self.get_output_names()
             results = {}
@@ -1682,7 +1682,7 @@ class Model():
             results = res
             
         # Return the results
-        return (t, results)
+        return t, results
     
     def __str__(self):
         """

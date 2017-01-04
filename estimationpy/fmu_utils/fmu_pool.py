@@ -165,7 +165,7 @@ class FmuPool():
 
         # Define the number of processes to be used
         if processes >= 1:
-            self.N_MAX_PROCESS = processes
+            self.N_MAX_PROCESS = 1 #processes # TODO: multithreading option should be available from the top level
         else:
             logger.warn("The number of processes specified in a Pool must be >=1")
             self.N_MAX_PROCESS = 1
