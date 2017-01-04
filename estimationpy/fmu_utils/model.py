@@ -1352,7 +1352,7 @@ class Model:
 
         :rtype: None
         """
-        self.__set_in_out_var__(None, 1) # TODO: inspect None
+        self.__set_in_out_var__(None, 1)
     
     def set_result_file(self, file_name):
         """
@@ -1598,7 +1598,7 @@ class Model:
         # Reshape to be consistent
         time_sec  = time_sec.reshape(-1, 1)
         
-        if input == None:
+        if input is None:
             # Take all the data series
             inputMatrix = numpy.matrix(numpy.zeros((Npoints, Ninputs)))
             

@@ -18,6 +18,7 @@ import logging
 from estimationpy.fmu_utils import estimationpy_logging
 estimationpy_logging.configure_logger(log_level = logging.DEBUG, log_level_console = logging.INFO, log_level_file = logging.DEBUG)
 
+
 def main():
     
     # Assign an existing FMU to the model, depending on the platform identified
@@ -77,7 +78,7 @@ def main():
     m.initialize_simulator()
     
     # instantiate the UKF for the FMU
-    ukf_FMU = UkfFmu(m)
+    ukf_FMU = UkfFmu(m, n_proc=1)
     
     # Start the filter
     t0 = pd.to_datetime(0.0, unit = "s", utc = True)

@@ -8,7 +8,8 @@ from estimationpy.fmu_utils.fmu_pool import FmuPool
 import logging
 logger = logging.getLogger(__name__)
 
-class UkfFmu():
+
+class UkfFmu:
     """
     This class represents an Unscented Kalman Filter (UKF) that can be used for the 
     state and parameter estimation of nonlinear dynamic systems represented
@@ -657,7 +658,7 @@ class UkfFmu():
         
         return covXX
     
-    def compute_C_x_x(self, x_new, x):
+    def compute_C_x_x(self, x_new, x):  # TODO: Redundant? It seems that despite the note below, compute_cov_x_x is used in the smoother
         """
         This method computes the state-state cross covariance matrix :math:`C_{xx}`
         between the old state :math:`\\mathbf{x}` and the new state :math:`\\mathbf{x}_{new}`.
@@ -685,11 +686,11 @@ class UkfFmu():
                 
         """
         W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
-        x_ave_next = self.average_proj(X_next)
-        x_ave_now  = self.average_proj(X_now)
+        x_ave_next = self.average_proj(X_next)  # TODO: check
+        x_ave_now  = self.average_proj(X_now)  # TODO: check
         
-        Vnext = X_next - x_ave_next
-        Vnow  = X_now - x_ave_now
+        Vnext = X_next - x_ave_next  # TODO: check
+        Vnow  = X_now - x_ave_now  # TODO: check
     
         Cxx = np.dot(np.dot(Vnext.T, W), Vnow)
         return Cxx
@@ -933,7 +934,7 @@ class UkfFmu():
         K             = K.T
         
         # Read the output value
-        if z == None:
+        if z is None:
             z = self.model.get_measured_data_ouputs(t)
 
         logger.debug("Measured output data to be compared agains simulations Z = {0}".format(z))
