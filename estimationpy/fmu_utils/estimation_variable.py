@@ -69,11 +69,13 @@ class EstimationVariable(object):
         self.variability = fmi_var.variability
         
         # Take the start, min and max value of this variable
+        # TODO: FMUException is raised due to 'No real value to read'
+        logger.debug('Initializing variable: {}'.format(self.name))
         t, value, start, min, max = fmu.get_variable_info_numeric(fmi_var)
         
         # TODO: it can be either value[0] or start. Not yet sure about the difference...
         try:
-            if value != None and value[0]!= start:
+            if value is not None and value[0]!= start:
                 logger.info("Start value is different from value read")
                 logger.info("Value read  = {0}".format(value[0]))
                 logger.info("Start value = {0}".format(start))
@@ -107,19 +109,24 @@ class EstimationVariable(object):
         
         """
         t = self.type_var
-        if t == pyfmi.fmi.FMI_REAL:
-            fmu.set_real(self.value_reference, self.initValue)
-        elif t == pyfmi.fmi.FMI_INTEGER:
-            fmu.set_integer(self.value_reference, self.initValue)
-        elif t == pyfmi.fmi.FMI_BOOLEAN:
-            fmu.set_boolean(self.value_reference, self.initValue)
-        elif t == pyfmi.fmi.FMI_ENUMERATION:
-            fmu.set_int(self.value_reference, self.initValue)
-        elif t == pyfmi.fmi.FMI_STRING:
-            fmu.set_string(self.value_reference, self.initValue)
-        else:
-            logger.error("FMU-EXCEPTION, The FMI variable of type {0} is not known".format(t))
-            return False
+        try:
+            if t == pyfmi.fmi.FMI_REAL:
+                fmu.set_real(self.value_reference, self.initValue)
+            elif t == pyfmi.fmi.FMI_INTEGER:
+                fmu.set_integer(self.value_reference, self.initValue)
+            elif t == pyfmi.fmi.FMI_BOOLEAN:
+                fmu.set_boolean(self.value_reference, self.initValue)
+            elif t == pyfmi.fmi.FMI_ENUMERATION:
+                fmu.set_int(self.value_reference, self.initValue)
+            elif t == pyfmi.fmi.FMI_STRING:
+                fmu.set_string(self.value_reference, self.initValue)
+            else:
+                logger.error("FMU-EXCEPTION, The FMI variable of type {0} is not known".format(t))
+                return False
+        except FMUException as e:
+            logger.error('FMU-EXCEPTION, Failed to set value of {}'.format(self.name))
+            raise e
+
         return True
 
     def get_fmi_var(self):

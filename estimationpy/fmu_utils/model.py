@@ -438,7 +438,14 @@ class Model:
             # inVar is of type InOutVar and the object that it contains is a PyFMI variable
             inputNames.append(inVar.get_object().name)
         return inputNames    
-    
+
+    def get_measured_output_names(self):
+        names = []
+        for o in self.outputs:
+            if o.is_measured_output():
+                names.append(o.get_data_series().name)
+        return names
+
     def get_measured_outputs_values(self):
         """
         This method return a vector that contains the values of the observed state variables of the model.
@@ -491,7 +498,9 @@ class Model:
         for o in self.outputs:
             if o.is_measured_output():
                 outDataSeries.append(o)
-        
+
+        assert len(outDataSeries) > 0, 'No measured outputs found'
+
         # Try to align the measured output data
         self.check_data_list(outDataSeries, align = True)
         
@@ -511,8 +520,8 @@ class Model:
         for o in outDataSeries:
             dataMatrix[:,i] = o.get_data_series().values
             i += 1
-        
-        return dataMatrix 
+
+        return dataMatrix
     
     def get_num_inputs(self):
         """
@@ -681,7 +690,8 @@ class Model:
         :rtype: List
         """
         parNames = []
-        for par in self.variables:
+        # for par in self.variables:  # TODO: LIKELY A BUG! DOES THE SAME AS get_variable_names()
+        for par in self.parameters:  # TRYING TO SOLVE THE ISSUE
             # EstimationVariable
             parNames.append(par.name)
         return parNames
@@ -832,7 +842,7 @@ class Model:
         try:
             # Take the data type associated to the variable
             t = self.fmu.get_variable_data_type(variable_info.name)
-            
+
             # According to the data type read, select one of these methods to get the information
             if t == pyfmi.fmi.FMI_REAL:
                 value = self.fmu.get_real( variable_info.value_reference )
@@ -862,7 +872,7 @@ class Model:
         
         except pyfmi.fmi.FMUException:
                 # if the real value is not present for this parameter/variable
-                logger.error("FMU-EXCEPTION, No real value to read for variable {0}".format(variable_info.name))
+                logger.error("FMU-EXCEPTION, No real value to read for variable {0}.".format(variable_info.name))
                 return None, None, None, None, None
     
     def get_variable_info(self, variable_info):
@@ -1042,7 +1052,7 @@ class Model:
             input_u = input_u.reshape(2, -1)
             
             time = pd.DatetimeIndex([start_time, start_time])
-            
+
             # Run the simulation, remember that
             # time has to be a dateteTimeIndex and Input has to be a numpy.matrix
             self.simulate(time=time, input=input_u)
@@ -1051,6 +1061,7 @@ class Model:
             # Initialize the selected variables and parameters to the values indicated 
             # Done after very small simulation because there can be some internal parameters that defines
             # the initial value and may override the initialization with the indicated values
+            # THIS DOESN'T WORK WITH MODELICA CONSTANTS!
             for v in self.variables:
                 v.modify_initial_value_in_fmu(self.fmu)
             for p in self.parameters:
@@ -1638,7 +1649,7 @@ class Model:
                 logger.warn("Simulation of the model failed between {0} and {1}, try again".format(start_time, final_time))
                 i += 1 
         
-        # Check if the simulation has been done, if not through an exception
+        # Check if the simulation has been done, if not throw an exception
         if not simulated:
             logger.error("Not possible to simulate the model, more than {0} unsuccessful tries".format(self.SIMULATION_TRIES))
             logger.error("Error log from PyFMI: {0}".format(self.fmu.get_log()))
