@@ -159,7 +159,7 @@ class InOutVar():
         :raises TypeError: The method raises an exception if the parameter is not of the proper type.
 
         """
-        if isinstance(pyfmi_var, pyfmi.fmi.ScalarVariable):
+        if (isinstance(pyfmi_var, pyfmi.fmi.ScalarVariable)) or (isinstance(pyfmi_var, pyfmi.fmi.ScalarVariable2)):
             self.pyfmi_var = pyfmi_var
         else:
             raise TypeError("The object passed to the method InOutVar.set_object() is not of type pyfmi.fmi.ScalarVariable ")

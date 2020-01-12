@@ -25,18 +25,18 @@ class Test(unittest.TestCase):
         Initialize the class for testing the Model
         """
         # Assign an existing FMU to the model, depending on the platform identified
-        dir_path = os.path.dirname(__file__)
+        self.dir_path = os.path.dirname(__file__)
         
         # Define the path of the FMU file
         if platform.architecture()[0]=="32bit":
             print "32-bit architecture"
-            self.filePath = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder.fmu")
+            self.filePath = os.path.join(self.dir_path, "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder.fmu")
         else:
             print "64-bit architecture"
-            self.filePath = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_64bit.fmu")
+            self.filePath = os.path.join(self.dir_path, "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_64bit.fmu")
             
         # Path of the CSV data
-        self.csv_inputPath = os.path.join(dir_path, "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
+        self.csv_inputPath = os.path.join(self.dir_path, "..", "modelica", "FmuExamples", "Resources", "data", "SimulationData_FirstOrder.csv")
 
     def test_instantiate_model_empty(self):
         """
@@ -76,7 +76,7 @@ class Test(unittest.TestCase):
         # test access to FMI methods
         self.assertIsNone(m.get_variable_object("a"), "trying to access a variable object should return None") 
     
-    def __instantiate_model(self, reinit = False):
+    def __instantiate_model(self, reinit = False, fmi_ver = '1.0'):
         """
         This function tests the initialization of a model given an FMU.
         The initialization can be done when creating the instance or after by calling the ReInit method.
@@ -85,21 +85,27 @@ class Test(unittest.TestCase):
         # Initialize the FMU model
         if reinit:
             m = model.Model()
+            filePath = self.filePath
             m.re_init(self.filePath)
         else:
-            m = model.Model(self.filePath)
-            
+            if fmi_ver == '1.0':
+                filePath = self.filePath
+                m = model.Model(self.filePath)
+            elif fmi_ver == '2.0':
+                filePath = os.path.join(self.dir_path, "..", "modelica", "FmuExamples", "Resources", "FMUs", "FirstOrder_v20.fmu")
+                m = model.Model(filePath)
         # test default values
         name = "FmuExamples.FirstOrder"
         self.assertEqual(name, m.get_fmu_name(), "The FMU name is not: %s" % name)
         
         # Check FMU details
         self.assertIsNotNone(m.get_fmu(), "The FMU object has not to be None")
-        self.assertEqual(self.filePath, m.get_fmu_file_path(), "The FMU file path is not the one specified")
+        self.assertEqual(filePath, m.get_fmu_file_path(), "The FMU file path is not the one specified")
         
         # Check list initialized correctly
-        self.assertListEqual(['u'], m.get_input_names(), "The list of input names is not correct ")
-        self.assertListEqual(['y','x'], m.get_output_names(), "The list of output names is not correct")
+        self.assertItemsEqual(['u'], m.get_input_names(), "The list of input names is not correct ")
+        print(m.get_output_names())
+        self.assertItemsEqual(['y','x'], m.get_output_names(), "The list of output names is not correct")
         
         # Check functions counting the list items work correctly
         self.assertEqual(1, m.get_num_inputs(), "The number of inputs has to be one")
@@ -116,11 +122,17 @@ class Test(unittest.TestCase):
         self.assertIsNotNone(m.get_output_by_name("x"), "The object corresponding to output 'x' should be accessible")
         self.assertIsNone(m.get_output_by_name("u"), "The object corresponding to output 'u' should not be accessible (its an input)")
     
-    def test_instantiate_model(self):
+    def test_instantiate_model_v10(self):
         """
-        Model that tests the initialization of a model given an FMU during instantiation
+        Model that tests the initialization of a model given an FMU v1.0 during instantiation
         """
-        self.__instantiate_model(reinit = False)
+        self.__instantiate_model()
+        
+    def test_instantiate_model_v20(self):
+        """
+        Model that tests the initialization of a model given an FMU v2.0 during instantiation
+        """
+        self.__instantiate_model(fmi_ver='2.0')
     
     def test_instantiate_model_re_init(self):
         """
