@@ -2,13 +2,18 @@ import os
 import numpy as np
 import pandas as pd
 import multiprocessing
+import calendar
 
 from estimationpy.fmu_utils.fmu_pool import FmuPool
 
 import logging
 logger = logging.getLogger(__name__)
 
-class UkfFmu():
+class UkfException(Exception):
+    pass
+
+
+class UkfFmu:
     """
     This class represents an Unscented Kalman Filter (UKF) that can be used for the 
     state and parameter estimation of nonlinear dynamic systems represented
@@ -82,11 +87,11 @@ class UkfFmu():
         if self.n_state_obs > self.n_state:
             msg = 'The number of observed states ('+str(self.n_state_obs)+') cannot be '
             msg+= 'higher that the number of states ('+str(self.n_state)+')!'
-            raise Exception(msg)
+            raise UkfException(msg)
         if self.n_pars < 0:
-            raise Exception('The number of estimated parameters cannot be < 0')
+            raise UkfException('The number of estimated parameters cannot be < 0')
         if self.n_outputs < 0:
-            raise Exception('The number of outputs cannot be < 0')
+            raise UkfException('The number of outputs cannot be < 0')
         
         # compute the number of sigma points
         self.n_points = 1 + 2*self.N
@@ -366,6 +371,7 @@ class UkfFmu():
             # reshape the state vector
             x = np.squeeze(x)
             x = x.reshape(1, self.n_state_obs)
+            logger.debug('State vector x reshaped to {}'.format(x.shape))
         except ValueError:
             msg = "The vector of state variables has a wrong size"
             msg += "{0} instead of {1}".format(x.shape, self.n_state_obs)
@@ -376,6 +382,7 @@ class UkfFmu():
             # reshape the parameter vector
             pars = np.squeeze(pars)
             pars = pars.reshape(1, self.n_pars)
+            logger.debug('Parameter vector pars reshaped to {}'.format(pars.shape))
         except ValueError:
             msg = "The vector of parameters has a wrong size"
             msg += "{0} instead of {1}".format(pars.shape, self.n_pars)
@@ -657,7 +664,7 @@ class UkfFmu():
         
         return covXX
     
-    def compute_C_x_x(self, x_new, x):
+    def compute_C_x_x(self, x_new, x):  # TODO: Redundant? It seems that despite the note below, compute_cov_x_x is used in the smoother
         """
         This method computes the state-state cross covariance matrix :math:`C_{xx}`
         between the old state :math:`\\mathbf{x}` and the new state :math:`\\mathbf{x}_{new}`.
@@ -685,11 +692,11 @@ class UkfFmu():
                 
         """
         W = np.diag(self.W_c[:,0]).reshape(self.n_points,self.n_points)
-        x_ave_next = self.average_proj(X_next)
-        x_ave_now  = self.average_proj(X_now)
+        x_ave_next = self.average_proj(X_next)  # TODO: check
+        x_ave_now  = self.average_proj(X_now)  # TODO: check
         
-        Vnext = X_next - x_ave_next
-        Vnow  = X_now - x_ave_now
+        Vnext = X_next - x_ave_next  # TODO: check
+        Vnow  = X_now - x_ave_now  # TODO: check
     
         Cxx = np.dot(np.dot(Vnext.T, W), Vnow)
         return Cxx
@@ -839,7 +846,7 @@ class UkfFmu():
         This method implements the basic step that constitutes the UKF algorithm.
         The main steps are two:
         
-        1. predition of the new state by projection,
+        1. prediction of the new state by projection,
         2. correction of the projection using the measurements
         
         :param numpy.array x: initial state vector
@@ -847,7 +854,7 @@ class UkfFmu():
         :param numpy.ndarray sqrtQ: square root of the process covariance matrix
         :param numpy.ndarray sqrtR: square root of the measurements/outputs covariance matrix
         :param datetime.datetime t_old: initial time for running the simulaiton
-        :param datetime.datetime t: final time for runnign the simulation
+        :param datetime.datetime t: final time for running the simulation
         :param numpy.array z: measured outputs at time ``t``. If not provided the method retieves
           the data automatically by calling the method :func:`estimationpy.fmu_utils.model.Model.get_measured_data_ouputs`.
 
@@ -874,17 +881,17 @@ class UkfFmu():
 
         logger.debug("Sigma point Xs = {0}".format(Xs))
     
-        # compute the projected (state) points (each sigma points is propagated through the state transition function)
+        # compute the projected (state) points (each sigma point is propagated through the state transition function)
         X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigma_point_proj(Xs,t_old,t)
 
-        logger.debug("Projected sigma point Xs_proj = {0}".format(X_proj))
+        logger.debug("Projected sigma points Xs_proj = {0}".format(X_proj))
     
         # compute the average
         x_ave = self.average_proj(X_proj)
         Xfull_ave = self.average_proj(Xfull_proj)
 
-        logger.debug("Averaged peojected sigma points is x_ave = {0}".format(x_ave))
-        logger.debug("Averaged peojected full state is Xfull_ave = {0}".format(Xfull_ave))
+        logger.debug("Averaged projected sigma points is x_ave = {0}".format(x_ave))
+        logger.debug("Averaged projected full state is Xfull_ave = {0}".format(Xfull_ave))
         
         # compute the new squared covariance matrix S
         Snew = self.compute_S(X_proj,x_ave,sqrtQ)
@@ -892,20 +899,24 @@ class UkfFmu():
         logger.debug("New squares S matrix is = {0}".format(Snew))
         
         # redraw the sigma points, given the new covariance matrix
-        x    = x_ave[0,0:self.n_state_obs]
-        pars = x_ave[0,self.n_state_obs:]
-        Xs   = self.compute_sigma_points(x, pars, Snew)
-        
+        # K. ARENDT: THIS STEP SEEMS TO BE UNNECESSARY
+        # x    = x_ave[0,0:self.n_state_obs]
+        # pars = x_ave[0,self.n_state_obs:]
+        # Xs   = self.compute_sigma_points(x, pars, Snew)
+
         # Merge the real full state and the new ones
         self.model.set_state(Xfull_ave[0])
 
         logger.debug("New sigma point is = {0}".format(Xs))
 
-        # compute the projected (outputs) points (each sigma points is propagated through the output function, this should not require a simulation,
-        # just the evaluation of a function since the output can be directly computed if the state vector and inputs are known )
-        X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigma_point_proj(Xs,t,t)
+        # compute the projected (outputs) points (each sigma points is propagated through the state transition function)
+        # K. ARENDT: THIS STEP SEEMS TO BE UNNECESSARY. IN ADDITION THERE WAS LIKELY A BUG (SEE BELOW)
+        # K. ARENDT: In the original code the full simulation was not performed, only a re-evaluation of the output
+        # function was made. This however does not work when parameters are estimated without states (not sure why).
+        # X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigma_point_proj(Xs,t,t) # Original code
+        # X_proj, Z_proj, Xfull_proj, Zfull_proj = self.sigma_point_proj(Xs,t_old,t) # Corrected code
 
-        logger.debug("Output projection of new sigm apoint is Z_proj = {0}".format(Z_proj))
+        logger.debug("Output projection of new sigma point is Z_proj = {0}".format(Z_proj))
         logger.debug("State re-projection is X_proj = {0}".format(X_proj))
         
         # compute the average output
@@ -933,7 +944,7 @@ class UkfFmu():
         K             = K.T
         
         # Read the output value
-        if z == None:
+        if z is None:
             z = self.model.get_measured_data_ouputs(t)
 
         logger.debug("Measured output data to be compared agains simulations Z = {0}".format(z))
@@ -962,8 +973,17 @@ class UkfFmu():
         # Set observed states and parameters
         self.model.set_state_selected(X_corr[0,:self.n_state_obs])
         self.model.set_parameters_selected(X_corr[0,self.n_state_obs:])
-        
-        return (X_corr[0], S_corr, Zave, Sy, Zfull_ave, Xfull_ave[0])        
+
+        # Remove unnecessary dimension in Zave and Zfull_ave,
+        # but do not allow to reduce to 0-d, because it causes troubles when converting arrays into DataFrames
+        Zave = Zave.squeeze()
+        if np.ndim(Zave) == 0:
+            Zave = Zave[np.newaxis]
+        Zfull_ave = Zfull_ave.squeeze()
+        if np.ndim(Zave) == 0:
+            Zave = Zave[np.newaxis]
+
+        return (X_corr[0], S_corr, Zave, Sy, Zfull_ave, Xfull_ave[0])
     
     def filter(self, start, stop, sqrt_P = None, sqrt_Q = None, sqrt_R = None, for_smoothing = False):
         """
@@ -1017,13 +1037,13 @@ class UkfFmu():
         
         # Read the output measured data
         measuredOuts = self.model.get_measured_output_data_series()
-        
+
         # Get the time vector 
         time = pd.to_datetime(measuredOuts[:,0], utc = True)
         
         # find the index of the closest matches for start and stop time
         ix_start, ix_stop = self.find_closest_matches(start, stop, time)
-        
+
         # Initial conditions and other values
         x     = [np.hstack((self.model.get_state_observed_values(), self.model.get_parameter_values()))]
         x_full= [self.model.get_state()]
@@ -1040,12 +1060,21 @@ class UkfFmu():
         y     = [measuredOuts[0,1:]]
         y_full= [measuredOuts[0,1:]]
         Sy    = [sqrt_R]
-        
+
+        start_ts = calendar.timegm(time[ix_start].timetuple())
+        final_ts = calendar.timegm(time[ix_stop-1].timetuple())
+
         for i in range(ix_start+1, ix_stop):
             t_old = time[i-1]
             t = time[i]
             z = measuredOuts[i,1:]
-            
+
+            # Print progress
+            current_ts = calendar.timegm(t.timetuple())
+            print '[UKF] Step {0}, time = {1} s ({2:.1f}%)'.format(i, current_ts,
+                                                                   100 * float(current_ts-start_ts)
+                                                                   /float(final_ts-start_ts))
+
             # Execute a filtering step
             try:
                 X_corr, sP, Zave, S_y, Zfull_ave, X_full = self.ukf_step(x[i-1-ix_start], sqrt_Ps[i-1-ix_start], sqrt_Q, sqrt_R, t_old, t, z)
@@ -1054,7 +1083,7 @@ class UkfFmu():
                 logger.exception(str(e))
                 logger.exception("The state is X = {0}".format(x[i-1-ix_start]))
                 logger.exception("The sqrtP matrix is".format(sqrt_Ps[i-1-ix_start]))
-                raise Exception("Problem while performing a UKF step")
+                raise UkfException("Problem while performing a UKF step")
                 
             # Add data to the list    
             x.append(X_corr)
@@ -1125,7 +1154,9 @@ class UkfFmu():
         # NOTE that at time i+1 there is available a corrected estimation of the state Xcorr[i+1]
         # thus the difference between these two states is back-propagated to the state at time i
         for i in range(nTimeStep-2,-1,-1):
-            
+
+            print "[UKF] Smoothing step {}".format(i)
+
             # reset the full state of the model
             self.model.set_state(x_full[i])
             
@@ -1195,8 +1226,15 @@ class UkfFmu():
             logger.debug("Ssmooth difference is = {0}".format(sqrtP[i] - Ssmooth[i]))
         
         # correct the shape of the last element that has not been smoothed
-        Yfull_smooth[-1] = Yfull_smooth[-1][0]
-        
+        # Yfull_smooth[-1] = Yfull_smooth[-1][0]    # Krzysztof: This line is likely a bug. This code
+                                                    # modifies the array to the following (see row m):
+                                                    # >>> yfull_smooth
+                                                    # [[x11, x12, ..., x1n],
+                                                    #  [x21, x22, ..., x2n],
+                                                    #  ...
+                                                    #  [x(m-1)1, x(m-1)2, ..., x(m-1)n],
+                                                    #  xm1]
+
         # Return the results of the filtering and smoothing
         return time, X, sqrtP, y, Sy, y_full, Xsmooth, Ssmooth, Yfull_smooth
     

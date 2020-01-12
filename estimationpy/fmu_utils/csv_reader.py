@@ -120,7 +120,7 @@ class CsvReader():
             df.index = pd.to_datetime(df.index, unit="s", utc=True)
             
             # Sort values with respect to the index
-            df.sort(inplace = True)
+            df.sort_index(inplace=True)
             
             return df
         
