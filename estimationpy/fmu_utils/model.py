@@ -91,10 +91,7 @@ class Model:
         
         # Set the simulation date time offset
         self.offset = offset
-        
-        # An array that contains the value references for every state variable
-        self.stateValueReferences = []
-        
+
         # See what can be done in catching the exception/propagating it
         if fmu_file is not None:
             self.__set_fmu__(fmu_file, result_handler, solver, atol, rtol, verbose)
@@ -1280,15 +1277,12 @@ class Model:
             # set the number of states
             self.N_STATES = len(self.get_state())
             
-            # get the value references of the state variables
-            self.stateValueReferences = self.fmu.get_state_value_references()
-            
             # Properties of the FMU
             self.name = str(self.fmu.get_name())
             self.author = str(self.fmu.get_author())
             self.description = str(self.fmu.get_description())
             self.fmu_type = str(self.fmu.__class__.__name__)
-            self.version = str(self.fmu.version)
+            self.version = str(self.fmu.get_version())
             self.guid = str(self.fmu.get_guid())
             self.tool = str(self.fmu.get_generation_tool())
             [Ncont, Nevt] = self.fmu.get_ode_sizes()
@@ -1301,11 +1295,13 @@ class Model:
         else:
             logger.warn("The FMU has already been assigned to this model")
     
-    def __set_in_out_var__(self, variability, causality):
+    def __set_in_out_var__(self, var_type):
         """
         This method identifies a subset of the variables that belong to the FMU depending
         on their charateristics, namely the causality and variability.
         The variables are identified in the following way
+        
+        If FMU is FMI v1.0:
         
         +---------------+-----------+-------------+
         | Variable type | causality | variability |
@@ -1315,18 +1311,51 @@ class Model:
         |    output     |    1      |     None    |
         +---------------+-----------+-------------+
         
+        If FMU is FMI v2.0:
+        
+        +---------------+-----------+-------------+
+        | Variable type | causality | variability |
+        +===============+===========+=============+
+        |    input      |    2      |     None    |
+        +---------------+-----------+-------------+
+        |    output     |    3      |     None    |
+        +---------------+-----------+-------------+
+        
         Once the variables are identified, they're added to the list of inputs and outputs
         of this model.
 
-        :param int variability: integer that identifies the variability of a variable in the FMU.
-        :param int causality: integer that identifies the causality of a variable in the FMU.
+        :param str var_type: string specifying the variable type ("inputs", "outputs")
 
         :rtype: None
         """
+
+        # Get variability and causality according to FMI version and variable type
+        # FMI v1.0
+        if self.version == '1.0':
+            if var_type == 'inputs':
+                variability = None
+                causality = 0
+            elif var_type == 'outputs':
+                variability = None
+                causality = 1
+            else:
+                raise ValueError('Variable of type {0} not able to be processed for FMI v{1}.'.format(var_type, self.version))
+        # FMI v2.0
+        if self.version == '2.0':
+            if var_type == 'inputs':
+                variability = None
+                causality = 2
+            elif var_type == 'outputs':
+                variability = None
+                causality = 3
+            else:
+                raise ValueError('Variable of type {0} not able to be processed for FMI v{1}.'.format(var_type, self.version))   
+
         # Take the variable of the FMU that have the specified variability and causality
         # the result is a dictionary which has as key the name of the variable with the dot notation
         # and as element a class of type << pyfmi.fmi.ScalarVariable >>
         # Alias variable removed for clarity.
+
         dictVariables = self.fmu.get_model_variables(include_alias = False, variability = variability, causality = causality)
             
         for k in dictVariables.keys():
@@ -1336,10 +1365,10 @@ class Model:
             var = InOutVar()
             var.set_object(dictVariables[k])
             
-            if variability is None and causality ==0:
+            if var_type == 'inputs':
                 # input
                 self.inputs.append(var)
-            if variability is None and causality ==1:
+            if var_type == 'outputs':
                 # output
                 self.outputs.append(var)
 
@@ -1352,7 +1381,7 @@ class Model:
 
         :rtype: None
         """
-        self.__set_in_out_var__(None, 0) # TODO: inspect None
+        self.__set_in_out_var__('inputs')
         
     def __set_outputs__(self):
         """
@@ -1363,7 +1392,7 @@ class Model:
 
         :rtype: None
         """
-        self.__set_in_out_var__(None, 1)
+        self.__set_in_out_var__('outputs')
     
     def set_result_file(self, file_name):
         """
